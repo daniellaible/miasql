@@ -6,3 +6,8 @@ authors = ["Daniel Laible"]
 repository ="https://github.com/daniellaible/miasql.git"
 
 [dependencies]
+[dependencies.uuid]
+version = "1.23.1"
+features = [
+    "v4",
+]

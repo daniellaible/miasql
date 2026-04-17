@@ -12,6 +12,14 @@ pub struct Table {
 
 impl Table {
 
+    pub fn new(tablename: String, tree: BPlusTree, uuid: Uuid) -> Table {
+        Table(tablename, tree, uuid)
+    }
+
+    pub fn new(tablename: String,  uuid: Uuid) -> Table {
+        Table(tablename, BPlusTree::new(), uuid)
+    }
+
     pub fn get_table_name(&self) -> String {
         return self.tablename.clone();
     }
