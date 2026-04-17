@@ -49,6 +49,7 @@ struct LeafNode<K, V, const MAX_KEYS: usize> {
     next: Option<Link<K, V, MAX_KEYS>>,
 }
 
+#[derive(Clone)]
 pub struct BPlusTree<K, V, const MAX_KEYS: usize = 32> {
     root: Link<K, V, MAX_KEYS>,
     len: usize,

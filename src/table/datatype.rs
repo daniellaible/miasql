@@ -1,4 +1,6 @@
-// These are the datatypes we will support in the beginning
+//! These are the datatypes we will support in the beginning
+
+#[derive(Clone)]
 pub enum DataType {
     BigInt{x: i64},
     Int {x: i32},
