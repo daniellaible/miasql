@@ -1,6 +1,6 @@
-mod datatypes;
-
-//this class represents a table of the database
+///this class represents a table of the database
+#![forbid(unsafe_code)]
+mod datatype;
 
 #[derive(Debug)]
 #[derive(Clone)]
@@ -31,5 +31,17 @@ impl Table {
     pub fn get_uuid(&self) -> Uuid {
         return self.uuid;
     }
+}
 
+#[cfg(test)]
+mod tests {
+    use super::Table;
+    use BPlusTree;
+
+    #[test]
+    fn create_new_table() {
+        let table: Table =  Table::new("test", Uuid::new_v4());
+        let name: String =  table.get_table_name();
+        assert_eq!(name, "test");
+    }
 }

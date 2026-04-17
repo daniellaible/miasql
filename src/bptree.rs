@@ -218,6 +218,26 @@ where
         out
     }
 
+    /// Finds the leave with the lowest id. It is used traversing the tree 
+    /// node to node. You use it also if you want all elements of this table
+    ///
+    pub fn leftmost_leaf(&self, mut node: Link<K, V, MAX_KEYS>) -> Link<K, V, MAX_KEYS> {
+        loop {
+            let b = node.borrow();
+            match &*b {
+                Node::Leaf(_) => {
+                    drop(b);      // end the borrow explicitly
+                    return node;  // now it's legal
+                }
+                Node::Internal(internal) => {
+                    let next = internal.children[0].clone();
+                    drop(b);      // end borrow before reassign
+                    node = next;
+                }
+            }
+        }
+    }
+
     // -------------------------
     // Search helpers
     // -------------------------
@@ -240,22 +260,7 @@ where
         }
     }
 
-    fn leftmost_leaf(&self, mut node: Link<K, V, MAX_KEYS>) -> Link<K, V, MAX_KEYS> {
-        loop {
-            let b = node.borrow();
-            match &*b {
-                Node::Leaf(_) => {
-                    drop(b);      // end the borrow explicitly
-                    return node;  // now it's legal
-                }
-                Node::Internal(internal) => {
-                    let next = internal.children[0].clone();
-                    drop(b);      // end borrow before reassign
-                    node = next;
-                }
-            }
-        }
-    }
+
 
     fn find_leaf_with_path(
         &self,
@@ -802,9 +807,7 @@ where
     }
 }
 
-// -------------------------
-// Example usage (remove if embedding in a crate)
-// -------------------------
+
 #[cfg(test)]
 mod tests {
     use super::BPlusTree;
