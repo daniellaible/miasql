@@ -2,6 +2,13 @@
 //!
 //! Use this class to access tables in the database.
 //!
+//! Parameters for creating a tabl are:
+//! - table_name
+//! - the B+Tree to store the data in
+//! - unique uuid that two tables with the same name but within different databases can be accessed
+//! - the name of the table columns
+//! - the datatype of the different columns
+//!
 //! Features
 //! - each table has a name
 //! - each table hasa uuid
@@ -13,6 +20,8 @@
 //! - get_bptree() - returns the tree
 //! - get_uuid() gets the uuid of the table
 
+use std::fs::File;
+use std::io::{BufReader, Read};
 use crate::bptree;
 use crate::bptree::BPlusTree;
 use uuid::Uuid;
@@ -31,10 +40,33 @@ pub struct Table {
 }
 
 impl Table {
-    pub fn new(tablename: String, tree: BPlusTree<i32, String, 3>, uuid: Uuid,
+
+    pub fn new_empty() -> Self {
+        Table{
+            table_name: "".to_string(),
+            tree: Default::default(),
+            uuid: Default::default(),
+            column_names: vec![],
+            column_types: vec![]    ,
+        }
+    }
+
+    /// creates a new table with the params:
+    /// - new() Constructor
+    /// - get_table_name() - returns the human-readable name of teh table
+    /// - get_bptree() - returns the tree
+    /// - get_uuid() gets the uuid of the table///
+    pub fn new(table_name: String, tree: BPlusTree<i32, String, 3>, uuid: Uuid,
                names: Vec<String>, types: Vec<DataType>) -> Table {
+
+        if names.len() != types.len(){
+            panic!("names length mismatch - unable to create such a mess");
+        }
+
+        // todo check if there are duplicates in the names
+
         Table {
-            table_name: tablename,
+            table_name,
             tree,
             uuid,
             column_names: names,
@@ -42,16 +74,28 @@ impl Table {
         }
     }
 
+    /// returns the name of the table in a human-readable form
     pub fn get_table_name(&self) -> String {
-        return self.table_name.clone();
+        self.table_name.clone()
     }
 
+    /// returns the B+Tree
     pub fn get_bptree(&self) -> &bptree::BPlusTree<i32, String, 3> {
-        return &self.tree;
+        &self.tree
     }
 
+    ///returns the Uuid of this table
     pub fn get_uuid(&self) -> Uuid {
-        return self.uuid;
+        self.uuid.clone()
+    }
+
+    pub fn read_table_from_disc(&self, path: String) -> (){
+        let file = File::open(path);
+        let mut buf:Vec<u8> = Vec::new();
+        let mut buf_reader = BufReader::new(file.unwrap());
+        buf_reader.read_to_end(&mut buf);
+
+        println!("{:?}", buf);
     }
 }
 
@@ -70,5 +114,11 @@ mod tests {
         let table: Table = Table::new(String::from("test"), _bp_tree, Uuid::new_v4(), names, types);
         let name: String = table.get_table_name();
         assert_eq!(name, "test");
+    }
+
+    #[test]
+    fn load_from_disc() {
+        let table: Table = Table::new_empty();
+        table.read_table_from_disc(String::from("C:/temp/moi/0e6bce68-99fa-3841-b790-24afbdf7db1d.moi"));
     }
 }
