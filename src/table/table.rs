@@ -135,7 +135,6 @@ impl Table {
         let mut number_of_columns_bytes = [0u8; 2];
         reader.read_exact(&mut number_of_columns_bytes).unwrap();
         let number_of_columns = i16::from_be_bytes(number_of_columns_bytes);
-        let columns_usize: usize = number_of_columns.try_into().expect("table name size is negative");
         println!("next 2 bytes as i16 (number_of_columns): {}", &number_of_columns);
 
         let mut part_bytes = [0u8; 2];
@@ -185,6 +184,21 @@ impl Table {
             let mut table_name = String::from_utf8(column_name_byte).unwrap();
             column_names[i] = table_name.clone();
         }
+
+        let mut column_types: Vec<DataType> = vec![DataType::new(); table_width];
+        for i in 0..table_width {
+            let mut column_type_len_byte = [0u8; 2];
+            reader.read_exact(&mut column_type_len_byte).unwrap();
+            let column_type_len_byte = i16::from_be_bytes(column_type_len_byte);
+            let column_name_size: usize = column_type_len_byte.try_into().expect("datatype name length was negative");
+
+            let mut column_type_byte = vec![0u8; column_name_size];
+            reader.read_exact(&mut column_type_byte).unwrap();
+            let mut column_type = String::from_utf8(column_type_byte).unwrap();
+            println!("column type: {}", &column_type);
+            //todo parse the strings to enums and save them in column_typesS
+        }
+
         println!("Column names: {:?}", column_names);
 
 

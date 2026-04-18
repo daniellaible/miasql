@@ -13,5 +13,12 @@ pub enum DataType {
     Date { x: i64 },
     Time { x: i64 },
     DateTime { x: i64 },
+    Undefined,
+}
+
+impl DataType {
+    pub(crate) fn new() -> DataType {
+        return DataType::Undefined;
+    }
 }
 
