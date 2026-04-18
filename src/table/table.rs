@@ -22,6 +22,7 @@
 
 use std::fs::File;
 use std::io::{BufReader, Read};
+use std::time::{Duration, Instant};
 use std::fmt;
 use crate::bptree;
 use crate::bptree::BPlusTree;
@@ -121,6 +122,7 @@ impl Table {
     }
 
     pub fn read_table_from_disc(&self, path: String) -> (){
+        let start = Instant::now();
         let file = File::open(path).unwrap();
         let mut reader = BufReader::new(file);
 
@@ -133,6 +135,7 @@ impl Table {
         let mut number_of_columns_bytes = [0u8; 2];
         reader.read_exact(&mut number_of_columns_bytes).unwrap();
         let number_of_columns = i16::from_be_bytes(number_of_columns_bytes);
+        let columns_usize: usize = number_of_columns.try_into().expect("table name size is negative");
         println!("next 2 bytes as i16 (number_of_columns): {}", &number_of_columns);
 
         let mut part_bytes = [0u8; 2];
@@ -158,7 +161,7 @@ impl Table {
         reader.read_exact(&mut table_name_length_byte).unwrap();
         let table_name_len = i16::from_be_bytes(table_name_length_byte);
         println!("next 2 bytes as i16 (table name len): {}", &table_name_len);
-        let table_name_len: usize = table_name_len.try_into().expect("table name length was negative");
+        let table_name_len: usize = table_name_len.try_into().expect("table name size is negative");
 
         let mut table_name_byte = vec![0u8; table_name_len];
         reader.read_exact(&mut table_name_byte).unwrap();
@@ -166,6 +169,27 @@ impl Table {
         let cleaned_name = table_name.trim_matches('"');
         println!("next: (table name): {}", cleaned_name);
 
+        let table_width: usize = match usize::try_from(number_of_columns) {
+            Ok(v) => v,
+            Err(_) => return,
+        };
+        let mut column_names: Vec<String> = vec![String::new(); table_width ];
+        for i in 0..table_width {
+            let mut column_name_len_byte = [0u8; 2];
+            reader.read_exact(&mut column_name_len_byte).unwrap();
+            let column_name_len = i16::from_be_bytes(column_name_len_byte);
+            let column_name_size: usize = column_name_len.try_into().expect("table name length was negative");
+
+            let mut column_name_byte = vec![0u8; column_name_size];
+            reader.read_exact(&mut column_name_byte).unwrap();
+            let mut table_name = String::from_utf8(column_name_byte).unwrap();
+            column_names[i] = table_name.clone();
+        }
+        println!("Column names: {:?}", column_names);
+
+
+        let duration = start.elapsed();
+        println!("Total time taken: {:?}", duration);
     }
 }
 
