@@ -22,6 +22,7 @@
 
 use std::fs::File;
 use std::io::{BufReader, Read};
+use std::fmt;
 use crate::bptree;
 use crate::bptree::BPlusTree;
 use uuid::Uuid;
@@ -90,12 +91,19 @@ impl Table {
     }
 
     pub fn read_table_from_disc(&self, path: String) -> (){
-        let file = File::open(path);
+/*        let file = File::open(path);
         let mut buf:Vec<u8> = Vec::new();
         let mut buf_reader = BufReader::new(file.unwrap());
-        buf_reader.read_to_end(&mut buf);
+        buf_reader.read_to_end(&mut buf);*/
 
-        println!("{:?}", buf);
+        let file = File::open(path).unwrap();
+        let mut reader = BufReader::new(file);
+
+        let mut magic = [0u8, 4];
+        reader.read_exact(&mut magic).unwrap();
+        println!("{:#04X?}", magic);
+        
+
     }
 }
 
