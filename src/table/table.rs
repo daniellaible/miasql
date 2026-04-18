@@ -98,7 +98,42 @@ impl Table {
         let mut version_bytes = [0u8; 4];
         reader.read_exact(&mut version_bytes).unwrap();
         let version = f32::from_be_bytes(version_bytes);
-        println!("next 4 bytes as f32: {}", version);
+        println!("next 4 bytes as f32 (version): {}", &version);
+
+        let mut number_of_columns_bytes = [0u8; 2];
+        reader.read_exact(&mut number_of_columns_bytes).unwrap();
+        let number_of_columns = i16::from_be_bytes(number_of_columns_bytes);
+        println!("next 2 bytes as i16 (number_of_columns): {}", &number_of_columns);
+
+        let mut part_bytes = [0u8; 2];
+        reader.read_exact(&mut part_bytes).unwrap();
+        let part = i16::from_be_bytes(part_bytes);
+        println!("next 2 bytes as i16 (part): {}", &part);
+
+        let mut part_of_bytes = [0u8; 2];
+        reader.read_exact(&mut part_of_bytes).unwrap();
+        let part_of = i16::from_be_bytes(part_of_bytes);
+        println!("next 2 bytes as i16 (part_of): {}", &part_of);
+
+        let mut next_file_length_byte = [0u8; 2];
+        reader.read_exact(&mut next_file_length_byte).unwrap();
+        let next_file_len = i16::from_be_bytes(next_file_length_byte);
+        println!("next 2 bytes as i16 (next file len): {}", &next_file_len);
+
+        if next_file_len != 0 {
+            println!("Next file was not implemented yet - however the length seems to be > 0");
+        }
+
+        let mut table_name_length_byte = [0u8; 2];
+        reader.read_exact(&mut table_name_length_byte).unwrap();
+        let table_name_len = i16::from_be_bytes(table_name_length_byte);
+        println!("next 2 bytes as i16 (table name len): {}", &table_name_len);
+
+        let mut table_name_length_byte = [0u8; table_name_len];
+        reader.read_exact(&mut table_name_length_byte).unwrap();
+        let table_name_len = i16::from_be_bytes(table_name_length_byte);
+        println!("next 2 bytes as i16 (table name len): {}", &table_name_len);
+
     }
 }
 
