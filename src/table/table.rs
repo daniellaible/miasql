@@ -80,14 +80,44 @@ impl Table {
         self.table_name.clone()
     }
 
+    /// sets the table name of the table
+    pub fn set_table_name(&mut self, table_name: String)  {
+        self.table_name = table_name;
+    }
+
     /// returns the B+Tree
     pub fn get_bptree(&self) -> &bptree::BPlusTree<i32, String, 3> {
         &self.tree
     }
 
+    /// if the tree has been changed or the tree has been loaded from disc
+    pub fn set_bptree(&mut self, tree: BPlusTree<i32, String, 3>) {
+        self.tree = tree;
+    }
+
     ///returns the Uuid of this table
     pub fn get_uuid(&self) -> Uuid {
         self.uuid.clone()
+    }
+
+    pub fn set_uuid(&mut self, uuid: Uuid) {
+        self.uuid = uuid;
+    }
+
+    pub fn set_column_names(&mut self, column_names: Vec<String>) {
+        self.column_names = column_names;
+    }
+
+    pub fn get_column_names(&self) -> &Vec<String> {
+        &self.column_names
+    }
+
+    pub fn set_column_types(&mut self, column_types: Vec<DataType>) {
+        self.column_types = column_types;
+    }
+
+    pub fn get_column_types(&self) -> &Vec<DataType> {
+        &self.column_types
     }
 
     pub fn read_table_from_disc(&self, path: String) -> (){
@@ -128,11 +158,13 @@ impl Table {
         reader.read_exact(&mut table_name_length_byte).unwrap();
         let table_name_len = i16::from_be_bytes(table_name_length_byte);
         println!("next 2 bytes as i16 (table name len): {}", &table_name_len);
+        let table_name_len: usize = table_name_len.try_into().expect("table name length was negative");
 
-        let mut table_name_length_byte = [0u8; table_name_len];
-        reader.read_exact(&mut table_name_length_byte).unwrap();
-        let table_name_len = i16::from_be_bytes(table_name_length_byte);
-        println!("next 2 bytes as i16 (table name len): {}", &table_name_len);
+        let mut table_name_byte = vec![0u8; table_name_len];
+        reader.read_exact(&mut table_name_byte).unwrap();
+        let mut table_name = String::from_utf8(table_name_byte).unwrap();
+        let cleaned_name = table_name.trim_matches('"');
+        println!("next: (table name): {}", cleaned_name);
 
     }
 }
@@ -148,10 +180,15 @@ mod tests {
     fn create_new_table() {
         let names:Vec<String> = vec![String::from("id"), String::from("first_name"), String::from("last_name"), String::from("age")];
         let types:Vec<DataType> = vec![DataType::BigInt{ x : 0}, DataType::VarChar {x : String::from(" "), y: 0}, DataType::VarChar {x : String::from(" "), y: 0}, DataType::Int {x: 50 }];
-        let mut _bp_tree = BPlusTree::default();
-        let table: Table = Table::new(String::from("test"), _bp_tree, Uuid::new_v4(), names, types);
+        let bp_tree = BPlusTree::default();
+        let uuid = Uuid::parse_str("a1a2a3a4-b1b2-c1c2-d1d2-d3d4d5d6d7d8").unwrap();
+        let table: Table = Table::new(String::from("test"), bp_tree, uuid, names, types);
+
         let name: String = table.get_table_name();
         assert_eq!(name, "test");
+
+        let uuid: Uuid = table.get_uuid();
+        assert_eq!(String::from(uuid), "a1a2a3a4-b1b2-c1c2-d1d2-d3d4d5d6d7d8");
     }
 
     #[test]
