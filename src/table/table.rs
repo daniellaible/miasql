@@ -91,19 +91,14 @@ impl Table {
     }
 
     pub fn read_table_from_disc(&self, path: String) -> (){
-/*        let file = File::open(path);
-        let mut buf:Vec<u8> = Vec::new();
-        let mut buf_reader = BufReader::new(file.unwrap());
-        buf_reader.read_to_end(&mut buf);*/
-
         let file = File::open(path).unwrap();
         let mut reader = BufReader::new(file);
 
-        let mut magic = [0u8, 4];
-        reader.read_exact(&mut magic).unwrap();
-        println!("{:#04X?}", magic);
-        
 
+        let mut version_bytes = [0u8; 4];
+        reader.read_exact(&mut version_bytes).unwrap();
+        let version = f32::from_be_bytes(version_bytes);
+        println!("next 4 bytes as f32: {}", version);
     }
 }
 
