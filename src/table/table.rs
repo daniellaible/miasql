@@ -20,15 +20,13 @@
 //! - get_bptree() - returns the tree
 //! - get_uuid() gets the uuid of the table
 
-use std::fs::File;
-use std::io::{BufReader, Read};
-use std::time::{Duration, Instant};
-use std::fmt;
 use crate::bptree;
 use crate::bptree::BPlusTree;
-use uuid::Uuid;
 use datatype::DataType;
-
+use std::fs::File;
+use std::io::{BufReader, Read};
+use std::time::Instant;
+use uuid::Uuid;
 
 mod datatype;
 
@@ -42,14 +40,13 @@ pub struct Table {
 }
 
 impl Table {
-
     pub fn new_empty() -> Self {
-        Table{
+        Table {
             table_name: "".to_string(),
             tree: Default::default(),
             uuid: Default::default(),
             column_names: vec![],
-            column_types: vec![]    ,
+            column_types: vec![],
         }
     }
 
@@ -58,13 +55,21 @@ impl Table {
     /// - get_table_name() - returns the human-readable name of teh table
     /// - get_bptree() - returns the tree
     /// - get_uuid() gets the uuid of the table///
-    pub fn new(table_name: String, tree: BPlusTree<i32, String, 3>, uuid: Uuid,
-               names: Vec<String>, types: Vec<DataType>) -> Table {
+    pub fn new(
+        table_name: String,
+        tree: BPlusTree<i32, String, 3>,
+        uuid: Uuid,
+        names: Vec<String>,
+        types: Vec<DataType>,
+    ) -> Table {
 
-        if names.len() != types.len(){
-            panic!("names length mismatch - unable to create such a mess");
+        assert!(names.len() > 0);
+        if names.len() != types.len() {
+            print!("names length mismatch - unable to create such a mess");
         }
-
+        if names[0].eq("ID") || names[0].eq("id") || names[0].eq("Id"){
+            println!("first column needs to be an column named id | ID || Id")
+        }
         // todo check if there are duplicates in the names
 
         Table {
@@ -82,7 +87,7 @@ impl Table {
     }
 
     /// sets the table name of the table
-    pub fn set_table_name(&mut self, table_name: String)  {
+    pub fn set_table_name(&mut self, table_name: String) {
         self.table_name = table_name;
     }
 
@@ -121,11 +126,10 @@ impl Table {
         &self.column_types
     }
 
-    pub fn read_table_from_disc(&self, path: String) -> (){
+    pub fn read_table_from_disc(&self, path: String) -> () {
         let start = Instant::now();
         let file = File::open(path).unwrap();
         let mut reader = BufReader::new(file);
-
 
         let mut version_bytes = [0u8; 4];
         reader.read_exact(&mut version_bytes).unwrap();
@@ -135,7 +139,10 @@ impl Table {
         let mut number_of_columns_bytes = [0u8; 2];
         reader.read_exact(&mut number_of_columns_bytes).unwrap();
         let number_of_columns = i16::from_be_bytes(number_of_columns_bytes);
-        println!("next 2 bytes as i16 (number_of_columns): {}", &number_of_columns);
+        println!(
+            "next 2 bytes as i16 (number_of_columns): {}",
+            &number_of_columns
+        );
 
         let mut part_bytes = [0u8; 2];
         reader.read_exact(&mut part_bytes).unwrap();
@@ -160,11 +167,13 @@ impl Table {
         reader.read_exact(&mut table_name_length_byte).unwrap();
         let table_name_len = i16::from_be_bytes(table_name_length_byte);
         println!("next 2 bytes as i16 (table name len): {}", &table_name_len);
-        let table_name_len: usize = table_name_len.try_into().expect("table name size is negative");
+        let table_name_len: usize = table_name_len
+            .try_into()
+            .expect("table name size is negative");
 
         let mut table_name_byte = vec![0u8; table_name_len];
         reader.read_exact(&mut table_name_byte).unwrap();
-        let mut table_name = String::from_utf8(table_name_byte).unwrap();
+        let table_name = String::from_utf8(table_name_byte).unwrap();
         let cleaned_name = table_name.trim_matches('"');
         println!("next: (table name): {}", cleaned_name);
 
@@ -172,35 +181,88 @@ impl Table {
             Ok(v) => v,
             Err(_) => return,
         };
-        let mut column_names: Vec<String> = vec![String::new(); table_width ];
+
+        //read column names
+        let mut column_names: Vec<String> = vec![String::new(); table_width];
         for i in 0..table_width {
             let mut column_name_len_byte = [0u8; 2];
             reader.read_exact(&mut column_name_len_byte).unwrap();
             let column_name_len = i16::from_be_bytes(column_name_len_byte);
-            let column_name_size: usize = column_name_len.try_into().expect("table name length was negative");
+            let column_name_size: usize = column_name_len
+                .try_into()
+                .expect("table name length was negative");
 
             let mut column_name_byte = vec![0u8; column_name_size];
             reader.read_exact(&mut column_name_byte).unwrap();
-            let mut table_name = String::from_utf8(column_name_byte).unwrap();
+            let table_name = String::from_utf8(column_name_byte).unwrap();
             column_names[i] = table_name.clone();
         }
 
-        let mut column_types: Vec<DataType> = vec![DataType::new(); table_width];
+        //read datatype definition
+        let mut column_types: Vec<DataType> = vec![DataType::Undefined; table_width];
         for i in 0..table_width {
             let mut column_type_len_byte = [0u8; 2];
             reader.read_exact(&mut column_type_len_byte).unwrap();
             let column_type_len_byte = i16::from_be_bytes(column_type_len_byte);
-            let column_name_size: usize = column_type_len_byte.try_into().expect("datatype name length was negative");
+            let column_name_size: usize = column_type_len_byte
+                .try_into()
+                .expect("datatype name length was negative");
 
             let mut column_type_byte = vec![0u8; column_name_size];
             reader.read_exact(&mut column_type_byte).unwrap();
-            let mut column_type = String::from_utf8(column_type_byte).unwrap();
-            println!("column type: {}", &column_type);
-            //todo parse the strings to enums and save them in column_typesS
+            let column_type = String::from_utf8(column_type_byte).unwrap();
+            let dt:DataType = datatype::to_datatype(&*column_type);
+            column_types[i] = dt;
         }
 
-        println!("Column names: {:?}", column_names);
+        let mut row:Vec<DataType> = vec![];
+        for i in 0..table_width{
+            let dt: &DataType = &column_types[i];
+            if matches!(DataType::BigInt { x: 0 }, dt){
+                let mut big_int_byte = [0u8; 8];
+                reader.read_exact(&mut big_int_byte).unwrap();
+                let big_int = i64::from_be_bytes(big_int_byte);
+                let dt_big_int:DataType = DataType::BigInt { x: big_int };
+                row.push(dt_big_int);
 
+            }else if matches!(DataType::Int { x: 0 }, dt){
+                let mut int_byte = [0u8; 4];
+                reader.read_exact(&mut int_byte).unwrap();
+                let int = i32::from_be_bytes(int_byte);
+                let dt_int:DataType = DataType::Int { x: int };
+                row.push(dt_int);
+
+            }else if matches!(DataType::Decimal { x: 0.0 }, dt) {
+                let mut decimal_byte = [0u8; 4];
+                reader.read_exact(&mut decimal_byte).unwrap();
+                let decimal = f32::from_be_bytes(decimal_byte);
+                let dt_decimal: DataType = DataType::Decimal { x: decimal };
+                row.push(dt_decimal);
+
+            }else if matches!(DataType::VarChar { x: String::default(), y: 0}, dt) {
+                let mut varchar_len_byte = [0u8; 2];
+                reader.read_exact(&mut varchar_len_byte).unwrap();
+                let varchar_len = i16::from_be_bytes(varchar_len_byte);
+                let varchar_size: usize = varchar_len
+                    .try_into()
+                    .expect("table name length was negative");
+
+                let mut varchar_byte = vec![0u8; varchar_size];
+                reader.read_exact(&mut varchar_byte).unwrap();
+                let varchar = String::from_utf8(varchar_byte).unwrap();
+                let dt_varchar: DataType = DataType::VarChar {x: varchar, y: varchar_size};
+                row.push(dt_varchar);
+            }
+        }
+        println!("row {:?}", row);
+
+
+
+
+
+
+        println!("Column names: {:?}", column_names);
+        println!("Column types: {:?}", column_types);
 
         let duration = start.elapsed();
         println!("Total time taken: {:?}", duration);
@@ -211,13 +273,29 @@ impl Table {
 mod tests {
     use super::Table;
     use crate::bptree::BPlusTree;
-    use uuid::Uuid;
     use crate::table::datatype::DataType;
+    use uuid::Uuid;
 
     #[test]
     fn create_new_table() {
-        let names:Vec<String> = vec![String::from("id"), String::from("first_name"), String::from("last_name"), String::from("age")];
-        let types:Vec<DataType> = vec![DataType::BigInt{ x : 0}, DataType::VarChar {x : String::from(" "), y: 0}, DataType::VarChar {x : String::from(" "), y: 0}, DataType::Int {x: 50 }];
+        let names: Vec<String> = vec![
+            String::from("id"),
+            String::from("first_name"),
+            String::from("last_name"),
+            String::from("age"),
+        ];
+        let types: Vec<DataType> = vec![
+            DataType::BigInt { x: 0 },
+            DataType::VarChar {
+                x: String::from(" "),
+                y: 0,
+            },
+            DataType::VarChar {
+                x: String::from(" "),
+                y: 0,
+            },
+            DataType::Int { x: 50 },
+        ];
         let bp_tree = BPlusTree::default();
         let uuid = Uuid::parse_str("a1a2a3a4-b1b2-c1c2-d1d2-d3d4d5d6d7d8").unwrap();
         let table: Table = Table::new(String::from("test"), bp_tree, uuid, names, types);
@@ -232,6 +310,8 @@ mod tests {
     #[test]
     fn load_from_disc() {
         let table: Table = Table::new_empty();
-        table.read_table_from_disc(String::from("C:/temp/moi/0e6bce68-99fa-3841-b790-24afbdf7db1d.moi"));
+        table.read_table_from_disc(String::from(
+            "C:/temp/moi/0e6bce68-99fa-3841-b790-24afbdf7db1d.moi",
+        ));
     }
 }

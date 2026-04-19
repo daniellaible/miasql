@@ -1,6 +1,6 @@
 //! These are the datatypes we will support in the beginning
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum DataType {
     BigInt { x: i64 },
     Int { x: i32 },
@@ -16,9 +16,21 @@ pub enum DataType {
     Undefined,
 }
 
-impl DataType {
-    pub(crate) fn new() -> DataType {
-        return DataType::Undefined;
+pub fn to_datatype(value: &str) -> DataType {
+    match value {
+        "BIGINT" => DataType::BigInt { x: 0 },
+        "INT" => DataType::Int { x: 0 },
+        "SMALLINT" => DataType::SmallInt { x: 0 },
+        "TINYINT" => DataType::TinyInt { x: 0 },
+        "DECIMAL" => DataType::Decimal { x: 0.0 },
+        "FLOAT" => DataType::Float { x: 0.0 },
+        "VARCHAR" => DataType::VarChar { x: String::default(), y: 0 },
+        "BOOL" => DataType::Bool {x: false},
+        "DATE" => DataType::Date { x: 0 },
+        "TIME" => DataType::Time { x: 0 },
+        "DateTime" => DataType::DateTime { x: 0 },
+        _ => DataType::Undefined,
     }
 }
+
 
