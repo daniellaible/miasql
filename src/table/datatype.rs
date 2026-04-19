@@ -16,6 +16,15 @@ pub enum DataType {
     Undefined,
 }
 
+impl DataType {
+    pub fn as_i64(&self) -> Option<i64> {
+        match self{
+            DataType::BigInt { x } => Some(*x),
+            _ => None
+        }
+    }
+}
+
 pub fn to_datatype(value: &str) -> DataType {
     match value {
         "BIGINT" => DataType::BigInt { x: 0 },

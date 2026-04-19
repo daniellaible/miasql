@@ -28,10 +28,217 @@ use std::io::{self, BufReader, Read};
 use std::time::Instant;
 use uuid::Uuid;
 
-
 mod datatype;
 
-#[derive(Clone)]
+
+pub fn read_table_from_disc(path: String) -> Table {
+    let start = Instant::now();
+    let file = File::open(path).unwrap();
+    let mut reader = BufReader::new(file);
+
+    let mut version_bytes = [0u8; 4];
+    reader.read_exact(&mut version_bytes).unwrap();
+    let version = f32::from_be_bytes(version_bytes);
+    println!("next 4 bytes as f32 (version): {}", &version);
+
+    let mut number_of_columns_bytes = [0u8; 2];
+    reader.read_exact(&mut number_of_columns_bytes).unwrap();
+    let number_of_columns = i16::from_be_bytes(number_of_columns_bytes);
+    println!(
+        "next 2 bytes as i16 (number_of_columns): {}",
+        &number_of_columns
+    );
+
+    let mut part_bytes = [0u8; 2];
+    reader.read_exact(&mut part_bytes).unwrap();
+    let part = i16::from_be_bytes(part_bytes);
+    println!("next 2 bytes as i16 (part): {}", &part);
+
+    let mut part_of_bytes = [0u8; 2];
+    reader.read_exact(&mut part_of_bytes).unwrap();
+    let part_of = i16::from_be_bytes(part_of_bytes);
+    println!("next 2 bytes as i16 (part_of): {}", &part_of);
+
+    let mut next_file_length_byte = [0u8; 2];
+    reader.read_exact(&mut next_file_length_byte).unwrap();
+    let next_file_len = i16::from_be_bytes(next_file_length_byte);
+    println!("next 2 bytes as i16 (next file len): {}", &next_file_len);
+
+    if next_file_len != 0 {
+        println!("Next file was not implemented yet - however the length seems to be > 0");
+    }
+
+    let mut table_name_length_byte = [0u8; 2];
+    reader.read_exact(&mut table_name_length_byte).unwrap();
+    let table_name_len = i16::from_be_bytes(table_name_length_byte);
+    println!("next 2 bytes as i16 (table name len): {}", &table_name_len);
+    let table_name_len: usize = table_name_len
+        .try_into()
+        .expect("table name size is negative");
+
+    let mut table_name_byte = vec![0u8; table_name_len];
+    reader.read_exact(&mut table_name_byte).unwrap();
+    let table_name = String::from_utf8(table_name_byte).unwrap();
+    let cleaned_name = table_name.trim_matches('"');
+    println!("next: (table name): {}", cleaned_name);
+
+    let table_width: usize = match usize::try_from(number_of_columns) {
+        Ok(v) => v,
+        Err(_) => panic!("table width overflow"),
+    };
+
+    //read column names
+    let mut column_names: Vec<String> = vec![String::new(); table_width];
+    for i in 0..table_width {
+        let mut column_name_len_byte = [0u8; 2];
+        reader.read_exact(&mut column_name_len_byte).unwrap();
+        let column_name_len = i16::from_be_bytes(column_name_len_byte);
+        let column_name_size: usize = column_name_len
+            .try_into()
+            .expect("table name length was negative");
+
+        let mut column_name_byte = vec![0u8; column_name_size];
+        reader.read_exact(&mut column_name_byte).unwrap();
+        let table_name = String::from_utf8(column_name_byte).unwrap();
+        column_names[i] = table_name.clone();
+    }
+
+    //read datatype definition
+    let mut column_types: Vec<DataType> = vec![DataType::Undefined; table_width];
+    for i in 0..table_width {
+        let mut column_type_len_byte = [0u8; 2];
+        reader.read_exact(&mut column_type_len_byte).unwrap();
+        let column_type_len_byte = i16::from_be_bytes(column_type_len_byte);
+        let column_name_size: usize = column_type_len_byte
+            .try_into()
+            .expect("datatype name length was negative");
+
+        let mut column_type_byte = vec![0u8; column_name_size];
+        reader.read_exact(&mut column_type_byte).unwrap();
+        let column_type = String::from_utf8(column_type_byte).unwrap();
+        let dt: DataType = datatype::to_datatype(&*column_type);
+        column_types[i] = dt;
+    }
+
+
+    let mut tree: BPlusTree<i64, Vec<DataType>> = BPlusTree::default();
+    let mut rows: Vec<Vec<DataType>> = Vec::new();
+
+    'read_rows: loop {
+        let mut row: Vec<DataType> = Vec::with_capacity(table_width);
+
+        for i in 0..table_width {
+            let dt = &column_types[i];
+
+            // Helper macro to turn EOF into "stop reading rows"
+            macro_rules! read_or_eof {
+            ($buf:expr) => {
+                match reader.read_exact(&mut $buf) {
+                    Ok(()) => {}
+                    Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => {
+                        // If we hit EOF at the start of a new row, we're done.
+                        // If we hit EOF mid-row, the file is truncated/corrupt.
+                        if row.is_empty() {
+                            break 'read_rows;
+                        } else {
+                            !panic!("EOF mid row");
+                            //return /* value */ /* value */; // or panic!("Unexpected EOF mid-row")
+                        }
+                    }
+                    Err(e) => panic!("I/O error while reading row: {e}"),
+                }
+            };
+        }
+
+            match dt {
+                DataType::BigInt { .. } => {
+                    let mut buf = [0u8; 8];
+                    read_or_eof!(buf);
+                    row.push(DataType::BigInt { x: i64::from_be_bytes(buf) });
+                }
+
+                DataType::Int { .. } => {
+                    let mut buf = [0u8; 4];
+                    read_or_eof!(buf);
+                    row.push(DataType::Int { x: i32::from_be_bytes(buf) });
+                }
+
+                DataType::SmallInt { .. } => {
+                    let mut buf = [0u8; 2];
+                    read_or_eof!(buf);
+                    row.push(DataType::SmallInt { x: i16::from_be_bytes(buf) });
+                }
+
+                DataType::TinyInt { .. } => {
+                    let mut buf = [0u8; 1];
+                    read_or_eof!(buf);
+                    row.push(DataType::TinyInt { x: i8::from_be_bytes(buf) });
+                }
+
+                DataType::Decimal { .. } => {
+                    let mut buf = [0u8; 4];
+                    read_or_eof!(buf);
+                    row.push(DataType::Decimal { x: f32::from_be_bytes(buf) });
+                }
+
+                DataType::VarChar { .. } => {
+                    let mut len_buf = [0u8; 2];
+                    read_or_eof!(len_buf);
+
+                    let varchar_len = i16::from_be_bytes(len_buf);
+                    let varchar_size: usize = varchar_len
+                        .try_into()
+                        .expect("varchar length was negative");
+
+                    let mut data = vec![0u8; varchar_size];
+                    // can't use macro directly because it expects an array; do the same logic:
+                    match reader.read_exact(&mut data) {
+                        Ok(()) => {}
+                        Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => {
+                            panic!("Corrupted file"); // ("Unexpected EOF reading varchar bytes")
+                        }
+                        Err(e) => panic!("I/O error while reading varchar: {e}"),
+                    }
+
+                    let s = String::from_utf8(data).unwrap();
+                    row.push(DataType::VarChar { x: s, y: varchar_size });
+                }
+
+                DataType::Undefined => {
+                    panic!("Column type Undefined in schema; cannot decode rows.");
+                }
+
+                other => {
+                    panic!("Decoding not implemented for datatype: {:?}", std::mem::discriminant(other));
+                }
+            }
+        }
+
+        // Successfully read a full row
+        rows.push(row);
+        let id:i64 =  row[0].clone().as_i64().unwrap();
+        tree.insert(id, row);
+
+    }
+
+    println!("Column names: {:?}", column_names);
+    println!("Column types: {:?}", column_types);
+
+    println!("Read {} rows", rows.len());
+    for i in 0..rows.len() {
+        let row: &Vec<DataType> = &rows[i];
+        println!("{:?}", row);
+    }
+
+
+    let duration = start.elapsed();
+    println!("Total time taken: {:?}", duration);
+    Table::new_empty()
+}
+
+
+
+    #[derive(Clone)]
 pub struct Table {
     table_name: String,
     tree: BPlusTree<i32, String, 3>,
@@ -126,209 +333,12 @@ impl Table {
         &self.column_types
     }
 
-    pub fn read_table_from_disc(&self, path: String) -> () {
-        let start = Instant::now();
-        let file = File::open(path).unwrap();
-        let mut reader = BufReader::new(file);
-
-        let mut version_bytes = [0u8; 4];
-        reader.read_exact(&mut version_bytes).unwrap();
-        let version = f32::from_be_bytes(version_bytes);
-        println!("next 4 bytes as f32 (version): {}", &version);
-
-        let mut number_of_columns_bytes = [0u8; 2];
-        reader.read_exact(&mut number_of_columns_bytes).unwrap();
-        let number_of_columns = i16::from_be_bytes(number_of_columns_bytes);
-        println!(
-            "next 2 bytes as i16 (number_of_columns): {}",
-            &number_of_columns
-        );
-
-        let mut part_bytes = [0u8; 2];
-        reader.read_exact(&mut part_bytes).unwrap();
-        let part = i16::from_be_bytes(part_bytes);
-        println!("next 2 bytes as i16 (part): {}", &part);
-
-        let mut part_of_bytes = [0u8; 2];
-        reader.read_exact(&mut part_of_bytes).unwrap();
-        let part_of = i16::from_be_bytes(part_of_bytes);
-        println!("next 2 bytes as i16 (part_of): {}", &part_of);
-
-        let mut next_file_length_byte = [0u8; 2];
-        reader.read_exact(&mut next_file_length_byte).unwrap();
-        let next_file_len = i16::from_be_bytes(next_file_length_byte);
-        println!("next 2 bytes as i16 (next file len): {}", &next_file_len);
-
-        if next_file_len != 0 {
-            println!("Next file was not implemented yet - however the length seems to be > 0");
-        }
-
-        let mut table_name_length_byte = [0u8; 2];
-        reader.read_exact(&mut table_name_length_byte).unwrap();
-        let table_name_len = i16::from_be_bytes(table_name_length_byte);
-        println!("next 2 bytes as i16 (table name len): {}", &table_name_len);
-        let table_name_len: usize = table_name_len
-            .try_into()
-            .expect("table name size is negative");
-
-        let mut table_name_byte = vec![0u8; table_name_len];
-        reader.read_exact(&mut table_name_byte).unwrap();
-        let table_name = String::from_utf8(table_name_byte).unwrap();
-        let cleaned_name = table_name.trim_matches('"');
-        println!("next: (table name): {}", cleaned_name);
-
-        let table_width: usize = match usize::try_from(number_of_columns) {
-            Ok(v) => v,
-            Err(_) => return,
-        };
-
-        //read column names
-        let mut column_names: Vec<String> = vec![String::new(); table_width];
-        for i in 0..table_width {
-            let mut column_name_len_byte = [0u8; 2];
-            reader.read_exact(&mut column_name_len_byte).unwrap();
-            let column_name_len = i16::from_be_bytes(column_name_len_byte);
-            let column_name_size: usize = column_name_len
-                .try_into()
-                .expect("table name length was negative");
-
-            let mut column_name_byte = vec![0u8; column_name_size];
-            reader.read_exact(&mut column_name_byte).unwrap();
-            let table_name = String::from_utf8(column_name_byte).unwrap();
-            column_names[i] = table_name.clone();
-        }
-
-        //read datatype definition
-        let mut column_types: Vec<DataType> = vec![DataType::Undefined; table_width];
-        for i in 0..table_width {
-            let mut column_type_len_byte = [0u8; 2];
-            reader.read_exact(&mut column_type_len_byte).unwrap();
-            let column_type_len_byte = i16::from_be_bytes(column_type_len_byte);
-            let column_name_size: usize = column_type_len_byte
-                .try_into()
-                .expect("datatype name length was negative");
-
-            let mut column_type_byte = vec![0u8; column_name_size];
-            reader.read_exact(&mut column_type_byte).unwrap();
-            let column_type = String::from_utf8(column_type_byte).unwrap();
-            let dt: DataType = datatype::to_datatype(&*column_type);
-            column_types[i] = dt;
-        }
-
-        let mut rows: Vec<Vec<DataType>> = Vec::new();
-
-         'read_rows: loop {
-            let mut row: Vec<DataType> = Vec::with_capacity(table_width);
-
-            for i in 0..table_width {
-                let dt = &column_types[i];
-
-                // Helper macro to turn EOF into "stop reading rows"
-                macro_rules! read_or_eof {
-            ($buf:expr) => {
-                match reader.read_exact(&mut $buf) {
-                    Ok(()) => {}
-                    Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => {
-                        // If we hit EOF at the start of a new row, we're done.
-                        // If we hit EOF mid-row, the file is truncated/corrupt.
-                        if row.is_empty() {
-                            break 'read_rows;
-                        } else {
-                            return; // or panic!("Unexpected EOF mid-row")
-                        }
-                    }
-                    Err(e) => panic!("I/O error while reading row: {e}"),
-                }
-            };
-        }
-
-                match dt {
-                    DataType::BigInt { .. } => {
-                        let mut buf = [0u8; 8];
-                        read_or_eof!(buf);
-                        row.push(DataType::BigInt { x: i64::from_be_bytes(buf) });
-                    }
-
-                    DataType::Int { .. } => {
-                        let mut buf = [0u8; 4];
-                        read_or_eof!(buf);
-                        row.push(DataType::Int { x: i32::from_be_bytes(buf) });
-                    }
-
-                    DataType::SmallInt { .. } => {
-                        let mut buf = [0u8; 2];
-                        read_or_eof!(buf);
-                        row.push(DataType::SmallInt { x: i16::from_be_bytes(buf) });
-                    }
-
-                    DataType::TinyInt {..} =>{
-                        let mut buf = [0u8; 1];
-                        read_or_eof!(buf);
-                        row.push(DataType::TinyInt { x: i8::from_be_bytes(buf) });
-                    }
-
-                    DataType::Decimal { .. } => {
-                        let mut buf = [0u8; 4];
-                        read_or_eof!(buf);
-                        row.push(DataType::Decimal { x: f32::from_be_bytes(buf) });
-                    }
-
-                    DataType::VarChar { .. } => {
-                        let mut len_buf = [0u8; 2];
-                        read_or_eof!(len_buf);
-
-                        let varchar_len = i16::from_be_bytes(len_buf);
-                        let varchar_size: usize = varchar_len
-                            .try_into()
-                            .expect("varchar length was negative");
-
-                        let mut data = vec![0u8; varchar_size];
-                        // can't use macro directly because it expects an array; do the same logic:
-                        match reader.read_exact(&mut data) {
-                            Ok(()) => {}
-                            Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => {
-                                // mid-row => truncated file
-                                return; // or panic!("Unexpected EOF reading varchar bytes")
-                            }
-                            Err(e) => panic!("I/O error while reading varchar: {e}"),
-                        }
-
-                        let s = String::from_utf8(data).unwrap();
-                        row.push(DataType::VarChar { x: s, y: varchar_size });
-                    }
-
-                    DataType::Undefined => {
-                        panic!("Column type Undefined in schema; cannot decode rows.");
-                    }
-
-                    other => {
-                        panic!("Decoding not implemented for datatype: {:?}", std::mem::discriminant(other));
-                    }
-                }
-            }
-
-            // Successfully read a full row
-            rows.push(row);
-        }
-
-        println!("Column names: {:?}", column_names);
-        println!("Column types: {:?}", column_types);
-
-        println!("Read {} rows", rows.len());
-        for i in 0..rows.len() {
-            let row:&Vec<DataType> = &rows[i];
-            println!("{:?}", row);
-        }
-
-
-        let duration = start.elapsed();
-        println!("Total time taken: {:?}", duration);
     }
-}
+
 
 #[cfg(test)]
 mod tests {
-    use super::Table;
+    use super::{read_table_from_disc, Table};
     use crate::bptree::BPlusTree;
     use crate::table::datatype::DataType;
     use uuid::Uuid;
@@ -367,7 +377,7 @@ mod tests {
     #[test]
     fn load_from_disc() {
         let table: Table = Table::new_empty();
-        table.read_table_from_disc(String::from(
+        read_table_from_disc(String::from(
             "C:/temp/moi/0e6bce68-99fa-3841-b790-24afbdf7db1d.moi",
         ));
     }
