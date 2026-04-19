@@ -62,12 +62,11 @@ impl Table {
         names: Vec<String>,
         types: Vec<DataType>,
     ) -> Table {
-
         assert!(names.len() > 0);
         if names.len() != types.len() {
             print!("names length mismatch - unable to create such a mess");
         }
-        if names[0].eq("ID") || names[0].eq("id") || names[0].eq("Id"){
+        if names[0].eq("ID") || names[0].eq("id") || names[0].eq("Id") {
             println!("first column needs to be an column named id | ID || Id")
         }
         // todo check if there are duplicates in the names
@@ -211,35 +210,32 @@ impl Table {
             let mut column_type_byte = vec![0u8; column_name_size];
             reader.read_exact(&mut column_type_byte).unwrap();
             let column_type = String::from_utf8(column_type_byte).unwrap();
-            let dt:DataType = datatype::to_datatype(&*column_type);
+            let dt: DataType = datatype::to_datatype(&*column_type);
             column_types[i] = dt;
         }
 
-        let mut row:Vec<DataType> = vec![];
-        for i in 0..table_width{
+        let mut row: Vec<DataType> = vec![];
+        for i in 0..table_width {
             let dt: &DataType = &column_types[i];
-            if matches!(DataType::BigInt { x: 0 }, dt){
+            if matches!(dt, DataType::BigInt { x: 0 }) {
                 let mut big_int_byte = [0u8; 8];
                 reader.read_exact(&mut big_int_byte).unwrap();
                 let big_int = i64::from_be_bytes(big_int_byte);
-                let dt_big_int:DataType = DataType::BigInt { x: big_int };
+                let dt_big_int: DataType = DataType::BigInt { x: big_int };
                 row.push(dt_big_int);
-
-            }else if matches!(DataType::Int { x: 0 }, dt){
+            } else if matches!(dt, DataType::Int { x: 0 }) {
                 let mut int_byte = [0u8; 4];
                 reader.read_exact(&mut int_byte).unwrap();
                 let int = i32::from_be_bytes(int_byte);
-                let dt_int:DataType = DataType::Int { x: int };
+                let dt_int: DataType = DataType::Int { x: int };
                 row.push(dt_int);
-
-            }else if matches!(DataType::Decimal { x: 0.0 }, dt) {
+            } else if matches!(dt, DataType::Decimal { x: 0.0 }) {
                 let mut decimal_byte = [0u8; 4];
                 reader.read_exact(&mut decimal_byte).unwrap();
                 let decimal = f32::from_be_bytes(decimal_byte);
                 let dt_decimal: DataType = DataType::Decimal { x: decimal };
                 row.push(dt_decimal);
-
-            }else if matches!(DataType::VarChar { x: String::default(), y: 0}, dt) {
+            } else if matches!(dt, DataType::VarChar { x: _, y: 0 }) {
                 let mut varchar_len_byte = [0u8; 2];
                 reader.read_exact(&mut varchar_len_byte).unwrap();
                 let varchar_len = i16::from_be_bytes(varchar_len_byte);
@@ -250,16 +246,15 @@ impl Table {
                 let mut varchar_byte = vec![0u8; varchar_size];
                 reader.read_exact(&mut varchar_byte).unwrap();
                 let varchar = String::from_utf8(varchar_byte).unwrap();
-                let dt_varchar: DataType = DataType::VarChar {x: varchar, y: varchar_size};
+                let dt_varchar: DataType = DataType::VarChar {
+                    x: varchar,
+                    y: varchar_size,
+                };
                 row.push(dt_varchar);
             }
         }
+
         println!("row {:?}", row);
-
-
-
-
-
 
         println!("Column names: {:?}", column_names);
         println!("Column types: {:?}", column_types);
