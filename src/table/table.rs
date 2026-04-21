@@ -15,7 +15,6 @@
 //! - each table consists at least of one B+Tree
 //!
 
-use std::fs;
 use crate::bptree;
 use crate::bptree::BPlusTree;
 use datatype::DataType;
@@ -27,7 +26,6 @@ use uuid::Uuid;
 mod datatype;
 
 pub fn save_table_to_disc(table: &Table, path: &String, uuid: &Uuid) {
-
     let mut file = OpenOptions::new()
         .create(true)
         .write(true)
@@ -36,11 +34,15 @@ pub fn save_table_to_disc(table: &Table, path: &String, uuid: &Uuid) {
         .unwrap();
 
     let version: f32 = 1.0;
-    let number_of_columns:i16 = 5;
-    let part:i16 = 1;
-    let part_of:i16 = 1;
-    let next_file_length: i16 = 6;
-    let next_file_name: &str = "cities";
+    let number_of_columns: i16 = 3;
+    let part: i16 = 1;
+    let part_of: i16 = 1;
+    let next_file_length: i16 = 0;
+    let next_file_name: &str = "";
+    let tablename_len: i16 = 6;
+    let tablename: &str = "cities";
+    let column_names: Vec<String> = vec!(String::from("id"), String::from("firstname"), String::from("lastname"));
+    let datatypes: Vec<DataType> = vec!(DataType::BigInt {x:0}, DataType::VarChar {x:String::from(""), y:0}, DataType::VarChar {x:String::from(""), y:0});
 
 
     file.write_all(&version.to_be_bytes()).unwrap();
@@ -49,6 +51,56 @@ pub fn save_table_to_disc(table: &Table, path: &String, uuid: &Uuid) {
     file.write_all(&part_of.to_be_bytes()).unwrap();
     file.write_all(&next_file_length.to_be_bytes()).unwrap();
     file.write_all(&next_file_name.as_bytes()).unwrap();
+    file.write_all(&tablename_len.to_be_bytes()).unwrap();
+    file.write_all(&tablename.as_bytes()).unwrap();
+
+    for name in column_names{
+        let length = name.len() as i16;
+        file.write_all(&length.to_be_bytes()).unwrap();
+        file.write_all(&name.as_bytes()).unwrap();
+    }
+
+    for dt in datatypes {
+        match dt {
+            DataType::BigInt { .. } => {
+                let number_of_letters: i16 = 6;
+                file.write_all(&number_of_letters.to_be_bytes()).unwrap();
+                file.write_all(b"BIGINT").unwrap();
+            }
+
+            DataType::Int { .. } => {
+                let number_of_letters: i16 = 3;
+                file.write_all(&number_of_letters.to_be_bytes()).unwrap();
+                file.write_all(b"INT").unwrap();
+            }
+
+            DataType::SmallInt { ..  } => {
+                let number_of_letters: i16 = 8;
+                file.write_all(&number_of_letters.to_be_bytes()).unwrap();
+                file.write_all(b"SMALLINT").unwrap();
+            }
+
+            DataType::TinyInt { .. } => {
+                let number_of_letters: i16 = 7;
+                file.write_all(&number_of_letters.to_be_bytes()).unwrap();
+                file.write_all(b"TINYINT").unwrap();
+            }
+
+            DataType::VarChar { .. } => {
+                let number_of_letters: i16 = 7;
+                file.write_all(&number_of_letters.to_be_bytes()).unwrap();
+                file.write_all(b"VARCHAR").unwrap();
+            }
+
+            other => {
+                println!(
+                    "unknown datatype in table definition",
+                );
+            }
+        }
+    }
+
+    let tree = table.get_bptree();
 
 }
 
@@ -60,18 +112,22 @@ pub fn read_table_from_disc(path: String, uuid: Uuid) -> Table {
     let mut version_bytes = [0u8; 4];
     reader.read_exact(&mut version_bytes).unwrap();
     let version = f32::from_be_bytes(version_bytes);
+    println!("version: {}", version);
 
     let mut number_of_columns_bytes = [0u8; 2];
     reader.read_exact(&mut number_of_columns_bytes).unwrap();
     let number_of_columns = i16::from_be_bytes(number_of_columns_bytes);
+    println!("number_of_columns: {}", number_of_columns);
 
     let mut part_bytes = [0u8; 2];
     reader.read_exact(&mut part_bytes).unwrap();
     let part = i16::from_be_bytes(part_bytes);
+    println!("part: {}", part);
 
     let mut part_of_bytes = [0u8; 2];
     reader.read_exact(&mut part_of_bytes).unwrap();
     let part_of = i16::from_be_bytes(part_of_bytes);
+    println!("part_of: {}", part_of);
 
     let mut next_file_length_byte = [0u8; 2];
     reader.read_exact(&mut next_file_length_byte).unwrap();
@@ -88,6 +144,7 @@ pub fn read_table_from_disc(path: String, uuid: Uuid) -> Table {
     reader.read_exact(&mut table_name_byte).unwrap();
     let table_name = String::from_utf8(table_name_byte).unwrap();
     let cleaned_name = table_name.trim_matches('"');
+    println!("cleaned_name: {}", cleaned_name);
 
     let table_width: usize = match usize::try_from(number_of_columns) {
         Ok(v) => v,
@@ -138,20 +195,20 @@ pub fn read_table_from_disc(path: String, uuid: Uuid) -> Table {
 
             // Helper macro to turn EOF into "stop reading rows"
             macro_rules! read_or_eof {
-            ($buf:expr) => {
-                match reader.read_exact(&mut $buf) {
-                    Ok(()) => {}
-                    Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => {
-                        if row.is_empty() {
-                            break 'read_rows;
-                        } else {
-                            println!("EOF mid row");
+                ($buf:expr) => {
+                    match reader.read_exact(&mut $buf) {
+                        Ok(()) => {}
+                        Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => {
+                            if row.is_empty() {
+                                break 'read_rows;
+                            } else {
+                                println!("EOF mid row");
+                            }
                         }
+                        Err(e) => println!("I/O error while reading row: {e}"),
                     }
-                    Err(e) => println!("I/O error while reading row: {e}") ,
-                }
-            };
-        }
+                };
+            }
 
             match dt {
                 DataType::BigInt { .. } => {
@@ -223,7 +280,10 @@ pub fn read_table_from_disc(path: String, uuid: Uuid) -> Table {
                     println!("Column type Undefined in schema; cannot decode rows.");
                 }
                 other => {
-                    println!("Decoding not implemented for datatype: {:?}", std::mem::discriminant(other));
+                    println!(
+                        "Decoding not implemented for datatype: {:?}",
+                        std::mem::discriminant(other)
+                    );
                 }
             }
         }
@@ -388,16 +448,26 @@ mod tests {
         );
     }
 
-
     #[test]
-    fn write_to_disc(){
-        let table: Table =         read_table_from_disc(
+    fn write_to_disc() {
+        let table: Table = read_table_from_disc(
             String::from("C:/temp/moi/0e6bce68-99fa-3841-b790-24afbdf7db1d.moi"),
             Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1d").unwrap(),
         );
-        save_table_to_disc(&table,
-                           &String::from("C:/temp/moi/0e6bce68-99fa-3841-b790-24afbdf7db1f.moi"),
-                           &Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1f").unwrap()
+        save_table_to_disc(
+            &table,
+            &String::from("C:/temp/moi/0e6bce68-99fa-3841-b790-24afbdf7db1f.moi"),
+            &Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1f").unwrap(),
         );
     }
+
+    #[test]
+    fn dev_with_test(){
+        let table: Table = read_table_from_disc(
+            String::from("C:/temp/moi/0e6bce68-99fa-3841-b790-24afbdf7db1f.moi"),
+            Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1f").unwrap(),
+        );
+
+    }
+
 }
