@@ -11,14 +11,9 @@
 //!
 //! Features
 //! - each table has a name
-//! - each table hasa uuid
+//! - each table has a uuid
 //! - each table consists at least of one B+Tree
 //!
-//! Functionality
-//! - new() Constructor
-//! - get_table_name() - returns the human-readable name of teh table
-//! - get_bptree() - returns the tree
-//! - get_uuid() gets the uuid of the table
 
 use crate::bptree;
 use crate::bptree::BPlusTree;
@@ -30,8 +25,7 @@ use uuid::Uuid;
 
 mod datatype;
 
-
-pub fn read_table_from_disc(path: String) -> Table {
+pub fn read_table_from_disc(path: String, uuid: Uuid) -> Table {
     let start = Instant::now();
     let file = File::open(path).unwrap();
     let mut reader = BufReader::new(file);
@@ -39,39 +33,26 @@ pub fn read_table_from_disc(path: String) -> Table {
     let mut version_bytes = [0u8; 4];
     reader.read_exact(&mut version_bytes).unwrap();
     let version = f32::from_be_bytes(version_bytes);
-    println!("next 4 bytes as f32 (version): {}", &version);
 
     let mut number_of_columns_bytes = [0u8; 2];
     reader.read_exact(&mut number_of_columns_bytes).unwrap();
     let number_of_columns = i16::from_be_bytes(number_of_columns_bytes);
-    println!(
-        "next 2 bytes as i16 (number_of_columns): {}",
-        &number_of_columns
-    );
 
     let mut part_bytes = [0u8; 2];
     reader.read_exact(&mut part_bytes).unwrap();
     let part = i16::from_be_bytes(part_bytes);
-    println!("next 2 bytes as i16 (part): {}", &part);
 
     let mut part_of_bytes = [0u8; 2];
     reader.read_exact(&mut part_of_bytes).unwrap();
     let part_of = i16::from_be_bytes(part_of_bytes);
-    println!("next 2 bytes as i16 (part_of): {}", &part_of);
 
     let mut next_file_length_byte = [0u8; 2];
     reader.read_exact(&mut next_file_length_byte).unwrap();
     let next_file_len = i16::from_be_bytes(next_file_length_byte);
-    println!("next 2 bytes as i16 (next file len): {}", &next_file_len);
-
-    if next_file_len != 0 {
-        println!("Next file was not implemented yet - however the length seems to be > 0");
-    }
 
     let mut table_name_length_byte = [0u8; 2];
     reader.read_exact(&mut table_name_length_byte).unwrap();
     let table_name_len = i16::from_be_bytes(table_name_length_byte);
-    println!("next 2 bytes as i16 (table name len): {}", &table_name_len);
     let table_name_len: usize = table_name_len
         .try_into()
         .expect("table name size is negative");
@@ -80,7 +61,6 @@ pub fn read_table_from_disc(path: String) -> Table {
     reader.read_exact(&mut table_name_byte).unwrap();
     let table_name = String::from_utf8(table_name_byte).unwrap();
     let cleaned_name = table_name.trim_matches('"');
-    println!("next: (table name): {}", cleaned_name);
 
     let table_width: usize = match usize::try_from(number_of_columns) {
         Ok(v) => v,
@@ -120,8 +100,7 @@ pub fn read_table_from_disc(path: String) -> Table {
         column_types[i] = dt;
     }
 
-
-    let mut tree: BPlusTree<i64, Vec<DataType>> = BPlusTree::default();
+    let mut tree: BPlusTree<i64, Vec<DataType>, 3> = BPlusTree::default();
     let mut rows: Vec<Vec<DataType>> = Vec::new();
 
     'read_rows: loop {
@@ -136,13 +115,10 @@ pub fn read_table_from_disc(path: String) -> Table {
                 match reader.read_exact(&mut $buf) {
                     Ok(()) => {}
                     Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => {
-                        // If we hit EOF at the start of a new row, we're done.
-                        // If we hit EOF mid-row, the file is truncated/corrupt.
                         if row.is_empty() {
                             break 'read_rows;
                         } else {
                             !panic!("EOF mid row");
-                            //return /* value */ /* value */; // or panic!("Unexpected EOF mid-row")
                         }
                     }
                     Err(e) => panic!("I/O error while reading row: {e}"),
@@ -154,31 +130,41 @@ pub fn read_table_from_disc(path: String) -> Table {
                 DataType::BigInt { .. } => {
                     let mut buf = [0u8; 8];
                     read_or_eof!(buf);
-                    row.push(DataType::BigInt { x: i64::from_be_bytes(buf) });
+                    row.push(DataType::BigInt {
+                        x: i64::from_be_bytes(buf),
+                    });
                 }
 
                 DataType::Int { .. } => {
                     let mut buf = [0u8; 4];
                     read_or_eof!(buf);
-                    row.push(DataType::Int { x: i32::from_be_bytes(buf) });
+                    row.push(DataType::Int {
+                        x: i32::from_be_bytes(buf),
+                    });
                 }
 
                 DataType::SmallInt { .. } => {
                     let mut buf = [0u8; 2];
                     read_or_eof!(buf);
-                    row.push(DataType::SmallInt { x: i16::from_be_bytes(buf) });
+                    row.push(DataType::SmallInt {
+                        x: i16::from_be_bytes(buf),
+                    });
                 }
 
                 DataType::TinyInt { .. } => {
                     let mut buf = [0u8; 1];
                     read_or_eof!(buf);
-                    row.push(DataType::TinyInt { x: i8::from_be_bytes(buf) });
+                    row.push(DataType::TinyInt {
+                        x: i8::from_be_bytes(buf),
+                    });
                 }
 
                 DataType::Decimal { .. } => {
                     let mut buf = [0u8; 4];
                     read_or_eof!(buf);
-                    row.push(DataType::Decimal { x: f32::from_be_bytes(buf) });
+                    row.push(DataType::Decimal {
+                        x: f32::from_be_bytes(buf),
+                    });
                 }
 
                 DataType::VarChar { .. } => {
@@ -186,9 +172,8 @@ pub fn read_table_from_disc(path: String) -> Table {
                     read_or_eof!(len_buf);
 
                     let varchar_len = i16::from_be_bytes(len_buf);
-                    let varchar_size: usize = varchar_len
-                        .try_into()
-                        .expect("varchar length was negative");
+                    let varchar_size: usize =
+                        varchar_len.try_into().expect("varchar length was negative");
 
                     let mut data = vec![0u8; varchar_size];
                     // can't use macro directly because it expects an array; do the same logic:
@@ -201,7 +186,10 @@ pub fn read_table_from_disc(path: String) -> Table {
                     }
 
                     let s = String::from_utf8(data).unwrap();
-                    row.push(DataType::VarChar { x: s, y: varchar_size });
+                    row.push(DataType::VarChar {
+                        x: s,
+                        y: varchar_size,
+                    });
                 }
 
                 DataType::Undefined => {
@@ -209,39 +197,35 @@ pub fn read_table_from_disc(path: String) -> Table {
                 }
 
                 other => {
-                    panic!("Decoding not implemented for datatype: {:?}", std::mem::discriminant(other));
+                    panic!(
+                        "Decoding not implemented for datatype: {:?}",
+                        std::mem::discriminant(other)
+                    );
                 }
             }
         }
 
         // Successfully read a full row
+        let id: i64 = row[0].as_i64().expect("row[0] needs to be a BigInt");
+        tree.insert(id, row.clone());
         rows.push(row);
-        let id:i64 =  row[0].clone().as_i64().unwrap();
-        tree.insert(id, row);
-
     }
-
-    println!("Column names: {:?}", column_names);
-    println!("Column types: {:?}", column_types);
-
-    println!("Read {} rows", rows.len());
-    for i in 0..rows.len() {
-        let row: &Vec<DataType> = &rows[i];
-        println!("{:?}", row);
-    }
-
+    let mut table: Table = Table::new_empty();
+    table.set_table_name(String::from(cleaned_name));
+    table.set_uuid(Uuid::default());
+    table.column_names = column_names;
+    table.column_types = column_types;
+    table.tree = tree;
 
     let duration = start.elapsed();
     println!("Total time taken: {:?}", duration);
-    Table::new_empty()
+    table
 }
 
-
-
-    #[derive(Clone)]
+#[derive(Clone)]
 pub struct Table {
     table_name: String,
-    tree: BPlusTree<i32, String, 3>,
+    tree: BPlusTree<i64, Vec<DataType>, 3>,
     uuid: Uuid,
     column_names: Vec<String>,
     column_types: Vec<DataType>,
@@ -265,7 +249,7 @@ impl Table {
     /// - get_uuid() gets the uuid of the table///
     pub fn new(
         table_name: String,
-        tree: BPlusTree<i32, String, 3>,
+        tree: BPlusTree<i64, Vec<DataType>, 3>,
         uuid: Uuid,
         names: Vec<String>,
         types: Vec<DataType>,
@@ -299,12 +283,12 @@ impl Table {
     }
 
     /// returns the B+Tree
-    pub fn get_bptree(&self) -> &bptree::BPlusTree<i32, String, 3> {
+    pub fn get_bptree(&self) -> &bptree::BPlusTree<i64, Vec<DataType>, 3> {
         &self.tree
     }
 
     /// if the tree has been changed or the tree has been loaded from disc
-    pub fn set_bptree(&mut self, tree: BPlusTree<i32, String, 3>) {
+    pub fn set_bptree(&mut self, tree: BPlusTree<i64, Vec<DataType>, 3>) {
         self.tree = tree;
     }
 
@@ -332,13 +316,11 @@ impl Table {
     pub fn get_column_types(&self) -> &Vec<DataType> {
         &self.column_types
     }
-
-    }
-
+}
 
 #[cfg(test)]
 mod tests {
-    use super::{read_table_from_disc, Table};
+    use super::{Table, read_table_from_disc};
     use crate::bptree::BPlusTree;
     use crate::table::datatype::DataType;
     use uuid::Uuid;
@@ -377,8 +359,9 @@ mod tests {
     #[test]
     fn load_from_disc() {
         let table: Table = Table::new_empty();
-        read_table_from_disc(String::from(
-            "C:/temp/moi/0e6bce68-99fa-3841-b790-24afbdf7db1d.moi",
-        ));
+        read_table_from_disc(
+            String::from("C:/temp/moi/0e6bce68-99fa-3841-b790-24afbdf7db1d.moi"),
+            Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1d").unwrap(),
+        );
     }
 }
