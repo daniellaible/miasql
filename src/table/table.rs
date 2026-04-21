@@ -145,10 +145,10 @@ pub fn read_table_from_disc(path: String, uuid: Uuid) -> Table {
                         if row.is_empty() {
                             break 'read_rows;
                         } else {
-                            !panic!("EOF mid row");
+                            println!("EOF mid row");
                         }
                     }
-                    Err(e) => panic!("I/O error while reading row: {e}"),
+                    Err(e) => println!("I/O error while reading row: {e}") ,
                 }
             };
         }
@@ -207,9 +207,9 @@ pub fn read_table_from_disc(path: String, uuid: Uuid) -> Table {
                     match reader.read_exact(&mut data) {
                         Ok(()) => {}
                         Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => {
-                            panic!("Corrupted file"); // ("Unexpected EOF reading varchar bytes")
+                            println!("Corrupted file");
                         }
-                        Err(e) => panic!("I/O error while reading varchar: {e}"),
+                        Err(e) => println!("I/O error while reading varchar: {e}"),
                     }
 
                     let s = String::from_utf8(data).unwrap();
@@ -220,14 +220,10 @@ pub fn read_table_from_disc(path: String, uuid: Uuid) -> Table {
                 }
 
                 DataType::Undefined => {
-                    panic!("Column type Undefined in schema; cannot decode rows.");
+                    println!("Column type Undefined in schema; cannot decode rows.");
                 }
-
                 other => {
-                    panic!(
-                        "Decoding not implemented for datatype: {:?}",
-                        std::mem::discriminant(other)
-                    );
+                    println!("Decoding not implemented for datatype: {:?}", std::mem::discriminant(other));
                 }
             }
         }
@@ -391,6 +387,7 @@ mod tests {
             Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1d").unwrap(),
         );
     }
+
 
     #[test]
     fn write_to_disc(){
