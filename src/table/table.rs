@@ -15,15 +15,42 @@
 //! - each table consists at least of one B+Tree
 //!
 
+use std::fs;
 use crate::bptree;
 use crate::bptree::BPlusTree;
 use datatype::DataType;
-use std::fs::File;
-use std::io::{self, BufReader, Read};
+use std::fs::{File, OpenOptions};
+use std::io::{self, BufReader, Read, Write};
 use std::time::Instant;
 use uuid::Uuid;
 
 mod datatype;
+
+pub fn save_table_to_disc(table: &Table, path: &String, uuid: &Uuid) {
+
+    let mut file = OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(true) // start fresh; remove if you truly want to append to existing file
+        .open(&path)
+        .unwrap();
+
+    let version: f32 = 1.0;
+    let number_of_columns:i16 = 5;
+    let part:i16 = 1;
+    let part_of:i16 = 1;
+    let next_file_length: i16 = 6;
+    let next_file_name: &str = "cities";
+
+
+    file.write_all(&version.to_be_bytes()).unwrap();
+    file.write_all(&number_of_columns.to_be_bytes()).unwrap();
+    file.write_all(&part.to_be_bytes()).unwrap();
+    file.write_all(&part_of.to_be_bytes()).unwrap();
+    file.write_all(&next_file_length.to_be_bytes()).unwrap();
+    file.write_all(&next_file_name.as_bytes()).unwrap();
+
+}
 
 pub fn read_table_from_disc(path: String, uuid: Uuid) -> Table {
     let start = Instant::now();
@@ -320,7 +347,7 @@ impl Table {
 
 #[cfg(test)]
 mod tests {
-    use super::{Table, read_table_from_disc};
+    use super::{Table, read_table_from_disc, save_table_to_disc};
     use crate::bptree::BPlusTree;
     use crate::table::datatype::DataType;
     use uuid::Uuid;
@@ -362,6 +389,18 @@ mod tests {
         read_table_from_disc(
             String::from("C:/temp/moi/0e6bce68-99fa-3841-b790-24afbdf7db1d.moi"),
             Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1d").unwrap(),
+        );
+    }
+
+    #[test]
+    fn write_to_disc(){
+        let table: Table =         read_table_from_disc(
+            String::from("C:/temp/moi/0e6bce68-99fa-3841-b790-24afbdf7db1d.moi"),
+            Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1d").unwrap(),
+        );
+        save_table_to_disc(&table,
+                           &String::from("C:/temp/moi/0e6bce68-99fa-3841-b790-24afbdf7db1f.moi"),
+                           &Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1f").unwrap()
         );
     }
 }

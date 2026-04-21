@@ -1,6 +1,6 @@
 [package]
 name = "miasql"
-version = "0.0.2"
+version = "0.0.3"
 edition = "2024"
 authors = ["Daniel Laible"]
 description = "A save, secure and fast sql database"
