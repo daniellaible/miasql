@@ -54,6 +54,7 @@ fn read_varchar<R: Read>(r: &mut R) -> io::Result<String> {
 }
 
 pub fn save_table_to_disc(table: &Table, path: &String, uuid: &Uuid) {
+    let start = Instant::now();
     let mut file = OpenOptions::new()
         .create(true)
         .write(true)
@@ -134,8 +135,6 @@ pub fn save_table_to_disc(table: &Table, path: &String, uuid: &Uuid) {
     let tree = table.get_bptree();
     let all_entries = tree.range(None, None);
     for (k, v) in all_entries {
-        println!("id:{} -> row {:?}", k, v);
-
         for cell in v {
             match cell {
                 DataType::BigInt { x } => {
@@ -165,6 +164,9 @@ pub fn save_table_to_disc(table: &Table, path: &String, uuid: &Uuid) {
             }
         }
     }
+
+    let duration = start.elapsed();
+    println!("Total time taken for writing: {:?}", duration);
 }
 
 pub fn read_table_from_disc(path: String, uuid: Uuid) -> Table {
@@ -345,7 +347,7 @@ pub fn read_table_from_disc(path: String, uuid: Uuid) -> Table {
     table.tree = tree;
 
     let duration = start.elapsed();
-    println!("Total time taken: {:?}", duration);
+    println!("Total time taken for reading: {:?}", duration);
     table
 }
 

@@ -37,7 +37,7 @@ pub fn to_datatype(value: &str) -> DataType {
         "BOOL" => DataType::Bool {x: false},
         "DATE" => DataType::Date { x: 0 },
         "TIME" => DataType::Time { x: 0 },
-        "DateTime" => DataType::DateTime { x: 0 },
+        "DATETIME" => DataType::DateTime { x: 0 },
         _ => DataType::Undefined,
     }
 }
