@@ -25,6 +25,34 @@ use uuid::Uuid;
 
 mod datatype;
 
+
+fn write_u16_be<W: Write>(w: &mut W, v: u16) -> io::Result<()> {
+    w.write_all(&v.to_be_bytes())
+}
+
+fn read_u16_be<R: Read>(r: &mut R) -> io::Result<u16> {
+    let mut buf = [0u8; 2];
+    r.read_exact(&mut buf)?;
+    Ok(u16::from_be_bytes(buf))
+}
+
+fn write_varchar<W: Write>(w: &mut W, s: &str) -> io::Result<()> {
+    let len: u16 = s
+        .len()
+        .try_into()
+        .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "VARCHAR too long for u16"))?;
+    write_u16_be(w, len)?;
+    w.write_all(s.as_bytes())
+}
+
+fn read_varchar<R: Read>(r: &mut R) -> io::Result<String> {
+    let len = read_u16_be(r)? as usize;
+    let mut data = vec![0u8; len];
+    r.read_exact(&mut data)?;
+    String::from_utf8(data)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, format!("invalid UTF-8: {e}")))
+}
+
 pub fn save_table_to_disc(table: &Table, path: &String, uuid: &Uuid) {
     let mut file = OpenOptions::new()
         .create(true)
@@ -118,6 +146,10 @@ pub fn save_table_to_disc(table: &Table, path: &String, uuid: &Uuid) {
                     file.write_all(&x.to_be_bytes()).unwrap();
                 }
 
+                DataType::Decimal { x } => {
+                    file.write_all(&x.to_be_bytes()).unwrap();
+                }
+
                 DataType::SmallInt { x } => {
                     file.write_all(&x.to_be_bytes()).unwrap();
                 }
@@ -126,15 +158,12 @@ pub fn save_table_to_disc(table: &Table, path: &String, uuid: &Uuid) {
                     file.write_all(&x.to_be_bytes()).unwrap();
                 }
 
-                DataType::VarChar { x, y } => {
-                    file.write_all(&y.to_be_bytes()).unwrap();
-                    file.write_all(x.as_bytes()).unwrap();
+                DataType::VarChar { x, .. } => {
+                    write_varchar(&mut file, &x).unwrap();
                 }
                 _ => println!("{:?}", cell),
             }
         }
-
-        // k,v are in sorted order across all leaves
     }
 }
 
@@ -286,27 +315,9 @@ pub fn read_table_from_disc(path: String, uuid: Uuid) -> Table {
                 }
 
                 DataType::VarChar { .. } => {
-                    let mut len_buf = [0u8; 2];
-                    read_or_eof!(len_buf);
-
-                    let varchar_len = i16::from_be_bytes(len_buf);
-                    let varchar_size: usize =
-                        varchar_len.try_into().expect("varchar length was negative");
-
-                    let mut data = vec![0u8; varchar_size];
-                    match reader.read_exact(&mut data) {
-                        Ok(()) => {}
-                        Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => {
-                            println!("Corrupted file");
-                        }
-                        Err(e) => println!("I/O error while reading varchar: {e}"),
-                    }
-
-                    let s = String::from_utf8(data).unwrap();
-                    row.push(DataType::VarChar {
-                        x: s,
-                        y: varchar_size,
-                    });
+                    let s = read_varchar(&mut reader).unwrap();
+                    let y = s.len();
+                    row.push(DataType::VarChar { x: s, y });
                 }
 
                 DataType::Undefined => {
