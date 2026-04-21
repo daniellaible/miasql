@@ -11,4 +11,5 @@ pub enum Operator {
     GREATEROREQ,
     LESSEROREQ,
     NOTEQUAL,
+    UNDEFINED
 }

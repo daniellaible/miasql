@@ -339,7 +339,7 @@ pub fn read_table_from_disc(path: String, uuid: Uuid) -> Table {
         tree.insert(id, row.clone());
         rows.push(row);
     }
-    let mut table: Table = Table::new_empty();
+    let mut table: Table = Table::default();
     table.set_table_name(String::from(cleaned_name));
     table.set_uuid(Uuid::default());
     table.column_names = column_names;
@@ -361,7 +361,7 @@ pub struct Table {
 }
 
 impl Table {
-    pub fn new_empty() -> Self {
+    pub fn default() -> Self {
         Table {
             table_name: "".to_string(),
             tree: Default::default(),
@@ -491,7 +491,7 @@ mod tests {
 
     #[test]
     fn load_from_disc() {
-        let table: Table = Table::new_empty();
+        let table: Table = Table::default();
         read_table_from_disc(
             String::from("C:/temp/moi/0e6bce68-99fa-3841-b790-24afbdf7db1d.moi"),
             Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1d").unwrap(),

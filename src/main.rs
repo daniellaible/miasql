@@ -1,8 +1,13 @@
 mod bptree;
 #[path="table/table.rs"]
 mod table;
-#[path="command/select.rs"]
-mod select;
+
+mod command {
+    pub mod sqloperator;
+    pub mod whereclause;
+    pub mod select;
+    pub mod insert;
+}
 
 fn main() {
     println!("Hello, world!");
