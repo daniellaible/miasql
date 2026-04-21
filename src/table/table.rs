@@ -29,21 +29,20 @@ pub fn save_table_to_disc(table: &Table, path: &String, uuid: &Uuid) {
     let mut file = OpenOptions::new()
         .create(true)
         .write(true)
-        .truncate(true) // start fresh; remove if you truly want to append to existing file
+        .truncate(true)
         .open(&path)
         .unwrap();
 
     let version: f32 = 1.0;
-    let number_of_columns: i16 = 3;
+    let number_of_columns: u16 = table.get_number_columns();
     let part: i16 = 1;
     let part_of: i16 = 1;
     let next_file_length: i16 = 0;
     let next_file_name: &str = "";
-    let tablename_len: i16 = 6;
-    let tablename: &str = "cities";
-    let column_names: Vec<String> = vec!(String::from("id"), String::from("firstname"), String::from("lastname"));
-    let datatypes: Vec<DataType> = vec!(DataType::BigInt {x:0}, DataType::VarChar {x:String::from(""), y:0}, DataType::VarChar {x:String::from(""), y:0});
-
+    let table_name_len: i16 = table.get_table_name().len() as i16;
+    let table_name: String = table.get_table_name();
+    let column_names: &Vec<String> = table.get_column_names();
+    let datatypes: &Vec<DataType> = table.get_column_types();
 
     file.write_all(&version.to_be_bytes()).unwrap();
     file.write_all(&number_of_columns.to_be_bytes()).unwrap();
@@ -51,10 +50,10 @@ pub fn save_table_to_disc(table: &Table, path: &String, uuid: &Uuid) {
     file.write_all(&part_of.to_be_bytes()).unwrap();
     file.write_all(&next_file_length.to_be_bytes()).unwrap();
     file.write_all(&next_file_name.as_bytes()).unwrap();
-    file.write_all(&tablename_len.to_be_bytes()).unwrap();
-    file.write_all(&tablename.as_bytes()).unwrap();
+    file.write_all(&table_name_len.to_be_bytes()).unwrap();
+    file.write_all(&table_name.as_bytes()).unwrap();
 
-    for name in column_names{
+    for name in column_names {
         let length = name.len() as i16;
         file.write_all(&length.to_be_bytes()).unwrap();
         file.write_all(&name.as_bytes()).unwrap();
@@ -68,13 +67,19 @@ pub fn save_table_to_disc(table: &Table, path: &String, uuid: &Uuid) {
                 file.write_all(b"BIGINT").unwrap();
             }
 
+            DataType::Decimal { .. } => {
+                let number_of_letters: i16 = 7;
+                file.write_all(&number_of_letters.to_be_bytes()).unwrap();
+                file.write_all(b"DECIMAL").unwrap();
+            }
+
             DataType::Int { .. } => {
                 let number_of_letters: i16 = 3;
                 file.write_all(&number_of_letters.to_be_bytes()).unwrap();
                 file.write_all(b"INT").unwrap();
             }
 
-            DataType::SmallInt { ..  } => {
+            DataType::SmallInt { .. } => {
                 let number_of_letters: i16 = 8;
                 file.write_all(&number_of_letters.to_be_bytes()).unwrap();
                 file.write_all(b"SMALLINT").unwrap();
@@ -93,15 +98,44 @@ pub fn save_table_to_disc(table: &Table, path: &String, uuid: &Uuid) {
             }
 
             other => {
-                println!(
-                    "unknown datatype in table definition",
-                );
+                println!("unknown datatype in table definition",);
             }
         }
     }
 
     let tree = table.get_bptree();
+    let all_entries = tree.range(None, None);
+    for (k, v) in all_entries {
+        println!("id:{} -> row {:?}", k, v);
 
+        for cell in v {
+            match cell {
+                DataType::BigInt { x } => {
+                    file.write_all(&x.to_be_bytes()).unwrap();
+                }
+
+                DataType::Int { x } => {
+                    file.write_all(&x.to_be_bytes()).unwrap();
+                }
+
+                DataType::SmallInt { x } => {
+                    file.write_all(&x.to_be_bytes()).unwrap();
+                }
+
+                DataType::TinyInt { x } => {
+                    file.write_all(&x.to_be_bytes()).unwrap();
+                }
+
+                DataType::VarChar { x, y } => {
+                    file.write_all(&y.to_be_bytes()).unwrap();
+                    file.write_all(x.as_bytes()).unwrap();
+                }
+                _ => println!("{:?}", cell),
+            }
+        }
+
+        // k,v are in sorted order across all leaves
+    }
 }
 
 pub fn read_table_from_disc(path: String, uuid: Uuid) -> Table {
@@ -260,7 +294,6 @@ pub fn read_table_from_disc(path: String, uuid: Uuid) -> Table {
                         varchar_len.try_into().expect("varchar length was negative");
 
                     let mut data = vec![0u8; varchar_size];
-                    // can't use macro directly because it expects an array; do the same logic:
                     match reader.read_exact(&mut data) {
                         Ok(()) => {}
                         Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => {
@@ -399,6 +432,10 @@ impl Table {
     pub fn get_column_types(&self) -> &Vec<DataType> {
         &self.column_types
     }
+
+    pub fn get_number_columns(&self) -> u16 {
+        self.column_names.len() as u16
+    }
 }
 
 #[cfg(test)]
@@ -462,12 +499,10 @@ mod tests {
     }
 
     #[test]
-    fn dev_with_test(){
+    fn dev_with_test() {
         let table: Table = read_table_from_disc(
             String::from("C:/temp/moi/0e6bce68-99fa-3841-b790-24afbdf7db1f.moi"),
             Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1f").unwrap(),
         );
-
     }
-
 }
