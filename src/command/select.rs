@@ -1,3 +1,7 @@
+use whereclause::WhereClause;
+
+mod whereclause;
+
 pub struct Select {
     table_name: String,
     columns: Vec<String>,

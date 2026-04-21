@@ -513,7 +513,7 @@ mod tests {
 
     #[test]
     fn dev_with_test() {
-        let table: Table = read_table_from_disc(
+        read_table_from_disc(
             String::from("C:/temp/moi/0e6bce68-99fa-3841-b790-24afbdf7db1f.moi"),
             Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1f").unwrap(),
         );
