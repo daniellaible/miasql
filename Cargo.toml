@@ -8,3 +8,4 @@ repository ="https://github.com/daniellaible/miasql.git"
 
 [dependencies]
 uuid = { version = "1.23.1", features = ["v4"] }
+regex = "1.12.3"

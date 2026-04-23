@@ -23,7 +23,7 @@ use std::io::{self, BufReader, Read, Write};
 use std::time::Instant;
 use uuid::Uuid;
 
-mod datatype;
+pub(crate) mod datatype;
 
 
 fn write_u16_be<W: Write>(w: &mut W, v: u16) -> io::Result<()> {
