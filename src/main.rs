@@ -1,3 +1,5 @@
+use tokio::net::TcpListener;
+
 mod bptree;
 #[path="table/table.rs"]
 mod table;
@@ -10,6 +12,29 @@ mod command {
     pub mod functions;
 }
 
-fn main() {
-    println!("Hello, world!");
+mod server{
+    pub mod server;
 }
+
+fn main() {
+    run_server();
+}
+
+
+#[tokio::main]
+async fn run_server() -> std::io::Result<()>{
+    let listener = TcpListener::bind("127.0.0.1:7878").await?;
+    println!("listening on 127.0.0.1:7878");
+
+    loop {
+        let (stream, addr) = listener.accept().await?;
+        println!("client connected: {addr}");
+
+        tokio::spawn(async move {
+            if let Err(e) = crate::server::server::handle_client(stream).await {
+                eprintln!("client error: {e}");
+            }
+        });
+    }
+}
+

@@ -67,8 +67,6 @@ mod tests {
     use crate::command::sqloperator::Operator;
     use crate::command::whereclause::WhereClause;
 
-
-
     #[test]
     fn simple_select_with_where_clause() {
         let select = "SELECT name, country FROM population WHERE id=1";

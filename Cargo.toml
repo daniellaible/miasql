@@ -1,6 +1,6 @@
 [package]
 name = "miasql"
-version = "0.0.4"
+version = "0.0.5"
 edition = "2024"
 authors = ["Daniel Laible"]
 description = "A save, secure and fast sql database"
@@ -9,3 +9,4 @@ repository ="https://github.com/daniellaible/miasql.git"
 [dependencies]
 uuid = { version = "1.23.1", features = ["v4"] }
 regex = "1.12.3"
+tokio = { version = "1", features = ["full"] }
