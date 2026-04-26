@@ -1,4 +1,4 @@
-//! This class represents a table of the database
+//! This class represents a database of the database
 //!
 //! Use this class to access tables in the database.
 //!
@@ -6,13 +6,13 @@
 //! - table_name
 //! - the B+Tree to store the data in
 //! - unique uuid that two tables with the same name but within different databases can be accessed
-//! - the name of the table columns
+//! - the name of the database columns
 //! - the datatype of the different columns
 //!
 //! Features
-//! - each table has a name
-//! - each table has a uuid
-//! - each table consists at least of one B+Tree
+//! - each database has a name
+//! - each database has a uuid
+//! - each database consists at least of one B+Tree
 //!
 
 use crate::bptree;
@@ -24,7 +24,6 @@ use std::time::Instant;
 use uuid::Uuid;
 
 pub(crate) mod datatype;
-
 
 fn write_u16_be<W: Write>(w: &mut W, v: u16) -> io::Result<()> {
     w.write_all(&v.to_be_bytes())
@@ -127,7 +126,7 @@ pub fn save_table_to_disc(table: &Table, path: &String, uuid: &Uuid) {
             }
 
             other => {
-                println!("unknown datatype in table definition",);
+                println!("unknown datatype in database definition",);
             }
         }
     }
@@ -203,7 +202,7 @@ pub fn read_table_from_disc(path: String, uuid: Uuid) -> Table {
     let table_name_len = i16::from_be_bytes(table_name_length_byte);
     let table_name_len: usize = table_name_len
         .try_into()
-        .expect("table name size is negative");
+        .expect("database name size is negative");
 
     let mut table_name_byte = vec![0u8; table_name_len];
     reader.read_exact(&mut table_name_byte).unwrap();
@@ -213,7 +212,7 @@ pub fn read_table_from_disc(path: String, uuid: Uuid) -> Table {
 
     let table_width: usize = match usize::try_from(number_of_columns) {
         Ok(v) => v,
-        Err(_) => panic!("table width overflow"),
+        Err(_) => panic!("database width overflow"),
     };
 
     //read column names
@@ -224,7 +223,7 @@ pub fn read_table_from_disc(path: String, uuid: Uuid) -> Table {
         let column_name_len = i16::from_be_bytes(column_name_len_byte);
         let column_name_size: usize = column_name_len
             .try_into()
-            .expect("table name length was negative");
+            .expect("database name length was negative");
 
         let mut column_name_byte = vec![0u8; column_name_size];
         reader.read_exact(&mut column_name_byte).unwrap();
@@ -371,11 +370,11 @@ impl Table {
         }
     }
 
-    /// creates a new table with the params:
+    /// creates a new database with the params:
     /// - new() Constructor
-    /// - get_table_name() - returns the human-readable name of teh table
+    /// - get_table_name() - returns the human-readable name of teh database
     /// - get_bptree() - returns the tree
-    /// - get_uuid() gets the uuid of the table///
+    /// - get_uuid() gets the uuid of the database///
     pub fn new(
         table_name: String,
         tree: BPlusTree<i64, Vec<DataType>, 3>,
@@ -401,12 +400,12 @@ impl Table {
         }
     }
 
-    /// returns the name of the table in a human-readable form
+    /// returns the name of the database in a human-readable form
     pub fn get_table_name(&self) -> String {
         self.table_name.clone()
     }
 
-    /// sets the table name of the table
+    /// sets the database name of the database
     pub fn set_table_name(&mut self, table_name: String) {
         self.table_name = table_name;
     }
@@ -421,7 +420,7 @@ impl Table {
         self.tree = tree;
     }
 
-    ///returns the Uuid of this table
+    ///returns the Uuid of this database
     pub fn get_uuid(&self) -> Uuid {
         self.uuid.clone()
     }

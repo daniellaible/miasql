@@ -1,8 +1,11 @@
 use tokio::net::TcpListener;
+use crate::database::Database;
 
 mod bptree;
-#[path="table/table.rs"]
+#[path= "database/table.rs"]
 mod table;
+#[path= "database/database.rs"]
+mod database;
 
 mod command {
     pub mod sqloperator;
@@ -11,15 +14,15 @@ mod command {
     pub mod insert;
     pub mod functions;
 }
-
 mod server{
     pub mod server;
 }
 
+
+
 fn main() {
     run_server();
 }
-
 
 #[tokio::main]
 async fn run_server() -> std::io::Result<()>{

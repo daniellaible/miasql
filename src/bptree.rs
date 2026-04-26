@@ -220,7 +220,7 @@ where
     }
 
     /// Finds the leave with the lowest id. It is used traversing the tree 
-    /// node to node. You use it also if you want all elements of this table
+    /// node to node. You use it also if you want all elements of this database
     ///
     pub fn leftmost_leaf(&self, mut node: Link<K, V, MAX_KEYS>) -> Link<K, V, MAX_KEYS> {
         loop {
