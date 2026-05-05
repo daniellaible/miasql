@@ -1,7 +1,7 @@
 # MiaSQL
 
 ## Description
-MiaSQL will be an open-source database that will be free to use for non-profit or private entities.
+MiaSQL will be an open-source database that will be free to use for non-profit or private entities. Please check the license agreement.
 
 
 ## Documentation
