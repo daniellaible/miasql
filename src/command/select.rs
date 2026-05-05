@@ -1,5 +1,4 @@
 use crate::command::whereclause::WhereClause;
-
 use regex::Regex;
 
 #[derive(Debug)]
