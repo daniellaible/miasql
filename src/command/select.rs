@@ -1,8 +1,6 @@
 use crate::command::whereclause::WhereClause;
 
 use regex::Regex;
-use crate::command::sqloperator::Operator;
-use crate::table::datatype::DataType;
 
 #[derive(Debug)]
 pub struct Select {
