@@ -13,6 +13,8 @@ mod command {
     pub mod insert;
     pub mod functions;
     pub mod command;
+    pub mod sqlcommands;
+    pub mod permissions;
 }
 mod server{
     pub mod server;

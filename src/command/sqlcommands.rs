@@ -1,5 +1,7 @@
+use crate::command::whereclause::WhereClause;
+
 #[derive(Clone, Debug)]
-pub enum SqlCommands {
+pub enum SqlCommand {
     SELECT {table: String, columns: Vec<String>, values: vec![], where_clause: WhereClause },
     CREATE {table: String, columns: Vec<String>, values: vec![], where_clause: WhereClause },
     DROP {table: String, columns: Vec<String>, values: vec![], where_clause: WhereClause },
