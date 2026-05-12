@@ -27,6 +27,10 @@ impl WhereClause {
     }
 
     pub fn parse(stmt: &String) -> WhereClause {
+        let lower_case_stmt: String = stmt.to_lowercase();
+        if !lower_case_stmt.contains("where"){
+            return WhereClause::default();
+        }
         let regex = Regex::new(r"(?i)\bwhere\b\s+([\s\S]*)").unwrap();
         let captures = regex.captures(stmt).unwrap();
         let where_as_string = captures.get(1).unwrap().as_str();
@@ -54,7 +58,6 @@ impl WhereClause {
         }
 
         splits[0] = splits[0].trim();
-        println!("{:?}", splits);
         let where_clause = WhereClause::new(String::from(splits[0]), operator, DataType::Int { x: splits[1].parse().unwrap() });
         where_clause
     }

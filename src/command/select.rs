@@ -8,7 +8,7 @@ pub struct Select {
     where_clause: WhereClause,
 }
 
-pub fn parse_stmt(stmt: String) -> Select{
+pub fn parse(stmt: String) -> Select{
     let mut select: Select = Select::default();
     select.columns = get_columns(&stmt);
     select.table_name = get_table_name(&stmt).unwrap_or_else(|| "doof").parse().unwrap();
@@ -60,14 +60,14 @@ impl Select {
 
 #[cfg(test)]
 mod tests {
-    use crate::command::select::{parse_stmt, Select};
+    use crate::command::select::{parse, Select};
     use crate::command::sqloperator::Operator;
     use crate::command::whereclause::WhereClause;
 
     #[test]
     fn simple_select_with_where_clause() {
-        let select = "SELECT name, country FROM population WHERE id=1";
-        let select: Select = parse_stmt(String::from(select));
+        let statement = "SELECT name, country FROM population WHERE id=1";
+        let select: Select = parse(String::from(statement));
         let clause: WhereClause = select.where_clause;
         assert_eq!(select.table_name, "population");
         assert_eq!(select.columns.len(), 2);
@@ -77,7 +77,7 @@ mod tests {
     #[test]
     fn simple_select_with_where_clause_lowercase() {
         let select = "select name, country from population where id=1";
-        let select: Select = parse_stmt(String::from(select));
+        let select: Select = parse(String::from(select));
         let clause: WhereClause = select.where_clause;
         assert_eq!(select.table_name, "population");
         assert_eq!(select.columns.len(), 2);
@@ -87,7 +87,7 @@ mod tests {
     #[test]
     fn simple_select_with_where_clause_less_than() {
         let select = "select name, country from population where id<100";
-        let select: Select = parse_stmt(String::from(select));
+        let select: Select = parse(String::from(select));
         let clause: WhereClause = select.where_clause;
         assert_eq!(select.table_name, "population");
         assert_eq!(select.columns.len(), 2);
@@ -97,7 +97,7 @@ mod tests {
     #[test]
     fn simple_select_with_where_clause_greater_than() {
         let select = "select name, country from population where id>100";
-        let select: Select = parse_stmt(String::from(select));
+        let select: Select = parse(String::from(select));
         let clause: WhereClause = select.where_clause;
         assert_eq!(select.table_name, "population");
         assert_eq!(select.columns.len(), 2);
@@ -107,7 +107,7 @@ mod tests {
     #[test]
     fn simple_select_without_where_clause() {
         let select = "SELECT name, country FROM population";
-        let select: Select = parse_stmt(String::from(select));
+        let select: Select = parse(String::from(select));
         let clause: WhereClause = select.where_clause;
         assert_eq!(select.table_name, "population");
         assert_eq!(select.columns.len(), 2);

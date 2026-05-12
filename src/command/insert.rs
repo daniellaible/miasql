@@ -1,6 +1,10 @@
 use crate::command::whereclause::WhereClause;
 use crate::table::datatype::DataType;
 use regex::Regex;
+use crate::command::command::Command;
+use crate::table::datatype::DataType::BigInt;
+
+
 
 #[derive(Debug)]
 pub struct Insert {
@@ -10,11 +14,25 @@ pub struct Insert {
     where_clause: WhereClause,
 }
 
-pub fn parse_stmt(stmt: String) -> Insert {
-    let mut insert: Insert = Insert::default();
-    let table: String = get_table(&stmt);
-    let columns: Vec<String> = get_columns(&stmt);
-    insert
+impl Command for Insert{
+    fn parse(stmt: String) -> () {
+        let mut insert: Insert = Insert::default();
+        let table: String = get_table(&stmt);
+        insert.table_name = table;
+
+        let columns: Vec<String> = get_columns(&stmt);
+        insert.columns = columns;
+
+        insert.where_clause = WhereClause::parse(&stmt);
+
+        println!("table name: {:?}", insert.table_name);
+        println!("columns: {:?}", insert.columns);
+        println!("where_clause: {:?}", insert.where_clause);
+    }
+}
+
+fn find_values(stmt: &String)-> Vec<Vec<DataType>> {
+    vec![vec![BigInt {x:1}]]
 }
 
 fn get_columns(stmt: &String) -> Vec<String> {
@@ -65,12 +83,40 @@ impl Insert {
 
 #[cfg(test)]
 mod tests {
-    use crate::command::insert::parse_stmt;
+    use crate::command::command::Command;
+    use crate::command::insert::Insert;
+
+    #[test]
+    fn simple_select_without_where_clause() {
+        let select =
+            "INSERT INTO user (first_name, last_name, age) VALUES ('daniel', 'mayer', '35')";
+       Insert::parse(select.to_string());
+    }
 
     #[test]
     fn simple_select_with_where_clause() {
         let select =
-            "INSERT INTO user (first_name, last_name, age) VALUES ('daniel', 'mayer', '35') ";
-        parse_stmt(String::from(select));
+            "INSERT INTO user (first_name, last_name, age) VALUES ('daniel', 'mayer', '35') where id=1";
+        Insert::parse(String::from(select));
     }
+
+    // This should be possible as well
+    // Copy all columns from one table to another table:
+    //      INSERT INTO target_table
+    //          SELECT * FROM source_table
+    //          WHERE condition;
+    //
+    //      INSERT INTO
+    //          table_name (column1, column2, column3)
+    //      VALUES
+    //          (value11, value12, value13),
+    //          (value21, value22, value23),
+    //          (value31, value32, value33);
+    //
+    // Copy only some columns from one table to another table:
+    //      INSERT INTO target_table (column1, column2, column3, ...)
+    //          SELECT column1, column2, column3, ...
+    //          FROM source_table
+    //      WHERE condition;
 }
+

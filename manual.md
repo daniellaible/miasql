@@ -1,7 +1,7 @@
 # MiaSQL
 
 ## Preface
-MiaSQL was born out of curiosity. Daniel Laible wanted to better understand the way SQL databases work.
+MiaSQL was born out of curiosity. Daniel wanted to understand the way SQL databases work.
 Therefor he decided to program his own db project. He published his project on github and nobody noticed.
 
 The word 'mia' means 'my' in Esperanto. To name the software in Esperanto was chosen deliberately. Esperanto was created as a world 
@@ -20,6 +20,6 @@ These are the datatypes we are currently supporting.
 * Float { 64 bit },
 * VarChar { String, SizeOf(Pointer) },
 * Bool { bool },
-* Date { 64 bit },
-* Time { 64 bit },
-* DateTime { 64 bit }
+* Date { 64 bit } ... nope - not supported yet,
+* Time { 64 bit } ... nope - not supported yet,
+* DateTime { 64 bit } ... nope - not supported yet

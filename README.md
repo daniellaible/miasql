@@ -6,6 +6,7 @@ MiaSQL will be an open-source database that will be free to use for non-profit o
 
 ## Documentation
 We are working on the documentation - it will be on the website.
+Until then please check the manual.md file. 
 
 ## License
 Sorry - we have not yet decided which licensing model we choose.
@@ -14,5 +15,5 @@ to fork, change, sell, modify, distribute or use this code in any other way or f
 
 
 ## Website
-We don't have a website yet - we are working on it.
+We don't have a website yet - we are working on it, but lets get the database running first.
 

@@ -1,5 +1,4 @@
 use tokio::net::TcpListener;
-use crate::database::Database;
 
 mod bptree;
 #[path= "database/table.rs"]
@@ -13,6 +12,7 @@ mod command {
     pub mod select;
     pub mod insert;
     pub mod functions;
+    pub mod command;
 }
 mod server{
     pub mod server;
