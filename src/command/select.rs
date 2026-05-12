@@ -18,11 +18,10 @@ impl Command for Select{
         if check_for_where(&stmt) {
             let clause  = WhereClause::parse(&stmt);
             let command = SqlCommand::SELECT {command: String::from("SELECT"), table, columns, values: Vec::new(), where_clause: clause};
-            println!("{:?}",command);
+
             command
         }else{
             let command = SqlCommand::SELECT {command: String::from("SELECT"), table, columns, values: Vec::new(), where_clause: WhereClause::default()};
-            println!("{:?}",command);
             command
         }
     }
@@ -36,7 +35,8 @@ fn get_columns(stmt: &String) -> Vec<String> {
     let columns_as_string = captures.get(1).unwrap().as_str();
     let single_column:Vec<&str> = columns_as_string.split(",").collect();
     let mut parts: Vec<String> = Vec::new();
-    for single_column in single_column {
+    for mut single_column in single_column {
+        single_column = single_column.trim();
         parts.push(single_column.to_string());
     }
     parts
@@ -82,6 +82,19 @@ mod tests {
     fn simple_select_with_where_clause_lowercase() {
         let select = "select name, country from population where id=1";
         let select: SqlCommand = Select::parse(String::from(select));
+        println!("{:?}", select);
+
+        match select {
+            SqlCommand::SELECT {command, table, columns, values, where_clause} => {
+                assert_eq!(command, "SELECT");
+                assert_eq!(table, "population");
+                assert_eq!(columns, vec!["name", "country"]);
+
+            },
+            _ => ()
+        }
+
+
 /*        let clause: WhereClause = select.where_clause;
         assert_eq!(select.table_name, "population");
         assert_eq!(select.columns.len(), 2);
