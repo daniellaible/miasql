@@ -23,3 +23,29 @@ These are the datatypes we are currently supporting.
 * Date { 64 bit } ... nope - not supported yet,
 * Time { 64 bit } ... nope - not supported yet,
 * DateTime { 64 bit } ... nope - not supported yet
+
+
+## The basic functionality of mia
+
+		TCP/IP
+		 7878
+		  || 
+	    COMMAND   -----> Parser  
+	  Sql-Command <-----
+		  ||
+		  ||
+		  ||
+		  ||      -----> Ledger
+		  ||
+		  ||      -----> moi-file Updater
+		  ||
+		  ||      -----> b-tree updater		
+		  ||
+		  ||
+		  ||
+		 \  /
+		  \/		
+	   
+	   Response  
+
+## Connecting to the Database

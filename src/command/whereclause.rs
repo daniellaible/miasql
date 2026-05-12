@@ -2,7 +2,7 @@ use crate::command::sqloperator::Operator;
 use crate::table::datatype::DataType;
 use regex::Regex;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct WhereClause {
     column: String,
     operator: Operator,

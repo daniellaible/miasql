@@ -84,19 +84,64 @@ impl Insert {
 mod tests {
     use crate::command::command::Command;
     use crate::command::insert::Insert;
+    use crate::command::sqlcommands::SqlCommand;
+    use crate::command::sqloperator::Operator;
+    use crate::table::datatype::DataType;
 
     #[test]
     fn simple_select_without_where_clause() {
-        let select =
-            "INSERT INTO user (first_name, last_name, age) VALUES ('daniel', 'mayer', '35')";
-       Insert::parse(select.to_string());
+        //let insert: Insert = Insert::default();
+       let stmt = "INSERT INTO user (first_name, last_name, age) VALUES ('daniel', 'mayer', '35')";
+       let cmd:SqlCommand = Insert::parse(stmt.to_string());
+        println!("{:?}", cmd);
+
+        match cmd {
+            SqlCommand::INSERT {
+                command,
+                table,
+                columns,
+                values,
+                where_clause,
+            } => {
+                assert_eq!(command, "INSERT");
+                assert_eq!(table, "user");
+                assert_eq!(columns,  vec!["first_name", "last_name", "age"] );
+
+                let clause = where_clause;
+                assert_eq!(clause.get_operator(), Operator::UNDEFINED);
+                assert_eq!(clause.get_column(), "");
+                assert_eq!(clause.get_value(), DataType::Undefined);
+            }
+            _ => (),
+        }
     }
 
     #[test]
     fn simple_select_with_where_clause() {
         let select =
             "INSERT INTO user (first_name, last_name, age) VALUES ('daniel', 'mayer', '35') where id=1";
-        Insert::parse(String::from(select));
+        let cmd:SqlCommand =  Insert::parse(String::from(select));
+
+        match cmd {
+            SqlCommand::INSERT {
+                command,
+                table,
+                columns,
+                values,
+                where_clause,
+            } => {
+                assert_eq!(command, "INSERT");
+                assert_eq!(table, "user");
+                assert_eq!(columns,  vec!["first_name", "last_name", "age"] );
+
+                let clause = where_clause;
+                assert_eq!(clause.get_operator(), Operator::EQUAL);
+                assert_eq!(clause.get_column(), "id");
+                assert_eq!(clause.get_value(), DataType::BigInt {x:1});
+            }
+            _ => (),
+        }
+
     }
 
     // This should be possible as well

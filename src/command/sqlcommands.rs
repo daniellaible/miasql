@@ -1,7 +1,7 @@
 use crate::command::whereclause::WhereClause;
 use crate::table::datatype::DataType;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum SqlCommand {
     SELECT {command: String, table: String, columns: Vec<String>, values: Vec<DataType>, where_clause: WhereClause },
     CREATE {command: String, table: String, columns: Vec<String>, values: Vec<DataType>, where_clause: WhereClause },
