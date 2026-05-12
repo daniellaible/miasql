@@ -1,6 +1,6 @@
 //! These are the datatypes we will support in the beginning
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum DataType {
     BigInt { x: i64 },
     Int { x: i32 },

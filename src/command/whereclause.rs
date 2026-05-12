@@ -18,6 +18,14 @@ impl WhereClause {
         self.operator.clone()
     }
 
+    pub fn get_column(&self) -> String {
+        self.column.clone()
+    }
+
+    pub fn get_value(&self) -> DataType {
+        self.value.clone()
+    }
+
     pub fn default() -> Self {
         WhereClause {
             column: String::default(),
@@ -58,7 +66,7 @@ impl WhereClause {
         }
 
         splits[0] = splits[0].trim();
-        let where_clause = WhereClause::new(String::from(splits[0]), operator, DataType::Int { x: splits[1].parse().unwrap() });
+        let where_clause = WhereClause::new(String::from(splits[0]), operator, DataType::BigInt { x: splits[1].parse().unwrap() });
         where_clause
     }
 }
