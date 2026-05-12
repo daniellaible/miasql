@@ -19,18 +19,14 @@ impl Command for Insert{
     fn parse(stmt: String) -> SqlCommand {
         let mut insert: Insert = Insert::default();
         let table: String = get_table(&stmt);
-        
-
         let columns: Vec<String> = get_columns(&stmt);
-        //insert.columns = columns;
-
-        insert.where_clause = WhereClause::parse(&stmt);
+        let clause: WhereClause = WhereClause::parse(&stmt);
 
         println!("table name: {:?}", insert.table_name);
         println!("columns: {:?}", insert.columns);
         println!("where_clause: {:?}", insert.where_clause);
-        
-        SqlCommand::INSERT {command: String::from("Insert"), table: table, columns: columns, values: vec![], where_clause: insert.where_clause }
+
+        SqlCommand::INSERT {command: String::from("INSERT"), table: table, columns: columns, values: vec![], where_clause: clause }
     }
 }
 

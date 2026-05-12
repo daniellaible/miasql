@@ -490,7 +490,7 @@ mod tests {
 
     #[test]
     fn load_from_disc() {
-        let table: Table = Table::default();
+        //let table: Table = Table::default();
         read_table_from_disc(
             String::from("C:/temp/moi/0e6bce68-99fa-3841-b790-24afbdf7db1d.moi"),
             Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1d").unwrap(),
