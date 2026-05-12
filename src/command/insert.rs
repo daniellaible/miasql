@@ -2,6 +2,7 @@ use crate::command::whereclause::WhereClause;
 use crate::table::datatype::DataType;
 use regex::Regex;
 use crate::command::command::Command;
+use crate::command::sqlcommands::SqlCommand;
 use crate::table::datatype::DataType::BigInt;
 
 
@@ -15,19 +16,21 @@ pub struct Insert {
 }
 
 impl Command for Insert{
-    fn parse(stmt: String) -> () {
+    fn parse(stmt: String) -> SqlCommand {
         let mut insert: Insert = Insert::default();
         let table: String = get_table(&stmt);
-        insert.table_name = table;
+        
 
         let columns: Vec<String> = get_columns(&stmt);
-        insert.columns = columns;
+        //insert.columns = columns;
 
         insert.where_clause = WhereClause::parse(&stmt);
 
         println!("table name: {:?}", insert.table_name);
         println!("columns: {:?}", insert.columns);
         println!("where_clause: {:?}", insert.where_clause);
+        
+        SqlCommand::INSERT {command: String::from("Insert"), table: table, columns: columns, values: vec![], where_clause: insert.where_clause }
     }
 }
 
