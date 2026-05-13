@@ -125,7 +125,7 @@ mod tests {
                 command,
                 table,
                 columns,
-                values,
+                values: _,
                 where_clause,
             } => {
                 assert_eq!(command, "INSERT");
@@ -151,7 +151,7 @@ mod tests {
                 command,
                 table,
                 columns,
-                values,
+                values: _,
                 where_clause,
             } => {
                 assert_eq!(command, "INSERT");
@@ -178,8 +178,8 @@ mod tests {
                 command,
                 table,
                 columns,
-                values,
-                where_clause,
+                values: _,
+                where_clause: _,
             } => {
                 assert_eq!(command, "INSERT");
                 assert_eq!(table, "user");

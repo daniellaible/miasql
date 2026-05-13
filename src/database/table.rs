@@ -51,7 +51,7 @@ fn read_varchar<R: Read>(r: &mut R) -> io::Result<String> {
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, format!("invalid UTF-8: {e}")))
 }
 
-pub fn save_table_to_disc(table: &Table, path: &String, uuid: &Uuid) {
+pub fn save_table_to_disc(table: &Table, path: &String, _uuid: &Uuid) {
     let start = Instant::now();
     let mut file = OpenOptions::new()
         .create(true)
@@ -124,7 +124,7 @@ pub fn save_table_to_disc(table: &Table, path: &String, uuid: &Uuid) {
                 file.write_all(b"VARCHAR").unwrap();
             }
 
-            other => {
+            _other => {
                 println!("unknown datatype in database definition",);
             }
         }
@@ -132,7 +132,7 @@ pub fn save_table_to_disc(table: &Table, path: &String, uuid: &Uuid) {
 
     let tree = table.get_bptree();
     let all_entries = tree.range(None, None);
-    for (k, v) in all_entries {
+    for (_k, v) in all_entries {
         for cell in v {
             match cell {
                 DataType::BigInt { x } => {
@@ -167,7 +167,7 @@ pub fn save_table_to_disc(table: &Table, path: &String, uuid: &Uuid) {
     println!("Total time taken for writing: {:?}", duration);
 }
 
-pub fn read_table_from_disc(path: String, uuid: Uuid) -> Table {
+pub fn read_table_from_disc(path: String, _uuid: Uuid) -> Table {
     let start = Instant::now();
     let file = File::open(path).unwrap();
     let mut reader = BufReader::new(file);
@@ -194,7 +194,7 @@ pub fn read_table_from_disc(path: String, uuid: Uuid) -> Table {
 
     let mut next_file_length_byte = [0u8; 2];
     reader.read_exact(&mut next_file_length_byte).unwrap();
-    let next_file_len = i16::from_be_bytes(next_file_length_byte);
+    let _next_file_len = i16::from_be_bytes(next_file_length_byte);
 
     let mut table_name_length_byte = [0u8; 2];
     reader.read_exact(&mut table_name_length_byte).unwrap();

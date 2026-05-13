@@ -1,5 +1,4 @@
 use crate::command::whereclause::WhereClause;
-use crate::database::datatype::DataType;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum SqlCommand {

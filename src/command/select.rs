@@ -96,7 +96,7 @@ mod tests {
     #[test]
     fn simple_select_with_where_clause() {
         let statement = "SELECT name, country FROM population WHERE id=1";
-        let select: SqlCommand = Select::parse(String::from(statement));
+        let _select: SqlCommand = Select::parse(String::from(statement));
     }
 
     #[test]
@@ -109,7 +109,7 @@ mod tests {
                 command,
                 table,
                 columns,
-                values,
+                values: _,
                 where_clause,
             } => {
                 assert_eq!(command, "SELECT");
@@ -137,7 +137,7 @@ mod tests {
                 command,
                 table,
                 columns,
-                values,
+                values: _,
                 where_clause,
             } => {
                 assert_eq!(command, "SELECT");
@@ -165,7 +165,7 @@ mod tests {
                 command,
                 table,
                 columns,
-                values,
+                values: _,
                 where_clause,
             } => {
                 assert_eq!(command, "SELECT");
@@ -191,7 +191,7 @@ mod tests {
                 command,
                 table,
                 columns,
-                values,
+                values: _,
                 where_clause,
             } => {
                 assert_eq!(command, "SELECT");
@@ -217,7 +217,7 @@ mod tests {
                 command,
                 table,
                 columns,
-                values,
+                values: _,
                 where_clause,
             } => {
                 assert_eq!(command, "SELECT");
