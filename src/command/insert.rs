@@ -1,7 +1,7 @@
 use crate::command::command::Command;
 use crate::command::sqlcommands::SqlCommand;
 use crate::command::whereclause::WhereClause;
-use crate::table::datatype::DataType;
+use crate::database::datatype::DataType;
 use regex::Regex;
 
 #[derive(Debug)]
@@ -115,7 +115,7 @@ mod tests {
     use crate::command::insert::Insert;
     use crate::command::sqlcommands::SqlCommand;
     use crate::command::sqloperator::Operator;
-    use crate::table::datatype::DataType;
+    use crate::database::datatype::DataType;
 
     #[test]
     fn simple_select_without_where_clause() {
@@ -197,13 +197,6 @@ mod tests {
     //      INSERT INTO target_table
     //          SELECT * FROM source_table
     //          WHERE condition;
-    //
-    //      INSERT INTO
-    //          table_name (column1, column2, column3)
-    //      VALUES
-    //          (value11, value12, value13),
-    //          (value21, value22, value23),
-    //          (value31, value32, value33);
     //
     // Copy only some columns from one table to another table:
     //      INSERT INTO target_table (column1, column2, column3, ...)

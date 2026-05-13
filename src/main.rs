@@ -1,10 +1,14 @@
 use tokio::net::TcpListener;
 
 mod bptree;
-#[path= "database/table.rs"]
-mod table;
-#[path= "database/database.rs"]
-mod database;
+/*#[path= "database/table.rs"]
+mod table;*/
+
+mod database {
+    pub mod database;
+    pub mod datatype;
+    pub mod table;
+}
 
 mod command {
     pub mod sqloperator;
@@ -16,6 +20,7 @@ mod command {
     pub mod sqlcommands;
     pub mod permissions;
 }
+
 mod server{
     pub mod server;
 }

@@ -1,5 +1,5 @@
 use crate::command::sqloperator::Operator;
-use crate::table::datatype::DataType;
+use crate::database::datatype::DataType;
 use regex::Regex;
 
 #[derive(Clone, Debug, PartialEq)]

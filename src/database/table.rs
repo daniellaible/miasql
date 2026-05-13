@@ -17,13 +17,12 @@
 
 use crate::bptree;
 use crate::bptree::BPlusTree;
-use datatype::DataType;
+use crate::database::datatype::DataType;
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufReader, Read, Write};
 use std::time::Instant;
 use uuid::Uuid;
-
-pub(crate) mod datatype;
+use crate::database::datatype;
 
 fn write_u16_be<W: Write>(w: &mut W, v: u16) -> io::Result<()> {
     w.write_all(&v.to_be_bytes())
@@ -454,7 +453,7 @@ impl Table {
 mod tests {
     use super::{Table, read_table_from_disc, save_table_to_disc};
     use crate::bptree::BPlusTree;
-    use crate::table::datatype::DataType;
+    use crate::database::datatype::DataType;
     use uuid::Uuid;
 
     #[test]

@@ -83,7 +83,7 @@ mod tests {
     use crate::command::select::Select;
     use crate::command::sqlcommands::SqlCommand;
     use crate::command::sqloperator::Operator;
-    use crate::table::datatype::DataType;
+    use crate::database::datatype::DataType;
 
     #[test]
     fn simple_select_with_where_clause() {
