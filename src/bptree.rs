@@ -212,10 +212,8 @@ where
                 }
                 out.push((ln.keys[i].clone(), ln.values[i].clone()));
             }
-
             cur = ln.next.clone();
         }
-
         out
     }
 
@@ -260,9 +258,7 @@ where
             }
         }
     }
-
-
-
+    
     fn find_leaf_with_path(
         &self,
         mut node: Link<K, V, MAX_KEYS>,

@@ -3,7 +3,7 @@ use crate::command::sqlcommands::SqlCommand;
 use crate::command::whereclause::WhereClause;
 use regex::Regex;
 
-#[derive(Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Select {
     table_name: String,
     columns: Vec<String>,
@@ -11,7 +11,8 @@ pub struct Select {
 }
 
 impl Command for Select {
-    fn parse(stmt: String) -> SqlCommand {
+    fn parse(mut stmt: String) -> SqlCommand {
+        stmt = stmt.to_uppercase();
         let columns = get_columns(&stmt);
         let table = get_table_name(&stmt)
             .unwrap_or_else(|| "doof")
@@ -27,6 +28,7 @@ impl Command for Select {
                 where_clause: clause,
             };
 
+            println!("{:#?}", command);
             command
         } else {
             let command = SqlCommand::SELECT {
@@ -55,8 +57,16 @@ fn get_columns(stmt: &String) -> Vec<String> {
 }
 
 fn get_table_name(stmt: &str) -> Option<&str> {
-    let re = Regex::new(r"(?i)\bfrom\b\s+([^\s;]+)(?:\s+\bwhere\b\s+[\s\S]*)?$").unwrap();
-    re.captures(stmt).and_then(|c| c.get(1).map(|m| m.as_str()))
+    if stmt.contains("WHERE") {
+        let re = Regex::new(r"(?i)\bfrom\b\s+([^\s;]+)(?:\s+\bwhere\b\s+[\s\S]*)?$").unwrap();
+        re.captures(stmt).and_then(|c| c.get(1).map(|m| m.as_str()))
+
+    }else{
+        let splits: Vec<_> =  stmt.split(" FROM ").collect();
+        let table_name: Option<&str> = Some(splits[1]);
+        table_name
+    }
+
 }
 
 fn check_for_where(stmt: &String) -> bool {
@@ -105,17 +115,47 @@ mod tests {
                 where_clause,
             } => {
                 assert_eq!(command, "SELECT");
-                assert_eq!(table, "population");
-                assert_eq!(columns, vec!["name", "country"]);
+                assert_eq!(table, "POPULATION");
+                assert_eq!(columns, vec!["NAME", "COUNTRY"]);
 
                 let clause = where_clause;
                 assert_eq!(clause.get_operator(), Operator::EQUAL);
-                assert_eq!(clause.get_column(), "id");
+                assert_eq!(clause.get_column(), "ID");
                 assert_eq!(clause.get_value(), DataType::BigInt { x: 1 });
             }
             _ => (),
         }
     }
+
+
+    #[test]
+    fn select_with_the_stars(){
+        let select = "select * from users where id = 1";
+        let select: SqlCommand = Select::parse(String::from(select));
+        println!("{:#?}", select);
+
+        match select {
+            SqlCommand::SELECT {
+                command,
+                table,
+                columns,
+                values,
+                where_clause,
+            } => {
+                assert_eq!(command, "SELECT");
+                assert_eq!(table, "USERS");
+                assert_eq!(columns, vec!["*"]);
+
+                let clause = where_clause;
+                assert_eq!(clause.get_operator(), Operator::EQUAL);
+                assert_eq!(clause.get_column(), "ID");
+                assert_eq!(clause.get_value(), DataType::BigInt { x: 1 });
+
+            }
+            _ => (),
+        }
+    }
+
 
     #[test]
     fn simple_select_with_where_clause_less_than() {
@@ -131,12 +171,12 @@ mod tests {
                 where_clause,
             } => {
                 assert_eq!(command, "SELECT");
-                assert_eq!(table, "population");
-                assert_eq!(columns, vec!["name", "country"]);
+                assert_eq!(table, "POPULATION");
+                assert_eq!(columns, vec!["NAME", "COUNTRY"]);
 
                 let clause = where_clause;
                 assert_eq!(clause.get_operator(), Operator::LESSER);
-                assert_eq!(clause.get_column(), "id");
+                assert_eq!(clause.get_column(), "ID");
                 assert_eq!(clause.get_value(), DataType::BigInt { x: 100 });
             }
             _ => (),
@@ -157,12 +197,12 @@ mod tests {
                 where_clause,
             } => {
                 assert_eq!(command, "SELECT");
-                assert_eq!(table, "population");
-                assert_eq!(columns, vec!["name", "country"]);
+                assert_eq!(table, "POPULATION");
+                assert_eq!(columns, vec!["NAME", "COUNTRY"]);
 
                 let clause = where_clause;
                 assert_eq!(clause.get_operator(), Operator::GREATER);
-                assert_eq!(clause.get_column(), "id");
+                assert_eq!(clause.get_column(), "ID");
                 assert_eq!(clause.get_value(), DataType::BigInt { x: 100 });
             }
             _ => (),
@@ -183,8 +223,8 @@ mod tests {
                 where_clause,
             } => {
                 assert_eq!(command, "SELECT");
-                assert_eq!(table, "population");
-                assert_eq!(columns, vec!["name", "country"]);
+                assert_eq!(table, "POPULATION");
+                assert_eq!(columns, vec!["NAME", "COUNTRY"]);
 
                 let clause = where_clause;
                 assert_eq!(clause.get_operator(), Operator::UNDEFINED);

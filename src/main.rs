@@ -1,8 +1,6 @@
 use tokio::net::TcpListener;
 
 mod bptree;
-/*#[path= "database/table.rs"]
-mod table;*/
 
 mod database {
     pub mod database;
@@ -24,8 +22,6 @@ mod command {
 mod server{
     pub mod server;
 }
-
-
 
 fn main() {
     run_server();

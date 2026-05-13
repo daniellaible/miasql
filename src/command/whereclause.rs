@@ -66,7 +66,10 @@ impl WhereClause {
         }
 
         splits[0] = splits[0].trim();
-        let where_clause = WhereClause::new(String::from(splits[0]), operator, DataType::BigInt { x: splits[1].parse().unwrap() });
+        let column = String::from(splits[0]);
+        let id:i64 = splits[1].trim().parse().unwrap();
+
+        let where_clause = WhereClause::new(column, operator, DataType::BigInt { x: id });
         where_clause
     }
 }
