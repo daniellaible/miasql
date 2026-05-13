@@ -30,8 +30,8 @@ These are the datatypes we are currently supporting.
 		TCP/IP
 		 7878
 		  || 
-	    COMMAND   -----> Parser  
-	  Sql-Command <-----
+	       COMMAND   -----> Parser  
+         Sql-Command <-----
 		  ||
 		  ||
 		  ||
@@ -46,6 +46,6 @@ These are the datatypes we are currently supporting.
 		 \  /
 		  \/		
 	   
-	   Response  
+	       Response  
 
 ## Connecting to the Database

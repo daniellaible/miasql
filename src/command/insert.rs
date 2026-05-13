@@ -1,11 +1,8 @@
+use crate::command::command::Command;
+use crate::command::sqlcommands::SqlCommand;
 use crate::command::whereclause::WhereClause;
 use crate::table::datatype::DataType;
 use regex::Regex;
-use crate::command::command::Command;
-use crate::command::sqlcommands::SqlCommand;
-use crate::table::datatype::DataType::BigInt;
-
-
 
 #[derive(Debug)]
 pub struct Insert {
@@ -15,23 +12,55 @@ pub struct Insert {
     where_clause: WhereClause,
 }
 
-impl Command for Insert{
+impl Command for Insert {
     fn parse(stmt: String) -> SqlCommand {
         let mut insert: Insert = Insert::default();
         let table: String = get_table(&stmt);
         let columns: Vec<String> = get_columns(&stmt);
+        let values: Vec<Vec<String>> = find_values(&stmt);
+        println!("{:#?}", values);
         let clause: WhereClause = WhereClause::parse(&stmt);
 
-        println!("table name: {:?}", insert.table_name);
-        println!("columns: {:?}", insert.columns);
-        println!("where_clause: {:?}", insert.where_clause);
-
-        SqlCommand::INSERT {command: String::from("INSERT"), table: table, columns: columns, values: vec![], where_clause: clause }
+        SqlCommand::INSERT {
+            command: String::from("INSERT"),
+            table: table,
+            columns: columns,
+            values: vec![],
+            where_clause: clause,
+        }
     }
 }
 
-fn find_values(stmt: &String)-> Vec<Vec<DataType>> {
-    vec![vec![BigInt {x:1}]]
+fn find_values(stmt: &String) -> Vec<Vec<String>> {
+    let values_re = Regex::new(r"(?i)VALUES\s*(.+)$").unwrap();
+    let tuple_re = Regex::new(r"\([^)]*\)").unwrap();
+    let field_re = Regex::new(r"'[^']*'|-?\d+(?:\.\d+)?|NULL").unwrap();
+
+    let Some(cap) = values_re.captures(stmt) else {
+        return Vec::new();
+    };
+
+    let values_part = cap.get(1).unwrap().as_str();
+
+    tuple_re
+        .find_iter(values_part)
+        .map(|m| {
+            let tuple = m.as_str();
+            let inner = &tuple[1..tuple.len() - 1];
+
+            field_re
+                .find_iter(inner)
+                .map(|f| {
+                    let s = f.as_str();
+                    if s.starts_with('\'') && s.ends_with('\'') {
+                        s[1..s.len() - 1].to_string()
+                    } else {
+                        s.to_string()
+                    }
+                })
+                .collect()
+        })
+        .collect()
 }
 
 fn get_columns(stmt: &String) -> Vec<String> {
@@ -44,7 +73,7 @@ fn get_columns(stmt: &String) -> Vec<String> {
     }
 
     let mut columns: Vec<String> = Vec::new();
-    for  column in temp_columns.iter() {
+    for column in temp_columns.iter() {
         let c = column.trim();
         columns.push(c.to_string());
     }
@@ -61,7 +90,7 @@ fn get_table(stmt: &String) -> String {
     String::from(table_name)
 }
 
-fn retrieve_table_n_columns(stmt: &String) -> &str{
+fn retrieve_table_n_columns(stmt: &String) -> &str {
     let regex_table_n_columns =
         Regex::new(r"(?i)\binsert\b\s*into\b\s*([\s\S]*?)\s+\bvalues\b\s+").unwrap();
     let captures_table_n_columns = regex_table_n_columns.captures(stmt).unwrap();
@@ -90,9 +119,8 @@ mod tests {
 
     #[test]
     fn simple_select_without_where_clause() {
-        //let insert: Insert = Insert::default();
-       let stmt = "INSERT INTO user (first_name, last_name, age) VALUES ('daniel', 'mayer', '35')";
-       let cmd:SqlCommand = Insert::parse(stmt.to_string());
+        let stmt = "INSERT INTO user (first_name, last_name, age) VALUES ('daniel', 'mayer', 35)";
+        let cmd: SqlCommand = Insert::parse(stmt.to_string());
         println!("{:?}", cmd);
 
         match cmd {
@@ -105,7 +133,7 @@ mod tests {
             } => {
                 assert_eq!(command, "INSERT");
                 assert_eq!(table, "user");
-                assert_eq!(columns,  vec!["first_name", "last_name", "age"] );
+                assert_eq!(columns, vec!["first_name", "last_name", "age"]);
 
                 let clause = where_clause;
                 assert_eq!(clause.get_operator(), Operator::UNDEFINED);
@@ -118,9 +146,8 @@ mod tests {
 
     #[test]
     fn simple_select_with_where_clause() {
-        let select =
-            "INSERT INTO user (first_name, last_name, age) VALUES ('daniel', 'mayer', '35') where id=1";
-        let cmd:SqlCommand =  Insert::parse(String::from(select));
+        let select = "INSERT INTO user (first_name, last_name, age) VALUES ('daniel', 'mayer', '35') where id=1";
+        let cmd: SqlCommand = Insert::parse(String::from(select));
 
         match cmd {
             SqlCommand::INSERT {
@@ -132,16 +159,37 @@ mod tests {
             } => {
                 assert_eq!(command, "INSERT");
                 assert_eq!(table, "user");
-                assert_eq!(columns,  vec!["first_name", "last_name", "age"] );
+                assert_eq!(columns, vec!["first_name", "last_name", "age"]);
 
                 let clause = where_clause;
                 assert_eq!(clause.get_operator(), Operator::EQUAL);
                 assert_eq!(clause.get_column(), "id");
-                assert_eq!(clause.get_value(), DataType::BigInt {x:1});
+                assert_eq!(clause.get_value(), DataType::BigInt { x: 1 });
             }
             _ => (),
         }
+    }
 
+    #[test]
+    fn select_with_multiple_value_tupels() {
+        let select = "INSERT INTO user (firstname, lastname, sex) VALUES ('max', 'maxwell', 1.75),('susie', 'sorglos', 'female'), ('hermann', 'etrusker', 'male')";
+
+        let cmd: SqlCommand = Insert::parse(String::from(select));
+
+        match cmd {
+            SqlCommand::INSERT {
+                command,
+                table,
+                columns,
+                values,
+                where_clause,
+            } => {
+                assert_eq!(command, "INSERT");
+                assert_eq!(table, "user");
+                assert_eq!(columns, vec!["firstname", "lastname", "sex"]);
+            }
+            _ => (),
+        }
     }
 
     // This should be possible as well
@@ -163,4 +211,3 @@ mod tests {
     //          FROM source_table
     //      WHERE condition;
 }
-
