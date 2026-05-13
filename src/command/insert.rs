@@ -14,11 +14,9 @@ pub struct Insert {
 
 impl Command for Insert {
     fn parse(stmt: String) -> SqlCommand {
-        let mut insert: Insert = Insert::default();
         let table: String = get_table(&stmt);
         let columns: Vec<String> = get_columns(&stmt);
         let values: Vec<Vec<String>> = find_values(&stmt);
-        println!("{:#?}", values);
         let clause: WhereClause = WhereClause::parse(&stmt);
 
         SqlCommand::INSERT {
@@ -121,7 +119,6 @@ mod tests {
     fn simple_select_without_where_clause() {
         let stmt = "INSERT INTO user (first_name, last_name, age) VALUES ('daniel', 'mayer', 35)";
         let cmd: SqlCommand = Insert::parse(stmt.to_string());
-        println!("{:?}", cmd);
 
         match cmd {
             SqlCommand::INSERT {
