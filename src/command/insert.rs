@@ -23,9 +23,9 @@ impl Command for Insert {
 
         SqlCommand::INSERT {
             command: String::from("INSERT"),
-            table: table,
-            columns: columns,
-            values: vec![],
+            table,
+            columns,
+            values,
             where_clause: clause,
         }
     }

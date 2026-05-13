@@ -27,8 +27,6 @@ impl Command for Select {
                 values: Vec::new(),
                 where_clause: clause,
             };
-
-            println!("{:#?}", command);
             command
         } else {
             let command = SqlCommand::SELECT {

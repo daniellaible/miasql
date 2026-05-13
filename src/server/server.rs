@@ -1,6 +1,7 @@
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpStream};
 use crate::command::command::Command;
+use crate::command::insert::Insert;
 use crate::command::select::Select;
 use crate::command::sqlcommands::SqlCommand;
 
@@ -38,7 +39,9 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                 println!("{:?}", select);
 
             } else if command.starts_with("INSERT"){
-                println!("INSERT recognized");
+                println!("{:?}", command);
+                let insert: SqlCommand = Insert::parse(String::from(command));
+                println!("{:?}", insert);
 
             }else if command.starts_with("UPDATE"){
                 println!("UPDATE recognized");
