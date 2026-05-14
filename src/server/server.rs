@@ -4,6 +4,7 @@ use crate::command::select::Select;
 use crate::command::sqlcommands::SqlCommand;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
+use crate::command::update::Update;
 use crate::database::database::Database;
 
 pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database> ) -> std::io::Result<()> {
@@ -34,7 +35,8 @@ pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database> ) -> s
                 sql = Insert::parse(String::from(command), dbs.clone());
                 println!("{:?}", sql);
             } else if command.starts_with("UPDATE") {
-                println!("UPDATE recognized");
+                sql = Update::parse(String::from(command), dbs.clone());
+                println!("{:?}", sql);
             } else if command.starts_with("DELETE") {
                 println!("DELETE recognized");
             } else if command.starts_with("CREATE") {

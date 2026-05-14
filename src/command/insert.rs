@@ -148,7 +148,7 @@ mod tests {
     #[test]
     fn simple_select_with_where_clause() {
         let dbs: Vec<Database> = vec!();
-        let select = "INSERT INTO user (first_name, last_name, age) VALUES ('daniel', 'mayer', '35') where id=1";
+        let select = "INSERT INTO user (first_name, last_name, age) VALUES ('Daniel', 'Mayer', '35') where id=1";
         let cmd: SqlCommand = Insert::parse(String::from(select), dbs);
 
         match cmd {
@@ -156,12 +156,14 @@ mod tests {
                 command,
                 table,
                 columns,
-                values: _,
+                values,
                 where_clause,
             } => {
                 assert_eq!(command, "INSERT");
                 assert_eq!(table, "user");
                 assert_eq!(columns, vec!["first_name", "last_name", "age"]);
+                assert_eq!(values, vec![vec!["Daniel", "Mayer", "35"]]);
+                println!("{:?}", values);
 
                 let clause = where_clause;
                 assert_eq!(clause.get_operator(), Operator::EQUAL);
