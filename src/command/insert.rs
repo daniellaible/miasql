@@ -122,7 +122,7 @@ mod tests {
         let dbs: Vec<Database> = vec!();
         let stmt = "INSERT INTO user (first_name, last_name, age) VALUES ('daniel', 'mayer', 35)";
         let cmd: SqlCommand = Insert::parse(stmt.to_string(), dbs);
-       
+
 
         match cmd {
             SqlCommand::INSERT {
@@ -165,7 +165,7 @@ mod tests {
 
                 let clause = where_clause;
                 assert_eq!(clause.get_operator(), Operator::EQUAL);
-                assert_eq!(clause.get_column(), "id");
+                assert_eq!(clause.get_column(), "ID");
                 assert_eq!(clause.get_value(), DataType::BigInt { x: 1 });
             }
             _ => (),

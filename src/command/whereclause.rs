@@ -35,12 +35,16 @@ impl WhereClause {
     }
 
     pub fn parse(stmt: &String) -> WhereClause {
-        let lower_case_stmt: String = stmt.to_lowercase();
-        if !lower_case_stmt.contains("where"){
+        let mut upper_case_stmt: String = stmt.to_uppercase();
+        if upper_case_stmt.contains(";"){
+            upper_case_stmt = upper_case_stmt.replace(";", "");
+        }
+
+        if !upper_case_stmt.contains("WHERE"){
             return WhereClause::default();
         }
-        let regex = Regex::new(r"(?i)\bwhere\b\s+([\s\S]*)").unwrap();
-        let captures = regex.captures(stmt).unwrap();
+        let regex = Regex::new(r"(?i)\bWHERE\b\s+([\s\S]*)").unwrap();
+        let captures = regex.captures(&upper_case_stmt).unwrap();
         let where_as_string = captures.get(1).unwrap().as_str();
 
         let mut splits: Vec<&str> = vec!();
