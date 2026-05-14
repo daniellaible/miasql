@@ -3,6 +3,7 @@ use crate::command::sqlcommands::SqlCommand;
 use crate::command::whereclause::WhereClause;
 use crate::database::datatype::DataType;
 use regex::Regex;
+use crate::database::database::Database;
 
 #[derive(Debug)]
 pub struct Insert {
@@ -13,7 +14,7 @@ pub struct Insert {
 }
 
 impl Command for Insert {
-    fn parse(stmt: String) -> SqlCommand {
+    fn parse(stmt: String, dbs: Vec<Database>) -> SqlCommand {
         let table: String = get_table(&stmt);
         let columns: Vec<String> = get_columns(&stmt);
         let values: Vec<Vec<String>> = find_values(&stmt);
@@ -113,12 +114,15 @@ mod tests {
     use crate::command::insert::Insert;
     use crate::command::sqlcommands::SqlCommand;
     use crate::command::sqloperator::Operator;
+    use crate::database::database::Database;
     use crate::database::datatype::DataType;
 
     #[test]
     fn simple_select_without_where_clause() {
+        let dbs: Vec<Database> = vec!();
         let stmt = "INSERT INTO user (first_name, last_name, age) VALUES ('daniel', 'mayer', 35)";
-        let cmd: SqlCommand = Insert::parse(stmt.to_string());
+        let cmd: SqlCommand = Insert::parse(stmt.to_string(), dbs);
+       
 
         match cmd {
             SqlCommand::INSERT {
@@ -143,8 +147,9 @@ mod tests {
 
     #[test]
     fn simple_select_with_where_clause() {
+        let dbs: Vec<Database> = vec!();
         let select = "INSERT INTO user (first_name, last_name, age) VALUES ('daniel', 'mayer', '35') where id=1";
-        let cmd: SqlCommand = Insert::parse(String::from(select));
+        let cmd: SqlCommand = Insert::parse(String::from(select), dbs);
 
         match cmd {
             SqlCommand::INSERT {
@@ -169,9 +174,9 @@ mod tests {
 
     #[test]
     fn select_with_multiple_value_tupels() {
+        let dbs: Vec<Database> = vec!();
         let select = "INSERT INTO user (firstname, lastname, sex) VALUES ('max', 'maxwell', 1.75),('susie', 'sorglos', 'female'), ('hermann', 'etrusker', 'male')";
-
-        let cmd: SqlCommand = Insert::parse(String::from(select));
+        let cmd: SqlCommand = Insert::parse(String::from(select), dbs);
 
         match cmd {
             SqlCommand::INSERT {

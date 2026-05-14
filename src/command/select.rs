@@ -2,6 +2,7 @@ use crate::command::command::Command;
 use crate::command::sqlcommands::SqlCommand;
 use crate::command::whereclause::WhereClause;
 use regex::Regex;
+use crate::database::database::Database;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Select {
@@ -11,7 +12,7 @@ pub struct Select {
 }
 
 impl Command for Select {
-    fn parse(mut stmt: String) -> SqlCommand {
+    fn parse(mut stmt: String, dbs: Vec<Database>) -> SqlCommand {
         stmt = stmt.to_uppercase();
         let columns = get_columns(&stmt);
         let table = get_table_name(&stmt)
@@ -64,7 +65,6 @@ fn get_table_name(stmt: &str) -> Option<&str> {
         let table_name: Option<&str> = Some(splits[1]);
         table_name
     }
-
 }
 
 fn check_for_where(stmt: &String) -> bool {
@@ -91,18 +91,21 @@ mod tests {
     use crate::command::select::Select;
     use crate::command::sqlcommands::SqlCommand;
     use crate::command::sqloperator::Operator;
+    use crate::database::database::Database;
     use crate::database::datatype::DataType;
 
     #[test]
     fn simple_select_with_where_clause() {
+        let dbs: Vec<Database> = vec!();
         let statement = "SELECT name, country FROM population WHERE id=1";
-        let _select: SqlCommand = Select::parse(String::from(statement));
+        let _select: SqlCommand = Select::parse(String::from(statement), dbs);
     }
 
     #[test]
     fn simple_select_with_where_clause_lowercase() {
+        let dbs: Vec<Database> = vec!();
         let select = "select name, country from population where id=1";
-        let select: SqlCommand = Select::parse(String::from(select));
+        let select: SqlCommand = Select::parse(String::from(select), dbs);
 
         match select {
             SqlCommand::SELECT {
@@ -125,11 +128,11 @@ mod tests {
         }
     }
 
-
     #[test]
     fn select_with_the_stars(){
+        let dbs: Vec<Database> = vec!();
         let select = "select * from users where id = 1";
-        let select: SqlCommand = Select::parse(String::from(select));
+        let select: SqlCommand = Select::parse(String::from(select), dbs);
         println!("{:#?}", select);
 
         match select {
@@ -154,11 +157,11 @@ mod tests {
         }
     }
 
-
     #[test]
     fn simple_select_with_where_clause_less_than() {
+        let dbs: Vec<Database> = vec!();
         let select = "select name, country from population where id<100";
-        let select: SqlCommand = Select::parse(String::from(select));
+        let select: SqlCommand = Select::parse(String::from(select), dbs);
 
         match select {
             SqlCommand::SELECT {
@@ -183,8 +186,9 @@ mod tests {
 
     #[test]
     fn simple_select_with_where_clause_greater_than() {
+        let dbs: Vec<Database> = vec!();
         let select = "select name, country from population where id>100";
-        let select: SqlCommand = Select::parse(String::from(select));
+        let select: SqlCommand = Select::parse(String::from(select), dbs);
 
         match select {
             SqlCommand::SELECT {
@@ -209,8 +213,9 @@ mod tests {
 
     #[test]
     fn simple_select_without_where_clause() {
+        let dbs: Vec<Database> = vec!();
         let select = "SELECT name, country FROM population";
-        let select: SqlCommand = Select::parse(String::from(select));
+        let select: SqlCommand = Select::parse(String::from(select), dbs);
 
         match select {
             SqlCommand::SELECT {

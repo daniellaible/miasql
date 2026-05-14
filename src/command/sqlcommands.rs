@@ -10,4 +10,5 @@ pub enum SqlCommand {
     UPDATE {command: String, table: String, columns: Vec<String>, values: Vec<String>, where_clause: WhereClause },
     DELETE {command: String, table: String, columns: Vec<String>, values: Vec<String>, where_clause: WhereClause },
     TRUNCATE {command: String, table: String, columns: Vec<String>, values: Vec<String>, where_clause: WhereClause },
+    UNDEFINED
 }
