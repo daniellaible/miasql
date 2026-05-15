@@ -15,10 +15,12 @@ pub struct Delete {
 impl Command for Delete {
     fn parse(stmt: String, dbs: Vec<Database>) -> SqlCommand {
         let table = get_table(&stmt);
-        println!("table: {:?}", table);
         let clause: WhereClause = WhereClause::parse(&stmt);
-        println!("clause: {:?}", clause);
-        SqlCommand::UNDEFINED
+        SqlCommand::DELETE {
+            command:String::from("DELETE"),
+            table,
+            where_clause: clause,
+        }
     }
 }
 

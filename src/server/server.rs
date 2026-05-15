@@ -4,6 +4,8 @@ use crate::command::select::Select;
 use crate::command::sqlcommands::SqlCommand;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
+use crate::command::delete::Delete;
+use crate::command::sqlcommands::SqlCommand::DELETE;
 use crate::command::update::Update;
 use crate::database::database::Database;
 
@@ -42,7 +44,8 @@ pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database> ) -> s
                 println!("{:?}", sql);
 
             } else if command.starts_with("DELETE") {
-                println!("DELETE recognized");
+                sql = Delete::parse(String::from(command), dbs.clone());
+                println!("{:?}", sql);
 
             } else if command.starts_with("CREATE") {
                 println!("CREATE recognized");
