@@ -28,29 +28,40 @@ pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database> ) -> s
         } else if command == "SHOW TABLES" {
         } else {
             let mut sql:SqlCommand = SqlCommand::UNDEFINED;
+
             if command.starts_with("SELECT") {
                 sql = Select::parse(String::from(command), dbs.clone());
                 println!("{:?}", sql);
+
             } else if command.starts_with("INSERT") {
                 sql = Insert::parse(String::from(command), dbs.clone());
                 println!("{:?}", sql);
+
             } else if command.starts_with("UPDATE") {
                 sql = Update::parse(String::from(command), dbs.clone());
                 println!("{:?}", sql);
+
             } else if command.starts_with("DELETE") {
                 println!("DELETE recognized");
+
             } else if command.starts_with("CREATE") {
                 println!("CREATE recognized");
+
             } else if command.starts_with("ALTER") {
                 println!("ALTER recognized");
+
             } else if command.starts_with("DROP") {
                 println!("DROP recognized");
+
             } else if command.starts_with("TRUNCATE") {
                 println!("TRUNCATE recognized");
+
             } else if command.starts_with("GRANT") {
                 println!("GRANT recognized");
+
             } else if command.starts_with("REVOKE") {
                 println!("REVOKE recognized");
+
             } else if command.starts_with("USE") {
                 println!("REVOKE recognized");
             }

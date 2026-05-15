@@ -29,8 +29,8 @@ We don't have a website yet - we are working on it, but lets get the database ru
 | 0.4.0     | the ledger is implemented                                                                          |
 | 0.5.0     | updating the b-tree on the fly                                                                     |
 | 0.6.0    | nested functions                                                                                   |
-| 0.7.0    | implementing joins and views                                                                       |
- | 0.8.0   | implementing order by / group by / having                                                          |
+| 0.7.0    | implementing order by / group by / having  - constraints                                           |
+ | 0.8.0   | implementing joins and views                                                                       |
 | 0.9.0    | implementing aggregate functions (count/sum/avg etc..) and subqueries                              |
 | 0.10.0   | implementing String functions                                                                      |
 | 0.11.0   | implementing date and time commands                                                                |
@@ -38,8 +38,8 @@ We don't have a website yet - we are working on it, but lets get the database ru
 | 0.13.0  | implementing user management                                                                       |
  | 0.14.0 | use ssh as shell and not standard socket                                                           |
 | 0.15.0 | backup importer for main databases                                                                 |
-| 0.16.0 | sharding                                                                                             |
-| 0.17.0 | clusters                                                                                             |
+| 0.16.0 | sharding                                                                                           |
+| 0.17.0 | clusters                                                                                           |
 
 
 
