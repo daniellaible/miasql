@@ -19,6 +19,7 @@ mod command {
     pub mod sqlcommands;
     pub mod permissions;
     pub mod update;
+    pub mod delete;
     pub mod constraint;
 }
 
