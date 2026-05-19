@@ -3,6 +3,7 @@
 
 ## Commands
 
+### Base Commands
 + CREATE_TABLE
   + add Tokens in the enum that represent the constraints
   + CREATE TABLE Persons (PersonID int PRIMARY KEY, LastName varchar(255) NOT NULL, FirstName varchar(255), Address varchar(255), City varchar(255));
@@ -25,12 +26,63 @@
   + ALTER TABLE Orders DROP FOREIGN KEY FK_PersonOrder;
 + TRUNCATE
   +  TRUNCATE TABLE Categories;
++ Inner Join
++ Outer Join
++ Full Join
+
+### KeyWords
+  +
+
+
+### Functions
+#### Math:
+  + Trim
+  + ABS
+  + ASIN
+  + ATAN
+  + AVG
+  + CEIL
+  + COS
+  + COT
+  + COUNT
+  + FLOOR
+  + LOG
+  + MAX
+  + MIN
+  + PI
+  + POWER
+  + RAND
+  + SIN
+  + SQRT
+  + SUM 
+  + TAB
+  + TRUNCATE
+
+#### String:
+  + ASCII
+  + CONCAT
+  + FORMAT
+  + INSERT
+  + REPLACE
+  + SUBSTRING
+  + TRIM
+  + UPPER
 
 ## MISC
 + WhereClause can not handle anything else than BigInt - should be able to handle VarChars too
 
-
 ## Datatypes
+  + CHAR
+  + BINARY
+  + VARBINARY
+  + BLOB
+  + TINYBLOB
+  + MEDIUMBLOB
+  + LONGBLOB
+  + TEXT
+  + MEDIUMTEXT
+  + LONGTEXT
+
 
 ## Database
 + column definitions need to have constraints, not only just names 

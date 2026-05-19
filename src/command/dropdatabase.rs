@@ -1,5 +1,5 @@
+use regex::{Captures, Regex};
 use crate::command::command::Command;
-use crate::command::droptable::DropTable;
 use crate::command::sqlcommands::SqlCommand;
 use crate::database::database::Database;
 
@@ -9,7 +9,15 @@ pub struct DropDatabase {}
 
 impl Command for DropDatabase {
     fn parse(stmt: String, dbs: Vec<Database>) -> SqlCommand {
-        todo!()
+        let regex = Regex::new(r"(?i)DATABASE\s+(.+)").unwrap();
+        let captures:Captures = regex.captures(&stmt).unwrap();
+        let database = captures.get(1).unwrap().as_str();
+        println!("{}", database);
+
+        SqlCommand::DROP_DATABASE {
+            command: String::from("DROP DATABASE"),
+            database: database.to_string()
+        }
     }
 }
 

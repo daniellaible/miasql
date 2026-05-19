@@ -60,3 +60,8 @@ not stored in the ledger. The first entry in the ledger is always a CREATE DATAB
 The ledger is the build-in backup system of the database.
 
 There is a plan on building a ledger viewer.
+
+
+## Syntax
+"DROP TABLE IF EXISTS table_name;" is not supported use "DROP TABLE table_name" instead.
+This is true for Dropping Databases as well.
