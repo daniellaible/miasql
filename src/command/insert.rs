@@ -1,17 +1,11 @@
 use crate::command::command::Command;
 use crate::command::sqlcommands::SqlCommand;
 use crate::command::whereclause::WhereClause;
-use crate::database::datatype::DataType;
-use regex::Regex;
 use crate::database::database::Database;
+use regex::Regex;
 
 #[derive(Debug)]
-pub struct Insert {
-    table_name: String,
-    columns: Vec<String>,
-    values: Vec<Vec<DataType>>,
-    where_clause: WhereClause,
-}
+pub struct Insert {}
 
 impl Command for Insert {
     fn parse(stmt: String, dbs: Vec<Database>) -> SqlCommand {
@@ -100,10 +94,6 @@ fn retrieve_table_n_columns(stmt: &String) -> &str {
 impl Insert {
     pub fn default() -> Self {
         Insert {
-            table_name: String::default(),
-            columns: vec![],
-            values: vec![vec![]],
-            where_clause: WhereClause::default(),
         }
     }
 }

@@ -5,11 +5,7 @@ use regex::Regex;
 use crate::database::database::Database;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Select {
-    table_name: String,
-    columns: Vec<String>,
-    where_clause: WhereClause,
-}
+pub struct Select {}
 
 impl Command for Select {
     fn parse(mut stmt: String, dbs: Vec<Database>) -> SqlCommand {
@@ -78,9 +74,6 @@ fn check_for_where(stmt: &String) -> bool {
 impl Select {
     pub fn default() -> Self {
         Select {
-            table_name: String::default(),
-            columns: vec![],
-            where_clause: WhereClause::default(),
         }
     }
 }

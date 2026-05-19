@@ -13,6 +13,7 @@ pub enum DataType {
     Date { x: i64 },
     Time { x: i64 },
     DateTime { x: i64 },
+    Null,
     Undefined,
 }
 
@@ -38,6 +39,7 @@ pub fn to_datatype(value: &str) -> DataType {
         "DATE" => DataType::Date { x: 0 },
         "TIME" => DataType::Time { x: 0 },
         "DATETIME" => DataType::DateTime { x: 0 },
+        "Null" => DataType::Null,
         _ => DataType::Undefined,
     }
 }

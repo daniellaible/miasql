@@ -1,14 +1,11 @@
-use regex::Regex;
 use crate::command::command::Command;
 use crate::command::sqlcommands::SqlCommand;
-use crate::command::update::Update;
 use crate::command::whereclause::WhereClause;
 use crate::database::database::Database;
+use regex::Regex;
 
 #[derive(Debug)]
 pub struct Delete {
-    table_name: String,
-    where_clause: WhereClause,
 }
 
 
@@ -34,8 +31,6 @@ fn get_table(stmt: &String) -> String {
 impl Delete {
     pub fn default() -> Self {
         Delete {
-            table_name: String::default(),
-            where_clause: WhereClause::default(),
         }
     }
 }
@@ -44,10 +39,7 @@ impl Delete {
 mod tests {
     use crate::command::command::Command;
     use crate::command::delete::Delete;
-    use crate::command::sqlcommands::SqlCommand;
-    use crate::command::sqloperator::Operator;
     use crate::database::database::Database;
-    use crate::database::datatype::DataType;
 
     #[test]
     fn simple_delete_with_where() {

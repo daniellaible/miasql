@@ -21,6 +21,7 @@ mod command {
     pub mod update;
     pub mod delete;
     pub mod constraint;
+    pub mod drop;
 }
 
 mod server{
