@@ -1,15 +1,14 @@
 use crate::command::command::Command;
+use crate::command::delete::Delete;
 use crate::command::insert::Insert;
 use crate::command::select::Select;
 use crate::command::sqlcommands::SqlCommand;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::TcpStream;
-use crate::command::delete::Delete;
-use crate::command::sqlcommands::SqlCommand::DELETE;
 use crate::command::update::Update;
 use crate::database::database::Database;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::TcpStream;
 
-pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database> ) -> std::io::Result<()> {
+pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database>) -> std::io::Result<()> {
     let mut buf = [0u8; 4096];
 
     loop {
@@ -29,44 +28,40 @@ pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database> ) -> s
         } else if command == "SHOW DATABASES" {
         } else if command == "SHOW TABLES" {
         } else {
-            let mut sql:SqlCommand = SqlCommand::UNDEFINED;
+            let mut sql: SqlCommand = SqlCommand::UNDEFINED;
 
             if command.starts_with("SELECT") {
                 sql = Select::parse(String::from(command), dbs.clone());
                 println!("{:?}", sql);
-
             } else if command.starts_with("INSERT") {
                 sql = Insert::parse(String::from(command), dbs.clone());
                 println!("{:?}", sql);
-
             } else if command.starts_with("UPDATE") {
                 sql = Update::parse(String::from(command), dbs.clone());
                 println!("{:?}", sql);
-
             } else if command.starts_with("DELETE") {
                 sql = Delete::parse(String::from(command), dbs.clone());
                 println!("{:?}", sql);
-
             } else if command.starts_with("CREATE") {
                 println!("CREATE recognized");
-
+                println!("Could be CREATE DATABASE or CREATE TABLE");
             } else if command.starts_with("ALTER") {
                 println!("ALTER recognized");
-
+                println!("ALTER command is a bitch");
             } else if command.starts_with("DROP") {
                 println!("DROP recognized");
-
+                println!("Could be DROP DATABASE or DROP TABLE");
             } else if command.starts_with("TRUNCATE") {
                 println!("TRUNCATE recognized");
 
+
             } else if command.starts_with("GRANT") {
                 println!("GRANT recognized");
-
             } else if command.starts_with("REVOKE") {
                 println!("REVOKE recognized");
-
             } else if command.starts_with("USE") {
-                println!("REVOKE recognized");
+                println!("USE recognized");
+                println!("Needs to be the first command");
             }
         }
 
