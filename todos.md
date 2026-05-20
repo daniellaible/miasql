@@ -9,11 +9,6 @@
   + CREATE TABLE Persons (PersonID int PRIMARY KEY, LastName varchar(255) NOT NULL, FirstName varchar(255), Address varchar(255), City varchar(255));
   + CREATE TABLE GermanCustomers AS SELECT * FROM Customers WHERE Country = 'Germany'; 
 + CREATE_DATABASE
-  + DROP DATABASE testDB;
-+ DROP_TABLE 
-  + DROP TABLE Shippers;
-+ DROP_DATABASE
-  + DROP DATABASE testDB;
 + ALTER 
   + ALTER TABLE Customers ADD Email varchar(255); 
   + ALTER TABLE Employees ALTER COLUMN BirthDate BIGINT;
@@ -26,15 +21,34 @@
   + ALTER TABLE Orders DROP FOREIGN KEY FK_PersonOrder;
 + TRUNCATE
   +  TRUNCATE TABLE Categories;
+
+### Joins
 + Inner Join
 + Outer Join
++ Left Join
++ Right Join
++ Self Join
 + Full Join
 
 ### KeyWords
-  +
 
 
-### Functions
+### Functions and Operators
+
+#### Operators
+ + And
+ + Or
+ + Not
+ + UNION ALL
+ + In
+ + Between
+ + Group By
+ + Having
+ + Exists ?
+ + Any
+ + All
+ + 
+
 #### Math:
   + Trim
   + ABS
@@ -67,6 +81,7 @@
   + SUBSTRING
   + TRIM
   + UPPER
+  + LIKE
 
 ## MISC
 + WhereClause can not handle anything else than BigInt - should be able to handle VarChars too

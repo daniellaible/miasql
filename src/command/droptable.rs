@@ -28,11 +28,8 @@ impl DropTable {
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
-
     #[test]
     fn simple_drop_table() {
 

@@ -38,8 +38,9 @@ These are the datatypes we are currently supporting.
 		  ||      -----> Ledger (stores commands on disc)
 		  ||
 		  ||      -----> moi-file Updater (stores data on disc)
+              ||      -----> ledger updates field DataOnDisc
 		  ||
-		  ||      -----> b-tree handler (stores tables in memory)		
+		  ||      -----> update b-tree (stores tables in memory)		
 		  ||
 		  ||
 		  ||

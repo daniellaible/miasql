@@ -1,9 +1,12 @@
+use crate::command::constraint::Constraint;
 use crate::command::whereclause::WhereClause;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum SqlCommand {
     SELECT {command: String, table: String, columns: Vec<String>, values: Vec<String>, where_clause: WhereClause },
-    CREATE_TABLE {command: String, table: String, columns: Vec<String>, values: Vec<String>, where_clause: WhereClause },
+    /// command is always CREATE_DATABASE, in table the table name is stored and in columns is a vector stored that contains tupels
+    /// that are structured like Vec<(column_name, Vec<constraint1, constraint2 ...>)>
+    CREATE_TABLE {command: String, table: String, columns: Vec<(String, Vec<Constraint>)> },
     CREATE_DATABASE {command: String, database: String},
     DROP_TABLE {command: String, table: String},
     DROP_DATABASE{command: String, database: String},
