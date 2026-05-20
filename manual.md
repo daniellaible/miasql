@@ -11,6 +11,8 @@ from third party tinkering, a tool that does not need to earn dividends for some
 
 ## Datatypes
 
+We do not support VarChar. We only support Char as datatype. VarChar seems to be an anachronism.  
+
 These are the datatypes we are currently supporting. 
 * BigInt { 64 bit },
 * Int { 32 bit },
@@ -18,7 +20,7 @@ These are the datatypes we are currently supporting.
 * TinyInt { 8 bit },
 * Decimal { 32 bit },
 * Float { 64 bit },
-* VarChar { String, SizeOf(Pointer) },
+* Char { String, SizeOf(Pointer) },
 * Bool { bool },
 * Date { 64 bit } ... nope - not supported yet,
 * Time { 64 bit } ... nope - not supported yet,

@@ -118,7 +118,7 @@ pub fn save_table_to_disc(table: &Table, path: &String, _uuid: &Uuid) {
                 file.write_all(b"TINYINT").unwrap();
             }
 
-            DataType::VarChar { .. } => {
+            DataType::Char { .. } => {
                 let number_of_letters: i16 = 7;
                 file.write_all(&number_of_letters.to_be_bytes()).unwrap();
                 file.write_all(b"VARCHAR").unwrap();
@@ -155,7 +155,7 @@ pub fn save_table_to_disc(table: &Table, path: &String, _uuid: &Uuid) {
                     file.write_all(&x.to_be_bytes()).unwrap();
                 }
 
-                DataType::VarChar { x, .. } => {
+                DataType::Char { x, .. } => {
                     write_varchar(&mut file, &x).unwrap();
                 }
                 _ => println!("{:?}", cell),
@@ -314,10 +314,10 @@ pub fn read_table_from_disc(path: String, _uuid: Uuid) -> Table {
                     });
                 }
 
-                DataType::VarChar { .. } => {
+                DataType::Char { .. } => {
                     let s = read_varchar(&mut reader).unwrap();
                     let y = s.len();
-                    row.push(DataType::VarChar { x: s, y });
+                    row.push(DataType::Char { x: s, y });
                 }
 
                 DataType::Undefined => {
@@ -466,11 +466,11 @@ mod tests {
         ];
         let types: Vec<DataType> = vec![
             DataType::BigInt { x: 0 },
-            DataType::VarChar {
+            DataType::Char {
                 x: String::from(" "),
                 y: 0,
             },
-            DataType::VarChar {
+            DataType::Char {
                 x: String::from(" "),
                 y: 0,
             },

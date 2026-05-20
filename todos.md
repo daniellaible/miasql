@@ -5,7 +5,6 @@
 
 ### Base Commands
 + CREATE_TABLE
-  + add Tokens in the enum that represent the constraints
   + CREATE TABLE Persons (PersonID int PRIMARY KEY, LastName varchar(255) NOT NULL, FirstName varchar(255), Address varchar(255), City varchar(255));
   + CREATE TABLE GermanCustomers AS SELECT * FROM Customers WHERE Country = 'Germany'; 
 + CREATE_DATABASE

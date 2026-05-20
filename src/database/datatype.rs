@@ -8,7 +8,7 @@ pub enum DataType {
     TinyInt { x: i8 },
     Decimal { x: f32 },
     Float { x: f64 },
-    VarChar { x: String, y: usize },
+    Char { x: String, y: usize },
     Bool { x: bool },
     Date { x: i64 },
     Time { x: i64 },
@@ -34,12 +34,12 @@ pub fn to_datatype(value: &str) -> DataType {
         "TINYINT" => DataType::TinyInt { x: 0 },
         "DECIMAL" => DataType::Decimal { x: 0.0 },
         "FLOAT" => DataType::Float { x: 0.0 },
-        "VARCHAR" => DataType::VarChar { x: String::default(), y: 0 },
+        "VARCHAR" => DataType::Char { x: String::default(), y: 0 },
         "BOOL" => DataType::Bool {x: false},
         "DATE" => DataType::Date { x: 0 },
         "TIME" => DataType::Time { x: 0 },
         "DATETIME" => DataType::DateTime { x: 0 },
-        "Null" => DataType::Null,
+        "NULL" => DataType::Null,
         _ => DataType::Undefined,
     }
 }
