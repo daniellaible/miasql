@@ -4,22 +4,15 @@
 ## Commands
 
 ### Base Commands
-+ CREATE_TABLE
-  + CREATE TABLE Persons (PersonID int PRIMARY KEY, LastName varchar(255) NOT NULL, FirstName varchar(255), Address varchar(255), City varchar(255));
-  + CREATE TABLE GermanCustomers AS SELECT * FROM Customers WHERE Country = 'Germany'; 
-+ CREATE_DATABASE
-+ ALTER 
-  + ALTER TABLE Customers ADD Email varchar(255); 
-  + ALTER TABLE Employees ALTER COLUMN BirthDate BIGINT;
-  + ALTER TABLE Customers DROP COLUMN ContactName
-  + ALTER TABLE Persons DROP CONSTRAINT UC_Person;
-  + ALTER TABLE Persons DROP INDEX UC_Person;
-  + ALTER TABLE Persons DROP CONSTRAINT PK_Person;
-  + ALTER TABLE Persons DROP PRIMARY KEY;
-  + ALTER TABLE Orders DROP CONSTRAINT FK_PersonOrder;
-  + ALTER TABLE Orders DROP FOREIGN KEY FK_PersonOrder;
-+ TRUNCATE
-  +  TRUNCATE TABLE Categories;
+ + use sqlparser with
+   + select
+   + create
+   + drop
+   + alter
+   + insert
+   + update
+   + delete
+   + truncate
 
 ### Joins
 + Inner Join
