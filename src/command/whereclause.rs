@@ -4,9 +4,9 @@ use regex::Regex;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct WhereClause {
-    column: String,
-    operator: Operator,
-    value: DataType,
+    pub(crate) column: String,
+    pub(crate) operator: Operator,
+    pub(crate) value: DataType,
 }
 
 impl WhereClause {
