@@ -9,6 +9,7 @@ use sqlparser::parser::Parser;
 use sqlparser::tokenizer::Token;
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpStream;
+use crate::command;
 use crate::command::sqloperator;
 use crate::command::sqloperator::Operator;
 use crate::command::whereclause::WhereClause;
@@ -106,6 +107,8 @@ fn tokenizer(stmt: &str) -> SqlCommand {
             println!("table: {:?}", insert.table);
         }
         Statement::Query(query) => {
+            let command:SqlCommand = command::select::parse(query.clone());
+
             println!("with: {:?}", query.with);
             let body = *query.body.clone();
             let select = body.as_select().unwrap();
@@ -127,7 +130,7 @@ fn tokenizer(stmt: &str) -> SqlCommand {
             println!("  body.projection: {:?}", select.projection);
             println!("  body.exclude: {:?}", select.exclude);
             println!("  body.into: {:?}", select.into);
-            println!("  body.from: {:?}", select.from);
+            println!("  body.from (tablename): {:?}", select.from);
 
             let table_name: Option<&str> = match select.from.as_slice() {
                 [TableWithJoins { relation, joins }] if joins.is_empty() => match relation {
@@ -139,13 +142,11 @@ fn tokenizer(stmt: &str) -> SqlCommand {
                 },
                 _ => None,
             };
-            println!("  table_name: {:?}", table_name.unwrap());
-
-
+            //println!("  table_name: {:?}", table_name.unwrap());
             println!("  body.lateral_views: {:?}", select.lateral_views);
             println!("  body.prewhere: {:?}", select.prewhere);
 
-            println!("  body.selection: {:?}", select.selection);
+            println!("  body.selection (where part): {:?}", select.selection);
             let Some(expr) = &select.selection else { return SqlCommand::UNDEFINED };
 
             let mut where_clause:WhereClause = WhereClause::default();

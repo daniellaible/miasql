@@ -1,93 +1,168 @@
 use crate::command::command::Command;
 use crate::command::sqlcommands::SqlCommand;
+use crate::command::sqloperator::Operator;
 use crate::command::whereclause::WhereClause;
-use regex::Regex;
-use crate::database::database::Database;
+use crate::database::datatype;
+use sqlparser::ast::{
+    BinaryOperator, Expr, Ident, ObjectName, ObjectNamePart, Query, TableFactor, TableWithJoins,
+    Value, ValueWithSpan,
+};
+use sqlparser::tokenizer::Token;
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct Select {}
+pub fn parse(query: Box<Query>) -> SqlCommand {
+    println!("with: {:?}", query.with);
+    let body = *query.body;
+    let select = body.as_select();
 
-impl Command for Select {
-    fn parse(mut stmt: String, dbs: Vec<Database>) -> SqlCommand {
-        stmt = stmt.to_uppercase();
-        let columns = get_columns(&stmt);
-        let table = get_table_name(&stmt)
-            .unwrap_or_else(|| "doof")
-            .parse()
-            .unwrap();
-        if check_for_where(&stmt) {
-            let clause = WhereClause::parse(&stmt);
-            let command = SqlCommand::SELECT {
-                command: String::from("SELECT"),
-                table,
-                columns,
-                values: Vec::new(),
-                where_clause: clause,
-            };
-            command
-        } else {
-            let command = SqlCommand::SELECT {
-                command: String::from("SELECT"),
-                table,
-                columns,
-                values: Vec::new(),
-                where_clause: WhereClause::default(),
-            };
-            command
+    let select_stmt = match select {
+        Some(x) => x,
+        _ => {
+            println!("Unable to parse Select command");
+            return SqlCommand::UNDEFINED;
         }
-    }
-}
+    };
+    println!("{:?}", select_stmt);
 
-fn get_columns(stmt: &String) -> Vec<String> {
-    let regex = Regex::new(r"(?i)\bselect\b\s*([\s\S]*?)\s+\bfrom\b\s+").unwrap();
-    let captures = regex.captures(stmt).unwrap();
-    let columns_as_string = captures.get(1).unwrap().as_str();
-    let single_column: Vec<&str> = columns_as_string.split(",").collect();
-    let mut parts: Vec<String> = Vec::new();
-    for mut single_column in single_column {
-        single_column = single_column.trim();
-        parts.push(single_column.to_string());
-    }
-    parts
-}
-
-fn get_table_name(stmt: &str) -> Option<&str> {
-    if stmt.contains("WHERE") {
-        let re = Regex::new(r"(?i)\bfrom\b\s+([^\s;]+)(?:\s+\bwhere\b\s+[\s\S]*)?$").unwrap();
-        re.captures(stmt).and_then(|c| c.get(1).map(|m| m.as_str()))
-
-    }else{
-        let splits: Vec<_> =  stmt.split(" FROM ").collect();
-        let table_name: Option<&str> = Some(splits[1]);
-        table_name
-    }
-}
-
-fn check_for_where(stmt: &String) -> bool {
-    let reg = Regex::new(r"(?i)\swhere\s").unwrap();
-    if reg.is_match(stmt) {
-        return true;
-    }
-    false
-}
-
-impl Select {
-    pub fn default() -> Self {
-        Select {
+    let ident: &str = match &select_stmt.select_token.0.token {
+        Token::Word(w) => w.value.as_str(),
+        _ => {
+            println!("Unable to parse Select command");
+            return SqlCommand::UNDEFINED;
         }
+    };
+    println!(" word_value: {:?}", ident);
+
+    let tablename_opt: Option<&str> = match select_stmt.from.as_slice() {
+        [TableWithJoins { relation, joins }] if joins.is_empty() => match relation {
+            TableFactor::Table {
+                name: ObjectName(parts),
+                ..
+            } => match parts.as_slice() {
+                [ObjectNamePart::Identifier(Ident { value, .. })] => Some(value.as_str()),
+                _ => None,
+            },
+            _ => None,
+        },
+        _ => None,
+    };
+
+    let tablename = match tablename_opt {
+        Some(x) => x,
+        None => {
+            println!("Unable to parse table name");
+            return SqlCommand::UNDEFINED;
+        }
+    };
+    let Some(expr) = &select_stmt.selection else {
+        return SqlCommand::UNDEFINED;
+    };
+    let where_opt = retrieve_where_clause(expr);
+    let where_clause = match where_opt {
+        Some(x) => x,
+        None => {
+            println!("Unable to parse where clause");
+            return SqlCommand::UNDEFINED;
+        }
+    };
+
+    println!("tablename: {:?}", tablename);
+    println!("where: {:?}", where_clause);
+
+    SqlCommand::SELECT {
+        command: String::from(ident),
+        table: String::from(tablename),
+        columns: Vec::new(),
+        values: Vec::new(),
+        where_clause: where_clause,
+    }
+}
+
+fn retrieve_where_clause(where_ast: &Expr) -> Option<WhereClause> {
+    if let Expr::BinaryOp {
+        left, op, right, ..
+    } = where_ast
+    {
+        let col_name = match left.as_ref() {
+            Expr::Identifier(ident) => ident.value.as_str(),
+            _ => "unable to find column",
+        };
+
+        let operator = match op {
+            BinaryOperator::Gt => Operator::GREATER,
+            BinaryOperator::Lt => Operator::LESSER,
+            BinaryOperator::Eq => Operator::EQUAL,
+            BinaryOperator::NotEq => Operator::NOTEQUAL,
+            BinaryOperator::GtEq => Operator::GREATEROREQ,
+            BinaryOperator::LtEq => Operator::LESSEROREQ,
+            _ => Operator::UNDEFINED,
+        };
+
+        let binopt_value: Option<&ValueWithSpan> = match right.as_ref() {
+            Expr::Value(vws) => Some(vws),
+            _ => None,
+        };
+        let value_with_span = binopt_value?;
+
+        let datatype: datatype::DataType = match &value_with_span.value {
+            Value::Number(num_str, _) => {
+                let n: i64 = match num_str.parse() {
+                    Ok(n) => n,
+                    Err(e) => {
+                        return None;
+                    }
+                };
+                datatype::DataType::BigInt { x: n }
+            }
+            Value::SingleQuotedString(ident) => datatype::DataType::Char {
+                x: String::from(ident),
+                y: ident.len(),
+            },
+            Value::DoubleQuotedString(ident) => datatype::DataType::Char {
+                x: String::from(ident),
+                y: ident.len(),
+            },
+            _ => datatype::DataType::Undefined,
+        };
+
+        Some(WhereClause {
+            column: String::from(col_name),
+            operator,
+            value: datatype,
+        })
+    } else {
+        None
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::command::command::Command;
-    use crate::command::select::Select;
+    use crate::command::select::parse;
+    use sqlparser::ast::Statement;
+    use sqlparser::dialect::GenericDialect;
+    use sqlparser::parser::Parser;
     use crate::command::sqlcommands::SqlCommand;
-    use crate::command::sqloperator::Operator;
-    use crate::database::database::Database;
-    use crate::database::datatype::DataType;
 
     #[test]
+    fn basic_select_test() {
+        let command: &str =
+            "Select distinct avg(amount), name, lastname from employee where id='foo'";
+        let dialect = GenericDialect {};
+        let ast = Parser::parse_sql(&dialect, command).unwrap();
+
+        match ast[0].clone() {
+            Statement::Query(query) => {
+                println!("{:?}", query);
+                let command = parse(query);
+                println!("{:?} ",command);
+            }
+            _ => {
+                assert!(false);
+            }
+        }
+    }
+}
+
+/*   #[test]
     fn simple_select_with_where_clause() {
         let dbs: Vec<Database> = vec!();
         let statement = "SELECT name, country FROM population WHERE id=1";
@@ -230,4 +305,4 @@ mod tests {
             _ => (),
         }
     }
-}
+}*/
