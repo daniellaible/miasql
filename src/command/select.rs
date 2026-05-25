@@ -96,21 +96,24 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
     let distinct = extract_distinct(select_stmt);
     let group_by = extract_group_by(select_stmt);
     let order_by = extract_order_by(&query);
+    let columns = extract_columns(select_stmt);
 
 
     println!("tablename: {:?}", tablename);
     println!("where: {:?}", where_clause);
 
-    SqlCommand::SELECT {
+    let command = SqlCommand::SELECT {
         command: String::from(ident),
         table: String::from(tablename),
-        columns: Vec::new(),
-        values: Vec::new(),
+        columns,
         distinct,
         group_by,
         order_by,
-        where_clause: where_clause,
-    }
+        where_clause,
+    };
+    println!("command: {:?}", command);
+    command
+
 }
 
 fn parse_projection(item: &SelectItem) -> Option<Projection> {
@@ -238,7 +241,7 @@ fn extract_order_by(query: &Query) -> Vec<String> {
 fn extract_order_expr(order_expr: &sqlparser::ast::OrderByExpr) -> Option<String> {
     let name = extract_expr_identifier(&order_expr.expr)?;
 
-    match order_expr.asc {
+    match order_expr.options.asc {
         Some(true) => Some(format!("{} ASC", name)),
         Some(false) => Some(format!("{} DESC", name)),
         None => Some(name),
@@ -318,6 +321,22 @@ fn retrieve_where_clause(where_ast: &Expr) -> Option<WhereClause> {
     }
 }
 
+fn extract_columns(select_stmt: &Select) -> Vec<String> {
+    let mut columns = Vec::new();
+
+    for item in &select_stmt.projection {
+        match parse_projection(item) {
+            Some(Projection::Column(name)) => columns.push(name),
+            Some(Projection::Function { name, column }) => {
+                columns.push(format!("{}({})", name, column));
+            }
+            None => {}
+        }
+    }
+
+    columns
+}
+
 #[cfg(test)]
 mod tests {
     use crate::command::select::parse;
@@ -329,7 +348,11 @@ mod tests {
     #[test]
     fn basic_select_test() {
         let command: &str =
-            "Select distinct avg(amount), sum(name), lastname from employee where id='foo' group By lastname, order by lastname";
+            "SELECT DISTINCT avg(amount), sum(name), lastname
+                FROM employee
+                WHERE id='foo'
+                GROUP BY lastname
+                ORDER BY lastname";
         let dialect = GenericDialect {};
         let ast = Parser::parse_sql(&dialect, command).unwrap();
 

@@ -7,7 +7,6 @@ pub enum SqlCommand {
         command: String,
         table: String,
         columns: Vec<String>,
-        values: Vec<String>,
         where_clause: WhereClause,
         distinct: bool,
         group_by: Vec<String>,
