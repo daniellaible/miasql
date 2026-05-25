@@ -32,7 +32,6 @@ pub struct ParsedFunction {
 
 
 pub fn parse(query: Box<Query>) -> SqlCommand {
-    println!("with: {:?}", query.with);
     let body = *query.body.clone();
     let select = body.as_select();
 
@@ -43,10 +42,8 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
             return SqlCommand::UNDEFINED;
         }
     };
-    println!("{:?}", select_stmt);
 
     let ident = retrieve_identifier(&select_stmt);
-    println!(" word_value: {:?}", ident);
 
     let tablename_opt: Option<&str> = match select_stmt.from.as_slice() {
         [TableWithJoins { relation, joins }] if joins.is_empty() => match relation {
@@ -70,37 +67,31 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
         }
     };
 
-    let Some(expr) = &select_stmt.selection else {
-        return SqlCommand::UNDEFINED;
-    };
-    let where_opt = retrieve_where_clause(expr);
-    let where_clause = match where_opt {
-        Some(x) => x,
-        None => {
-            println!("Unable to parse where clause");
-            return SqlCommand::UNDEFINED;
-        }
+    let where_clause = match &select_stmt.selection {
+        Some(expr) => match retrieve_where_clause(expr) {
+            Some(x) => x,
+            None => {
+                println!("Unable to parse where clause");
+                return SqlCommand::UNDEFINED;
+            }
+        },
+        None => WhereClause {
+            column: String::new(),
+            operator: Operator::UNDEFINED,
+            value: datatype::DataType::Undefined,
+        },
     };
 
     let foo = &select_stmt.projection;
     let bar = foo.iter();
     for val in bar {
         let parsed = parse_projection(val);
-        println!("{:?}", parsed);
-
-/*        if let Some(func) = parsed {
-            println!("function = {}, column = {}", func.name, func.column);
-        }*/
     }
 
     let distinct = extract_distinct(select_stmt);
     let group_by = extract_group_by(select_stmt);
     let order_by = extract_order_by(&query);
     let columns = extract_columns(select_stmt);
-
-
-    println!("tablename: {:?}", tablename);
-    println!("where: {:?}", where_clause);
 
     let command = SqlCommand::SELECT {
         command: String::from(ident),
@@ -340,176 +331,180 @@ fn extract_columns(select_stmt: &Select) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use crate::command::select::parse;
+    use crate::command::sqlcommands::SqlCommand;
+    use crate::command::sqloperator::Operator;
+    use crate::database::datatype;
     use sqlparser::ast::Statement;
     use sqlparser::dialect::GenericDialect;
     use sqlparser::parser::Parser;
-    use crate::command::sqlcommands::SqlCommand;
+
+    fn parse_select(sql: &str) -> SqlCommand {
+        let dialect = GenericDialect {};
+        let ast = Parser::parse_sql(&dialect, sql).unwrap();
+
+        match ast.into_iter().next().unwrap() {
+            Statement::Query(query) => parse(query),
+            _ => panic!("expected query"),
+        }
+    }
 
     #[test]
-    fn basic_select_test() {
-        let command: &str =
+    fn select_with_distinct_group_by_and_order_by() {
+        let command = parse_select(
             "SELECT DISTINCT avg(amount), sum(name), lastname
-                FROM employee
-                WHERE id='foo'
-                GROUP BY lastname
-                ORDER BY lastname";
-        let dialect = GenericDialect {};
-        let ast = Parser::parse_sql(&dialect, command).unwrap();
+             FROM employee
+             WHERE id = 'foo'
+             GROUP BY lastname
+             ORDER BY lastname"
+        );
 
-        match ast[0].clone() {
-            Statement::Query(query) => {
-                println!("{:?}", query);
-                let command = parse(query);
-                println!("{:?} ",command);
+        match command {
+            SqlCommand::SELECT {
+                command,
+                table,
+                columns,
+                distinct,
+                group_by,
+                order_by,
+                where_clause,
+            } => {
+                assert_eq!(command, "SELECT");
+                assert_eq!(table, "employee");
+                assert_eq!(
+                    columns,
+                    vec![
+                        "avg(amount)".to_string(),
+                        "sum(name)".to_string(),
+                        "lastname".to_string()
+                    ]
+                );
+                assert!(distinct);
+                assert_eq!(group_by, vec!["lastname".to_string()]);
+                assert_eq!(order_by, vec!["lastname".to_string()]);
+
+                assert_eq!(where_clause.column, "id");
+                assert_eq!(where_clause.operator, Operator::EQUAL);
+                assert_eq!(
+                    where_clause.value,
+                    datatype::DataType::Char {
+                        x: "foo".to_string(),
+                        y: 3,
+                    }
+                );
             }
-            _ => {
-                assert!(false);
+            _ => panic!("expected SELECT"),
+        }
+    }
+
+    #[test]
+    fn select_with_order_by_desc() {
+        let command = parse_select(
+            "SELECT lastname
+             FROM employee
+             WHERE id = 1
+             ORDER BY lastname DESC"
+        );
+
+        match command {
+            SqlCommand::SELECT {
+                columns,
+                distinct,
+                group_by,
+                order_by,
+                where_clause,
+                ..
+            } => {
+                assert_eq!(columns, vec!["lastname".to_string()]);
+                assert!(!distinct);
+                assert!(group_by.is_empty());
+                assert_eq!(order_by, vec!["lastname DESC".to_string()]);
+                assert_eq!(where_clause.column, "id");
+                assert_eq!(where_clause.operator, Operator::EQUAL);
+                assert_eq!(where_clause.value, datatype::DataType::BigInt { x: 1 });
             }
+            _ => panic!("expected SELECT"),
+        }
+    }
+
+    #[test]
+    fn select_with_order_by_asc() {
+        let command = parse_select(
+            "SELECT lastname
+             FROM employee
+             WHERE id = 1
+             ORDER BY lastname ASC"
+        );
+
+        match command {
+            SqlCommand::SELECT { order_by, .. } => {
+                assert_eq!(order_by, vec!["lastname ASC".to_string()]);
+            }
+            _ => panic!("expected SELECT"),
+        }
+    }
+
+    #[test]
+    fn select_with_multiple_group_by_columns() {
+        let command = parse_select(
+            "SELECT firstname, lastname
+             FROM employee
+             WHERE id = 1
+             GROUP BY firstname, lastname"
+        );
+
+        match command {
+            SqlCommand::SELECT { columns, group_by, .. } => {
+                assert_eq!(
+                    columns,
+                    vec!["firstname".to_string(), "lastname".to_string()]
+                );
+                assert_eq!(
+                    group_by,
+                    vec!["firstname".to_string(), "lastname".to_string()]
+                );
+            }
+            _ => panic!("expected SELECT"),
+        }
+    }
+
+    #[test]
+    fn select_with_multiple_order_by_columns() {
+        let command = parse_select(
+            "SELECT firstname, lastname
+             FROM employee
+             WHERE id = 1
+             ORDER BY lastname DESC, firstname ASC"
+        );
+
+        match command {
+            SqlCommand::SELECT { order_by, .. } => {
+                assert_eq!(
+                    order_by,
+                    vec![
+                        "lastname DESC".to_string(),
+                        "firstname ASC".to_string()
+                    ]
+                );
+            }
+            _ => panic!("expected SELECT"),
+        }
+    }
+
+    #[test]
+    fn select_with_numeric_where_clause() {
+        let command = parse_select(
+            "SELECT name
+             FROM employee
+             WHERE id >= 100"
+        );
+
+        match command {
+            SqlCommand::SELECT { where_clause, .. } => {
+                assert_eq!(where_clause.column, "id");
+                assert_eq!(where_clause.operator, Operator::GREATEROREQ);
+                assert_eq!(where_clause.value, datatype::DataType::BigInt { x: 100 });
+            }
+            _ => panic!("expected SELECT"),
         }
     }
 }
-
-/*   #[test]
-    fn simple_select_with_where_clause() {
-        let dbs: Vec<Database> = vec!();
-        let statement = "SELECT name, country FROM population WHERE id=1";
-        let _select: SqlCommand = Select::parse(String::from(statement), dbs);
-    }
-
-    #[test]
-    fn simple_select_with_where_clause_lowercase() {
-        let dbs: Vec<Database> = vec!();
-        let select = "select name, country from population where id=1";
-        let select: SqlCommand = Select::parse(String::from(select), dbs);
-
-        match select {
-            SqlCommand::SELECT {
-                command,
-                table,
-                columns,
-                values: _,
-                where_clause,
-            } => {
-                assert_eq!(command, "SELECT");
-                assert_eq!(table, "POPULATION");
-                assert_eq!(columns, vec!["NAME", "COUNTRY"]);
-
-                let clause = where_clause;
-                assert_eq!(clause.get_operator(), Operator::EQUAL);
-                assert_eq!(clause.get_column(), "ID");
-                assert_eq!(clause.get_value(), DataType::BigInt { x: 1 });
-            }
-            _ => (),
-        }
-    }
-
-    #[test]
-    fn select_with_the_stars(){
-        let dbs: Vec<Database> = vec!();
-        let select = "select * from users where id = 1";
-        let select: SqlCommand = Select::parse(String::from(select), dbs);
-        println!("{:#?}", select);
-
-        match select {
-            SqlCommand::SELECT {
-                command,
-                table,
-                columns,
-                values: _,
-                where_clause,
-            } => {
-                assert_eq!(command, "SELECT");
-                assert_eq!(table, "USERS");
-                assert_eq!(columns, vec!["*"]);
-
-                let clause = where_clause;
-                assert_eq!(clause.get_operator(), Operator::EQUAL);
-                assert_eq!(clause.get_column(), "ID");
-                assert_eq!(clause.get_value(), DataType::BigInt { x: 1 });
-
-            }
-            _ => (),
-        }
-    }
-
-    #[test]
-    fn simple_select_with_where_clause_less_than() {
-        let dbs: Vec<Database> = vec!();
-        let select = "select name, country from population where id<100";
-        let select: SqlCommand = Select::parse(String::from(select), dbs);
-
-        match select {
-            SqlCommand::SELECT {
-                command,
-                table,
-                columns,
-                values: _,
-                where_clause,
-            } => {
-                assert_eq!(command, "SELECT");
-                assert_eq!(table, "POPULATION");
-                assert_eq!(columns, vec!["NAME", "COUNTRY"]);
-
-                let clause = where_clause;
-                assert_eq!(clause.get_operator(), Operator::LESSER);
-                assert_eq!(clause.get_column(), "ID");
-                assert_eq!(clause.get_value(), DataType::BigInt { x: 100 });
-            }
-            _ => (),
-        }
-    }
-
-    #[test]
-    fn simple_select_with_where_clause_greater_than() {
-        let dbs: Vec<Database> = vec!();
-        let select = "select name, country from population where id>100";
-        let select: SqlCommand = Select::parse(String::from(select), dbs);
-
-        match select {
-            SqlCommand::SELECT {
-                command,
-                table,
-                columns,
-                values: _,
-                where_clause,
-            } => {
-                assert_eq!(command, "SELECT");
-                assert_eq!(table, "POPULATION");
-                assert_eq!(columns, vec!["NAME", "COUNTRY"]);
-
-                let clause = where_clause;
-                assert_eq!(clause.get_operator(), Operator::GREATER);
-                assert_eq!(clause.get_column(), "ID");
-                assert_eq!(clause.get_value(), DataType::BigInt { x: 100 });
-            }
-            _ => (),
-        }
-    }
-
-    #[test]
-    fn simple_select_without_where_clause() {
-        let dbs: Vec<Database> = vec!();
-        let select = "SELECT name, country FROM population";
-        let select: SqlCommand = Select::parse(String::from(select), dbs);
-
-        match select {
-            SqlCommand::SELECT {
-                command,
-                table,
-                columns,
-                values: _,
-                where_clause,
-            } => {
-                assert_eq!(command, "SELECT");
-                assert_eq!(table, "POPULATION");
-                assert_eq!(columns, vec!["NAME", "COUNTRY"]);
-
-                let clause = where_clause;
-                assert_eq!(clause.get_operator(), Operator::UNDEFINED);
-                assert_eq!(clause.get_column(), "");
-                assert_eq!(clause.get_value(), DataType::Undefined);
-            }
-            _ => (),
-        }
-    }
-}*/
