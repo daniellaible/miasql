@@ -128,12 +128,6 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
         },
     };
 
-    let foo = &select_stmt.projection;
-    let bar = foo.iter();
-    for val in bar {
-        let parsed = parse_projection(val);
-    }
-
     let distinct = extract_distinct(select_stmt);
     let group_by = extract_group_by(select_stmt);
     let order_by = extract_order_by(&query);
@@ -149,7 +143,6 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
         joins,
         where_clause,
     };
-    println!("command: {:?}", command);
     command
 }
 
@@ -245,79 +238,9 @@ fn parse_projection(item: &SelectItem) -> Option<Projection> {
                 column: ident.value.clone(),
             })
         }
-
         _ => None,
     }
 }
-
-/*fn parse_function(item: &SelectItem) -> Option<ParsedFunction> {
-    let func = match item {
-        SelectItem::UnnamedExpr(Expr::Function(func)) => func,
-        _ => return None,
-    };
-
-    let args = match &func.args {
-        FunctionArguments::List(FunctionArgumentList {
-                                    duplicate_treatment: None,
-                                    args,
-                                    clauses,
-                                }) if clauses.is_empty() => args,
-        _ => return None,
-    };
-
-    if func.filter.is_some() || func.over.is_some() || !func.within_group.is_empty() {
-        return None;
-    }
-
-    let ident = match &args[..] {
-        [FunctionArg::Unnamed(FunctionArgExpr::Expr(Expr::Identifier(ident)))] => ident,
-        _ => return None,
-    };
-
-    let math_functions = match func.name.to_string().to_ascii_lowercase().as_str() {
-        "avg" => FunctionKind::Avg,
-        "sum" => FunctionKind::Sum,
-        "count" => FunctionKind::Count,
-        "abs" => FunctionKind::Abs,
-        "acos" => FunctionKind::Acos,
-        "asin" => FunctionKind::Asin,
-        "atan" => FunctionKind::Atan,
-        "ceil" => FunctionKind::Ceil,
-        "ceiling" => FunctionKind::Ceiling,
-        "cos" => FunctionKind::Cos,
-        "cot" => FunctionKind::Cot,
-        "degrees" => FunctionKind::Degrees,
-        "div" => FunctionKind::Div  ,
-        "exp" => FunctionKind::Exp,
-        "floor" => FunctionKind::Floor,
-        "greatest" => FunctionKind::Greatest,
-        "least" => FunctionKind::Least,
-        "ln" => FunctionKind::Ln,
-        "log" => FunctionKind::Log,
-        "log10" => FunctionKind::Log10,
-        "log2" => FunctionKind::Log2,
-        "max" => FunctionKind::Max,
-        "min" => FunctionKind::Min,
-        "mod" => FunctionKind::Mod,
-        "pi" => FunctionKind::Pi,
-        "pow" => FunctionKind::Pow,
-        "power" => FunctionKind::Power,
-        "radians" => FunctionKind::Radians,
-        "rand"  => FunctionKind::Rand,
-        "round" => FunctionKind::Round,
-        "sign" => FunctionKind::Sign,
-        "sin" => FunctionKind::Sin,
-        "sort" => FunctionKind::Sort,
-        "tan" => FunctionKind::Tan,
-        "truncate" => FunctionKind::Truncate,
-        _ => return None,
-    };
-
-    Some(ParsedFunction {
-        kind: math_functions,
-        column: ident.value.clone(),
-    })
-}*/
 
 fn retrieve_identifier(select_stmt: &&Select) -> String {
     let ident: &str = match &select_stmt.select_token.0.token {
@@ -609,6 +532,32 @@ mod tests {
     }
 
     #[test]
+    fn select_in_capitals() {
+        let command = parse_select(
+            "SELECT FIRSTNAME, LASTNAME
+             FROM EMPLOYEE
+             WHERE ID = 1
+             GROUP BY FIRSTNAME, LASTNAME",
+        );
+
+        match command {
+            SqlCommand::SELECT {
+                columns, group_by, ..
+            } => {
+                assert_eq!(
+                    columns,
+                    vec!["FIRSTNAME".to_string(), "LASTNAME".to_string()]
+                );
+                assert_eq!(
+                    group_by,
+                    vec!["FIRSTNAME".to_string(), "LASTNAME".to_string()]
+                );
+            }
+            _ => panic!("expected SELECT"),
+        }
+    }
+
+    #[test]
     fn select_with_multiple_order_by_columns() {
         let command = parse_select(
             "SELECT firstname, lastname
@@ -641,6 +590,24 @@ mod tests {
                 assert_eq!(where_clause.column, "id");
                 assert_eq!(where_clause.operator, Operator::GREATEROREQ);
                 assert_eq!(where_clause.value, datatype::DataType::BigInt { x: 100 });
+            }
+            _ => panic!("expected SELECT"),
+        }
+    }
+
+
+    #[test]
+    fn select_without_where_clause() {
+        let command = parse_select(
+            "SELECT name
+             FROM employee"
+        );
+
+        match command {
+            SqlCommand::SELECT { where_clause, .. } => {
+                assert_eq!(where_clause.column, "");
+                assert_eq!(where_clause.operator, Operator::UNDEFINED);
+                assert_eq!(where_clause.value, datatype::DataType::Undefined);
             }
             _ => panic!("expected SELECT"),
         }
@@ -704,6 +671,5 @@ mod tests {
             }
             _ => panic!("expected SELECT"),
         }
-        //assert_eq!(command, SqlCommand::UNDEFINED);
     }
 }
