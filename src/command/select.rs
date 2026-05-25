@@ -37,6 +37,38 @@ pub enum FunctionKind {
     Avg,
     Sum,
     Count,
+    Abs,
+    Acos,
+    Asin,
+    Atan,
+    Ceil,
+    Ceiling,
+    Cos,
+    Cot,
+    Degrees,
+    Div,
+    Exp,
+    Floor,
+    Greatest,
+    Least,
+    Ln,
+    Log,
+    Log10,
+    Log2,
+    Max,
+    Min,
+    Mod,
+    Pi,
+    Pow,
+    Power,
+    Radians,
+    Rand,
+    Round,
+    Sign,
+    Sin,
+    Sort,
+    Tan,
+    Truncate
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -217,7 +249,7 @@ fn parse_projection(item: &SelectItem) -> Option<Projection> {
     }
 }
 
-fn parse_function(item: &SelectItem) -> Option<ParsedFunction> {
+/*fn parse_function(item: &SelectItem) -> Option<ParsedFunction> {
     let func = match item {
         SelectItem::UnnamedExpr(Expr::Function(func)) => func,
         _ => return None,
@@ -241,18 +273,50 @@ fn parse_function(item: &SelectItem) -> Option<ParsedFunction> {
         _ => return None,
     };
 
-    let kind = match func.name.to_string().to_ascii_lowercase().as_str() {
+    let math_functions = match func.name.to_string().to_ascii_lowercase().as_str() {
         "avg" => FunctionKind::Avg,
         "sum" => FunctionKind::Sum,
         "count" => FunctionKind::Count,
+        "abs" => FunctionKind::Abs,
+        "acos" => FunctionKind::Acos,
+        "asin" => FunctionKind::Asin,
+        "atan" => FunctionKind::Atan,
+        "ceil" => FunctionKind::Ceil,
+        "ceiling" => FunctionKind::Ceiling,
+        "cos" => FunctionKind::Cos,
+        "cot" => FunctionKind::Cot,
+        "degrees" => FunctionKind::Degrees,
+        "div" => FunctionKind::Div  ,
+        "exp" => FunctionKind::Exp,
+        "floor" => FunctionKind::Floor,
+        "greatest" => FunctionKind::Greatest,
+        "least" => FunctionKind::Least,
+        "ln" => FunctionKind::Ln,
+        "log" => FunctionKind::Log,
+        "log10" => FunctionKind::Log10,
+        "log2" => FunctionKind::Log2,
+        "max" => FunctionKind::Max,
+        "min" => FunctionKind::Min,
+        "mod" => FunctionKind::Mod,
+        "pi" => FunctionKind::Pi,
+        "pow" => FunctionKind::Pow,
+        "power" => FunctionKind::Power,
+        "radians" => FunctionKind::Radians,
+        "rand"  => FunctionKind::Rand,
+        "round" => FunctionKind::Round,
+        "sign" => FunctionKind::Sign,
+        "sin" => FunctionKind::Sin,
+        "sort" => FunctionKind::Sort,
+        "tan" => FunctionKind::Tan,
+        "truncate" => FunctionKind::Truncate,
         _ => return None,
     };
 
     Some(ParsedFunction {
-        kind,
+        kind: math_functions,
         column: ident.value.clone(),
     })
-}
+}*/
 
 fn retrieve_identifier(select_stmt: &&Select) -> String {
     let ident: &str = match &select_stmt.select_token.0.token {
@@ -282,7 +346,6 @@ fn extract_group_by(select_stmt: &Select) -> Vec<String> {
             result.push("ALL".to_string());
         }
     }
-
     result
 }
 
@@ -301,7 +364,6 @@ fn extract_order_by(query: &Query) -> Vec<String> {
             _ => {}
         }
     }
-
     result
 }
 
@@ -400,7 +462,6 @@ fn extract_columns(select_stmt: &Select) -> Vec<String> {
             None => {}
         }
     }
-
     columns
 }
 
@@ -583,5 +644,29 @@ mod tests {
             }
             _ => panic!("expected SELECT"),
         }
+    }
+
+    #[test]
+    fn select_with_invalid_join_returns_undefined() {
+        let command = parse_select(
+            "SELECT Orders.OrderID, Customers.CustomerName
+         FROM Orders
+         INNER JOIN Customers ON Orders.CustomerID > Customers.CustomerID
+         WHERE Orders.OrderID = 1",
+        );
+
+        assert_eq!(command, SqlCommand::UNDEFINED);
+    }
+
+    #[test]
+    fn select_with_invalid_join_returns() {
+        let command = parse_select(
+            "SELECT Orders.OrderID, Customers.CustomerName
+         FROM Orders
+         INNER JOIN Customers ON Orders.CustomerID > Customers.CustomerID
+         WHERE Orders.OrderID = 1",
+        );
+
+        assert_eq!(command, SqlCommand::UNDEFINED);
     }
 }
