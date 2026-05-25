@@ -3,7 +3,16 @@ use crate::command::whereclause::WhereClause;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum SqlCommand {
-    SELECT {command: String, table: String, columns: Vec<String>, values: Vec<String>, where_clause: WhereClause },
+    SELECT {
+        command: String,
+        table: String,
+        columns: Vec<String>,
+        values: Vec<String>,
+        where_clause: WhereClause,
+        distinct: bool,
+        group_by: Vec<String>,
+        order_by: Vec<String>,
+    },
     /// command is always CREATE_DATABASE, in table the table name is stored and in columns is a vector stored that contains tupels
     /// that are structured like Vec<(column_name, Vec<constraint1, constraint2 ...>)>
     CREATE_TABLE {command: String, table: String, columns: Vec<(String, Vec<Constraint>)> },

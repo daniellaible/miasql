@@ -33,7 +33,7 @@ pub struct ParsedFunction {
 
 pub fn parse(query: Box<Query>) -> SqlCommand {
     println!("with: {:?}", query.with);
-    let body = *query.body;
+    let body = *query.body.clone();
     let select = body.as_select();
 
     let select_stmt = match select {
@@ -93,7 +93,9 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
         }*/
     }
 
-
+    let distinct = extract_distinct(select_stmt);
+    let group_by = extract_group_by(select_stmt);
+    let order_by = extract_order_by(&query);
 
 
     println!("tablename: {:?}", tablename);
@@ -104,6 +106,9 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
         table: String::from(tablename),
         columns: Vec::new(),
         values: Vec::new(),
+        distinct,
+        group_by,
+        order_by,
         where_clause: where_clause,
     }
 }
@@ -188,6 +193,74 @@ fn retrieve_identifier(select_stmt: &&Select) -> String {
     String::from(ident)
 }
 
+fn extract_distinct(select_stmt: &Select) -> bool {
+    select_stmt.distinct.is_some()
+}
+
+fn extract_group_by(select_stmt: &Select) -> Vec<String> {
+    let mut result = Vec::new();
+
+    match &select_stmt.group_by {
+        sqlparser::ast::GroupByExpr::Expressions(exprs, _) => {
+            for expr in exprs {
+                if let Some(name) = extract_expr_identifier(expr) {
+                    result.push(name);
+                }
+            }
+        }
+        sqlparser::ast::GroupByExpr::All(_) => {
+            result.push("ALL".to_string());
+        }
+    }
+
+    result
+}
+
+fn extract_order_by(query: &Query) -> Vec<String> {
+    let mut result = Vec::new();
+
+    for order_by in &query.order_by {
+        match &order_by.kind {
+            sqlparser::ast::OrderByKind::Expressions(exprs) => {
+                for order_expr in exprs {
+                    if let Some(name) = extract_order_expr(order_expr) {
+                        result.push(name);
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+
+    result
+}
+
+fn extract_order_expr(order_expr: &sqlparser::ast::OrderByExpr) -> Option<String> {
+    let name = extract_expr_identifier(&order_expr.expr)?;
+
+    match order_expr.asc {
+        Some(true) => Some(format!("{} ASC", name)),
+        Some(false) => Some(format!("{} DESC", name)),
+        None => Some(name),
+    }
+}
+
+fn extract_expr_identifier(expr: &Expr) -> Option<String> {
+    match expr {
+        Expr::Identifier(ident) => Some(ident.value.clone()),
+        Expr::CompoundIdentifier(idents) => {
+            Some(
+                idents
+                    .iter()
+                    .map(|ident| ident.value.clone())
+                    .collect::<Vec<_>>()
+                    .join("."),
+            )
+        }
+        _ => None,
+    }
+}
+
 fn retrieve_where_clause(where_ast: &Expr) -> Option<WhereClause> {
     if let Expr::BinaryOp {
         left, op, right, ..
@@ -256,7 +329,7 @@ mod tests {
     #[test]
     fn basic_select_test() {
         let command: &str =
-            "Select distinct avg(amount), sum(name), lastname from employee where id='foo'";
+            "Select distinct avg(amount), sum(name), lastname from employee where id='foo' group By lastname, order by lastname";
         let dialect = GenericDialect {};
         let ast = Parser::parse_sql(&dialect, command).unwrap();
 
