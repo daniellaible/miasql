@@ -3,9 +3,12 @@ use crate::command::sqlcommands::SqlCommand;
 use crate::command::sqloperator::Operator;
 use crate::command::whereclause::WhereClause;
 use crate::database::datatype;
-use sqlparser::ast::{BinaryOperator, Expr, Function as SqlFunction, FunctionArg, FunctionArgExpr, FunctionArgumentList, FunctionArguments, Ident, ObjectName, ObjectNamePart, Query, Select, SelectItem, TableFactor, TableWithJoins, Value, ValueWithSpan};
+use sqlparser::ast::{
+    BinaryOperator, Expr, Function as SqlFunction, FunctionArg, FunctionArgExpr,
+    FunctionArgumentList, FunctionArguments, Ident, ObjectName, ObjectNamePart, Query, Select,
+    SelectItem, TableFactor, TableWithJoins, Value, ValueWithSpan,
+};
 use sqlparser::tokenizer::Token;
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum JoinType {
@@ -26,10 +29,7 @@ pub struct JoinClause {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Projection {
     Column(String),
-    Function {
-        name: String,
-        column: String,
-    },
+    Function { name: String, column: String },
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -68,7 +68,7 @@ pub enum FunctionKind {
     Sin,
     Sort,
     Tan,
-    Truncate
+    Truncate,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -222,18 +222,19 @@ fn parse_projection(item: &SelectItem) -> Option<Projection> {
         }
 
         SelectItem::UnnamedExpr(Expr::Function(SqlFunction {
-                                                   name,
-                                                   args: FunctionArguments::List(FunctionArgumentList {
-                                                                                     duplicate_treatment: None,
-                                                                                     args,
-                                                                                     clauses,
-                                                                                 }),
-                                                   filter: None,
-                                                   null_treatment: None,
-                                                   over: None,
-                                                   within_group,
-                                                   ..
-                                               })) if clauses.is_empty() && within_group.is_empty() => {
+            name,
+            args:
+                FunctionArguments::List(FunctionArgumentList {
+                    duplicate_treatment: None,
+                    args,
+                    clauses,
+                }),
+            filter: None,
+            null_treatment: None,
+            over: None,
+            within_group,
+            ..
+        })) if clauses.is_empty() && within_group.is_empty() => {
             let ident = match &args[..] {
                 [FunctionArg::Unnamed(FunctionArgExpr::Expr(Expr::Identifier(ident)))] => ident,
                 _ => return None,
@@ -322,7 +323,9 @@ fn retrieve_identifier(select_stmt: &&Select) -> String {
     let ident: &str = match &select_stmt.select_token.0.token {
         Token::Word(w) => w.value.as_str(),
 
-        _ => {return String::new(); }
+        _ => {
+            return String::new();
+        }
     };
     String::from(ident)
 }
@@ -380,15 +383,13 @@ fn extract_order_expr(order_expr: &sqlparser::ast::OrderByExpr) -> Option<String
 fn extract_expr_identifier(expr: &Expr) -> Option<String> {
     match expr {
         Expr::Identifier(ident) => Some(ident.value.clone()),
-        Expr::CompoundIdentifier(idents) => {
-            Some(
-                idents
-                    .iter()
-                    .map(|ident| ident.value.clone())
-                    .collect::<Vec<_>>()
-                    .join("."),
-            )
-        }
+        Expr::CompoundIdentifier(idents) => Some(
+            idents
+                .iter()
+                .map(|ident| ident.value.clone())
+                .collect::<Vec<_>>()
+                .join("."),
+        ),
         _ => None,
     }
 }
@@ -467,7 +468,7 @@ fn extract_columns(select_stmt: &Select) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::command::select::parse;
+    use crate::command::select::{JoinType, parse};
     use crate::command::sqlcommands::SqlCommand;
     use crate::command::sqloperator::Operator;
     use crate::database::datatype;
@@ -492,7 +493,7 @@ mod tests {
              FROM employee
              WHERE id = 'foo'
              GROUP BY lastname
-             ORDER BY lastname"
+             ORDER BY lastname",
         );
 
         match command {
@@ -540,7 +541,7 @@ mod tests {
             "SELECT lastname
              FROM employee
              WHERE id = 1
-             ORDER BY lastname DESC"
+             ORDER BY lastname DESC",
         );
 
         match command {
@@ -570,7 +571,7 @@ mod tests {
             "SELECT lastname
              FROM employee
              WHERE id = 1
-             ORDER BY lastname ASC"
+             ORDER BY lastname ASC",
         );
 
         match command {
@@ -587,11 +588,13 @@ mod tests {
             "SELECT firstname, lastname
              FROM employee
              WHERE id = 1
-             GROUP BY firstname, lastname"
+             GROUP BY firstname, lastname",
         );
 
         match command {
-            SqlCommand::SELECT { columns, group_by, .. } => {
+            SqlCommand::SELECT {
+                columns, group_by, ..
+            } => {
                 assert_eq!(
                     columns,
                     vec!["firstname".to_string(), "lastname".to_string()]
@@ -611,17 +614,14 @@ mod tests {
             "SELECT firstname, lastname
              FROM employee
              WHERE id = 1
-             ORDER BY lastname DESC, firstname ASC"
+             ORDER BY lastname DESC, firstname ASC",
         );
 
         match command {
             SqlCommand::SELECT { order_by, .. } => {
                 assert_eq!(
                     order_by,
-                    vec![
-                        "lastname DESC".to_string(),
-                        "firstname ASC".to_string()
-                    ]
+                    vec!["lastname DESC".to_string(), "firstname ASC".to_string()]
                 );
             }
             _ => panic!("expected SELECT"),
@@ -633,7 +633,7 @@ mod tests {
         let command = parse_select(
             "SELECT name
              FROM employee
-             WHERE id >= 100"
+             WHERE id >= 100",
         );
 
         match command {
@@ -668,5 +668,42 @@ mod tests {
         );
 
         assert_eq!(command, SqlCommand::UNDEFINED);
+    }
+    #[test]
+
+    fn select_with_valid_join_returns() {
+        let command = parse_select(
+            "SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate
+                FROM Orders
+               INNER JOIN Customers ON Orders.CustomerID=Customers.CustomerID;",
+        );
+
+        match command {
+            SqlCommand::SELECT {
+                table,
+                columns,
+                distinct,
+                group_by,
+                order_by,
+                where_clause,
+                joins,
+                ..
+            } => {
+                assert!(columns.is_empty());
+                assert!(!distinct);
+                assert!(group_by.is_empty());
+                assert!(order_by.is_empty());
+                assert_eq!(table, "Orders");
+                assert_eq!(where_clause.column, "");
+                assert_eq!(where_clause.operator, Operator::UNDEFINED);
+                assert_eq!(where_clause.value, datatype::DataType::Undefined);
+                assert_eq!(joins[0].join_type, JoinType::Inner);
+                assert_eq!(joins[0].table, "Customers");
+                assert_eq!(joins[0].left_column, "Orders.CustomerID");
+                assert_eq!(joins[0].right_column, "Customers.CustomerID");
+            }
+            _ => panic!("expected SELECT"),
+        }
+        //assert_eq!(command, SqlCommand::UNDEFINED);
     }
 }
