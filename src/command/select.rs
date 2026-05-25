@@ -7,6 +7,22 @@ use sqlparser::ast::{BinaryOperator, Expr, Function as SqlFunction, FunctionArg,
 use sqlparser::tokenizer::Token;
 
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum JoinType {
+    Inner,
+    Left,
+    Right,
+    Full,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct JoinClause {
+    pub join_type: JoinType,
+    pub table: String,
+    pub left_column: String,
+    pub right_column: String,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Projection {
     Column(String),
@@ -28,8 +44,6 @@ pub struct ParsedFunction {
     pub kind: FunctionKind,
     pub column: String,
 }
-
-
 
 pub fn parse(query: Box<Query>) -> SqlCommand {
     let body = *query.body.clone();
@@ -59,10 +73,10 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
         _ => None,
     };
 
-    let tablename = match tablename_opt {
+    let (tablename, joins) = match extract_table_and_joins(select_stmt) {
         Some(x) => x,
         None => {
-            println!("Unable to parse table name");
+            println!("Unable to parse table / joins");
             return SqlCommand::UNDEFINED;
         }
     };
@@ -100,11 +114,73 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
         distinct,
         group_by,
         order_by,
+        joins,
         where_clause,
     };
     println!("command: {:?}", command);
     command
+}
 
+fn extract_table_and_joins(select_stmt: &Select) -> Option<(String, Vec<JoinClause>)> {
+    let [table_with_joins] = select_stmt.from.as_slice() else {
+        return None;
+    };
+
+    let base_table = match &table_with_joins.relation {
+        TableFactor::Table {
+            name: ObjectName(parts),
+            ..
+        } => match parts.as_slice() {
+            [ObjectNamePart::Identifier(Ident { value, .. })] => value.clone(),
+            _ => return None,
+        },
+        _ => return None,
+    };
+
+    let mut joins = Vec::new();
+
+    for join in &table_with_joins.joins {
+        let joined_table = match &join.relation {
+            TableFactor::Table {
+                name: ObjectName(parts),
+                ..
+            } => match parts.as_slice() {
+                [ObjectNamePart::Identifier(Ident { value, .. })] => value.clone(),
+                _ => return None,
+            },
+            _ => return None,
+        };
+
+        let (join_type, constraint) = match &join.join_operator {
+            sqlparser::ast::JoinOperator::Inner(c) => (JoinType::Inner, c),
+            sqlparser::ast::JoinOperator::LeftOuter(c) => (JoinType::Left, c),
+            sqlparser::ast::JoinOperator::RightOuter(c) => (JoinType::Right, c),
+            sqlparser::ast::JoinOperator::FullOuter(c) => (JoinType::Full, c),
+            _ => return None,
+        };
+
+        let (left_column, right_column) = match constraint {
+            sqlparser::ast::JoinConstraint::On(Expr::BinaryOp { left, op, right }) => {
+                if *op != BinaryOperator::Eq {
+                    return None;
+                }
+
+                let left_column = extract_expr_identifier(left)?;
+                let right_column = extract_expr_identifier(right)?;
+                (left_column, right_column)
+            }
+            _ => return None,
+        };
+
+        joins.push(JoinClause {
+            join_type,
+            table: joined_table,
+            left_column,
+            right_column,
+        });
+    }
+
+    Some((base_table, joins))
 }
 
 fn parse_projection(item: &SelectItem) -> Option<Projection> {
@@ -291,11 +367,11 @@ fn retrieve_where_clause(where_ast: &Expr) -> Option<WhereClause> {
                 };
                 datatype::DataType::BigInt { x: n }
             }
-            Value::SingleQuotedString(ident) => datatype::DataType::Char {
+            Value::SingleQuotedString(ident) => datatype::DataType::VarChar {
                 x: String::from(ident),
                 y: ident.len(),
             },
-            Value::DoubleQuotedString(ident) => datatype::DataType::Char {
+            Value::DoubleQuotedString(ident) => datatype::DataType::VarChar {
                 x: String::from(ident),
                 y: ident.len(),
             },
@@ -367,6 +443,7 @@ mod tests {
                 group_by,
                 order_by,
                 where_clause,
+                ..
             } => {
                 assert_eq!(command, "SELECT");
                 assert_eq!(table, "employee");
@@ -386,7 +463,7 @@ mod tests {
                 assert_eq!(where_clause.operator, Operator::EQUAL);
                 assert_eq!(
                     where_clause.value,
-                    datatype::DataType::Char {
+                    datatype::DataType::VarChar {
                         x: "foo".to_string(),
                         y: 3,
                     }

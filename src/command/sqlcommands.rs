@@ -1,4 +1,5 @@
 use crate::command::constraint::Constraint;
+use crate::command::select::JoinClause;
 use crate::command::whereclause::WhereClause;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -11,6 +12,7 @@ pub enum SqlCommand {
         distinct: bool,
         group_by: Vec<String>,
         order_by: Vec<String>,
+        joins: Vec<JoinClause>,
     },
     /// command is always CREATE_DATABASE, in table the table name is stored and in columns is a vector stored that contains tupels
     /// that are structured like Vec<(column_name, Vec<constraint1, constraint2 ...>)>

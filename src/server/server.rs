@@ -184,10 +184,10 @@ fn tokenizer(stmt: &str) -> SqlCommand {
                         datatype::DataType::BigInt { x: n }
                     }
                     Value::SingleQuotedString(ident) => {
-                        datatype::DataType::Char {x: String::from(ident), y: ident.len()}
+                        datatype::DataType::VarChar {x: String::from(ident), y: ident.len()}
                     }
                     Value::DoubleQuotedString(ident) => {
-                        datatype::DataType::Char {x: String::from(ident), y: ident.len()}
+                        datatype::DataType::VarChar {x: String::from(ident), y: ident.len()}
                     }
                     _ => datatype::DataType::Undefined,
                 };
