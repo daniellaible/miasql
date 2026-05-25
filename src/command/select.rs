@@ -3,11 +3,33 @@ use crate::command::sqlcommands::SqlCommand;
 use crate::command::sqloperator::Operator;
 use crate::command::whereclause::WhereClause;
 use crate::database::datatype;
-use sqlparser::ast::{
-    BinaryOperator, Expr, Ident, ObjectName, ObjectNamePart, Query, TableFactor, TableWithJoins,
-    Value, ValueWithSpan,
-};
+use sqlparser::ast::{BinaryOperator, Expr, Function as SqlFunction, FunctionArg, FunctionArgExpr, FunctionArgumentList, FunctionArguments, Ident, ObjectName, ObjectNamePart, Query, Select, SelectItem, TableFactor, TableWithJoins, Value, ValueWithSpan};
 use sqlparser::tokenizer::Token;
+
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Projection {
+    Column(String),
+    Function {
+        name: String,
+        column: String,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum FunctionKind {
+    Avg,
+    Sum,
+    Count,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ParsedFunction {
+    pub kind: FunctionKind,
+    pub column: String,
+}
+
+
 
 pub fn parse(query: Box<Query>) -> SqlCommand {
     println!("with: {:?}", query.with);
@@ -23,13 +45,7 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
     };
     println!("{:?}", select_stmt);
 
-    let ident: &str = match &select_stmt.select_token.0.token {
-        Token::Word(w) => w.value.as_str(),
-        _ => {
-            println!("Unable to parse Select command");
-            return SqlCommand::UNDEFINED;
-        }
-    };
+    let ident = retrieve_identifier(&select_stmt);
     println!(" word_value: {:?}", ident);
 
     let tablename_opt: Option<&str> = match select_stmt.from.as_slice() {
@@ -53,6 +69,7 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
             return SqlCommand::UNDEFINED;
         }
     };
+
     let Some(expr) = &select_stmt.selection else {
         return SqlCommand::UNDEFINED;
     };
@@ -65,6 +82,20 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
         }
     };
 
+    let foo = &select_stmt.projection;
+    let bar = foo.iter();
+    for val in bar {
+        let parsed = parse_projection(val);
+        println!("{:?}", parsed);
+
+/*        if let Some(func) = parsed {
+            println!("function = {}, column = {}", func.name, func.column);
+        }*/
+    }
+
+
+
+
     println!("tablename: {:?}", tablename);
     println!("where: {:?}", where_clause);
 
@@ -75,6 +106,86 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
         values: Vec::new(),
         where_clause: where_clause,
     }
+}
+
+fn parse_projection(item: &SelectItem) -> Option<Projection> {
+    match item {
+        SelectItem::UnnamedExpr(Expr::Identifier(ident)) => {
+            Some(Projection::Column(ident.value.clone()))
+        }
+
+        SelectItem::UnnamedExpr(Expr::Function(SqlFunction {
+                                                   name,
+                                                   args: FunctionArguments::List(FunctionArgumentList {
+                                                                                     duplicate_treatment: None,
+                                                                                     args,
+                                                                                     clauses,
+                                                                                 }),
+                                                   filter: None,
+                                                   null_treatment: None,
+                                                   over: None,
+                                                   within_group,
+                                                   ..
+                                               })) if clauses.is_empty() && within_group.is_empty() => {
+            let ident = match &args[..] {
+                [FunctionArg::Unnamed(FunctionArgExpr::Expr(Expr::Identifier(ident)))] => ident,
+                _ => return None,
+            };
+
+            Some(Projection::Function {
+                name: name.to_string(),
+                column: ident.value.clone(),
+            })
+        }
+
+        _ => None,
+    }
+}
+
+fn parse_function(item: &SelectItem) -> Option<ParsedFunction> {
+    let func = match item {
+        SelectItem::UnnamedExpr(Expr::Function(func)) => func,
+        _ => return None,
+    };
+
+    let args = match &func.args {
+        FunctionArguments::List(FunctionArgumentList {
+                                    duplicate_treatment: None,
+                                    args,
+                                    clauses,
+                                }) if clauses.is_empty() => args,
+        _ => return None,
+    };
+
+    if func.filter.is_some() || func.over.is_some() || !func.within_group.is_empty() {
+        return None;
+    }
+
+    let ident = match &args[..] {
+        [FunctionArg::Unnamed(FunctionArgExpr::Expr(Expr::Identifier(ident)))] => ident,
+        _ => return None,
+    };
+
+    let kind = match func.name.to_string().to_ascii_lowercase().as_str() {
+        "avg" => FunctionKind::Avg,
+        "sum" => FunctionKind::Sum,
+        "count" => FunctionKind::Count,
+        _ => return None,
+    };
+
+    Some(ParsedFunction {
+        kind,
+        column: ident.value.clone(),
+    })
+}
+
+fn retrieve_identifier(select_stmt: &&Select) -> String {
+    let ident: &str = match &select_stmt.select_token.0.token {
+        Token::Word(w) => w.value.as_str(),
+
+        _ => {return String::new(); }
+    };
+    String::from(ident)
 }
 
 fn retrieve_where_clause(where_ast: &Expr) -> Option<WhereClause> {
@@ -145,7 +256,7 @@ mod tests {
     #[test]
     fn basic_select_test() {
         let command: &str =
-            "Select distinct avg(amount), name, lastname from employee where id='foo'";
+            "Select distinct avg(amount), sum(name), lastname from employee where id='foo'";
         let dialect = GenericDialect {};
         let ast = Parser::parse_sql(&dialect, command).unwrap();
 
