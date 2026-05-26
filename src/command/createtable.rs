@@ -1,13 +1,23 @@
-use sqlparser::ast::{ColumnOption, CreateTable};
+use sqlparser::ast::{ColumnOption, CreateTable, Ident, ObjectNamePart, Statement, TableConstraint};
 use crate::command::constraint::Constraint;
 use crate::command::sqlcommands::SqlCommand;
 use crate::database::datatype::DataType;
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ParsedForeignKey {
+    pub name: Option<String>,
+    pub columns: Vec<String>,
+    pub foreign_table: String,
+    pub referred_columns: Vec<String>,
+}
 
 pub fn parse(create: CreateTable) -> SqlCommand {
     //println!("create: {:?}", create);
 
     let tablename = create.name.to_string();
-     let iter_columns = create.columns.iter();
+    let iter_columns = create.columns.iter();
+
+     let foo = create.constraints.iter();
 
      let mut columns: Vec<(String, String, Vec<Constraint>)> = Vec::new();
      for col_def in iter_columns {
@@ -19,6 +29,7 @@ pub fn parse(create: CreateTable) -> SqlCommand {
          let dataType = col_def.data_type.to_string();
 
          println!("dataType: {:?}", dataType);
+
 
          let iter_options = col_def.options.iter();
          let mut column_constraints:Vec<Constraint> = Vec::new();
@@ -38,13 +49,53 @@ pub fn parse(create: CreateTable) -> SqlCommand {
          let column_def:(String, String
                          , Vec<Constraint>) = (name, dataType, column_constraints);
          columns.push(column_def);
+
+
          println!("----");
      }
+
+    let foreign_keys = extract_foreign_keys(create);
+
     SqlCommand::CREATE_TABLE {
         command: String::from("CREATE TABLE"),
         table: String::from(tablename),
-        columns
+        columns,
+        foreign_keys
     }
+}
+
+pub fn extract_foreign_keys(create_table: CreateTable) -> Vec<ParsedForeignKey> {
+
+    let mut foreign_keys = Vec::new();
+
+    for constraint in &create_table.constraints {
+        if let TableConstraint::ForeignKey(fk) = constraint {
+            let foreign_table = match &fk.foreign_table.0.as_slice() {
+                [ObjectNamePart::Identifier(Ident { value, .. })] => value.clone(),
+                parts => parts
+                    .iter()
+                    .filter_map(|part| match part {
+                        ObjectNamePart::Identifier(ident) => Some(ident.value.clone()),
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>()
+                    .join("."),
+            };
+
+            foreign_keys.push(ParsedForeignKey {
+                name: fk.name.as_ref().map(|ident| ident.value.clone()),
+                columns: fk.columns.iter().map(|ident| ident.value.clone()).collect(),
+                foreign_table,
+                referred_columns: fk
+                    .referred_columns
+                    .iter()
+                    .map(|ident| ident.value.clone())
+                    .collect(),
+            });
+        }
+    }
+
+    foreign_keys
 }
 
 #[cfg(test)]
@@ -74,10 +125,11 @@ mod tests {
 
         let command: &str = "CREATE TABLE Orders (  OrderID int PRIMARY KEY,  OrderNumber int NOT NULL, PersonID int, CONSTRAINT fk_Person FOREIGN KEY (PersonID) REFERENCES Persons(PersonID));";
         let ast = Parser::parse_sql(&dialect, command).unwrap();
-
-        match ast.into_iter().next().unwrap() {
+        println!("{:?}", ast[0]);
+        let result = match ast.into_iter().next().unwrap() {
             Statement::CreateTable(create) => parse(create),
             _ => panic!("expected query"),
         };
+        println!("{:?}", result);
     }
 }

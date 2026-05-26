@@ -1,4 +1,5 @@
 use crate::command::constraint::Constraint;
+use crate::command::createtable::ParsedForeignKey;
 use crate::command::select::JoinClause;
 use crate::command::whereclause::WhereClause;
 use crate::database::datatype::DataType;
@@ -20,7 +21,8 @@ pub enum SqlCommand {
     CREATE_TABLE {
         command: String,
         table: String,
-        columns: Vec<(String, String, Vec<Constraint>)>
+        columns: Vec<(String, String, Vec<Constraint>)>,
+        foreign_keys: Vec<ParsedForeignKey>,
     },
     CREATE_DATABASE {command: String, database: String},
     DROP_TABLE {command: String, table: String},
