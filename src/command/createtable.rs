@@ -12,29 +12,17 @@ pub struct ParsedForeignKey {
 }
 
 pub fn parse(create: CreateTable) -> SqlCommand {
-    //println!("create: {:?}", create);
-
     let tablename = create.name.to_string();
     let iter_columns = create.columns.iter();
 
-     let foo = create.constraints.iter();
-
      let mut columns: Vec<(String, String, Vec<Constraint>)> = Vec::new();
      for col_def in iter_columns {
-         //println!("column: {:?}", col_def);
-
          let name = col_def.name.value.to_string();
-         println!("column_name: {:?}", name);
-
          let dataType = col_def.data_type.to_string();
-
-         println!("dataType: {:?}", dataType);
-
 
          let iter_options = col_def.options.iter();
          let mut column_constraints:Vec<Constraint> = Vec::new();
          for option in iter_options {
-             //println!("option: {:?}", option.option);
              let column_opt = &option.option;
              let constraint:Constraint = match column_opt {
                  ColumnOption::NotNull => Constraint::NOT_NULL,
@@ -43,15 +31,10 @@ pub fn parse(create: CreateTable) -> SqlCommand {
                  _ => Constraint::UNDEFINED,
              };
              column_constraints.push(constraint.clone());
-             println!("constraint: {:?}", constraint);
-
          }
          let column_def:(String, String
                          , Vec<Constraint>) = (name, dataType, column_constraints);
          columns.push(column_def);
-
-
-         println!("----");
      }
 
     let foreign_keys = extract_foreign_keys(create);
@@ -94,7 +77,6 @@ pub fn extract_foreign_keys(create_table: CreateTable) -> Vec<ParsedForeignKey> 
             });
         }
     }
-
     foreign_keys
 }
 
@@ -116,7 +98,6 @@ mod tests {
             Statement::CreateTable(create) => parse(create),
             _ => panic!("expected query"),
         };
-        println!("{:?}", result);
     }
 
     #[test]
@@ -130,6 +111,5 @@ mod tests {
             Statement::CreateTable(create) => parse(create),
             _ => panic!("expected query"),
         };
-        println!("{:?}", result);
     }
 }
