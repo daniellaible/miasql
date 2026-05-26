@@ -11,6 +11,7 @@ mod database {
 
 mod command {
     pub mod sqloperator;
+    pub mod createtable;
     pub mod whereclause;
     pub mod select;
     pub mod insert;

@@ -419,7 +419,7 @@ mod tests {
              ORDER BY lastname",
         );
 
-        match command {
+        let result = match command {
             SqlCommand::SELECT {
                 command,
                 table,
@@ -455,7 +455,8 @@ mod tests {
                 );
             }
             _ => panic!("expected SELECT"),
-        }
+        };
+        println!("{:?}", result.clone())
     }
 
     #[test]

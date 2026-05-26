@@ -1,20 +1,13 @@
-use std::any::Any;
-use sqlparser::ast::Expr::BinaryOp;
+use crate::command;
 use crate::command::sqlcommands::SqlCommand;
 use crate::database::database::Database;
-use sqlparser::ast::{BinaryOperator, Expr, Ident, ObjectName, ObjectNamePart, Statement, TableFactor, TableWithJoins, Value, ValueWithSpan};
-use sqlparser::ast::FunctionReturnType::DataType;
+use sqlparser::ast::Statement;
 use sqlparser::dialect::GenericDialect;
 use sqlparser::parser::Parser;
 use sqlparser::tokenizer::Token;
+use std::any::Any;
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpStream;
-use crate::command;
-use crate::command::sqloperator;
-use crate::command::sqloperator::Operator;
-use crate::command::whereclause::WhereClause;
-use crate::database::datatype;
-
 
 pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database>) -> std::io::Result<()> {
     let mut buf = [0u8; 4096];
@@ -87,6 +80,7 @@ pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database>) -> st
 fn tokenizer(stmt: &str) -> SqlCommand {
     let dialect = GenericDialect {};
     let ast = Parser::parse_sql(&dialect, stmt).unwrap();
+    println!("{:#?}", ast[0].clone());
 
     match ast[0].clone() {
         Statement::AlterTable(alter) => {
@@ -100,6 +94,7 @@ fn tokenizer(stmt: &str) -> SqlCommand {
             println!("end_token: {:?}", alter.end_token);
         }
         Statement::CreateTable(create) => {
+            let command: SqlCommand = command::createtable::parse(create.clone());
             println!("table name: {}", create.name);
             println!("columns: {:?}", create.columns);
         }
@@ -107,13 +102,13 @@ fn tokenizer(stmt: &str) -> SqlCommand {
             println!("table: {:?}", insert.table);
         }
         Statement::Query(query) => {
-            let command:SqlCommand = command::select::parse(query.clone());
+            let command: SqlCommand = command::select::parse(query.clone());
 
             println!("with: {:?}", query.with);
             let body = *query.body.clone();
             let select = body.as_select().unwrap();
 
-            let word_value: Option<&str> = match  &select.select_token.0.token {
+            let word_value: Option<&str> = match &select.select_token.0.token {
                 Token::Word(w) => Some(w.value.as_str()),
                 _ => None,
             };
@@ -131,75 +126,9 @@ fn tokenizer(stmt: &str) -> SqlCommand {
             println!("  body.exclude: {:?}", select.exclude);
             println!("  body.into: {:?}", select.into);
             println!("  body.from (tablename): {:?}", select.from);
-
-            let table_name: Option<&str> = match select.from.as_slice() {
-                [TableWithJoins { relation, joins }] if joins.is_empty() => match relation {
-                    TableFactor::Table { name: ObjectName(parts), .. } => match parts.as_slice() {
-                        [ObjectNamePart::Identifier(Ident { value, .. })] => Some(value.as_str()),
-                        _ => None,
-                    },
-                    _ => None,
-                },
-                _ => None,
-            };
-            //println!("  table_name: {:?}", table_name.unwrap());
             println!("  body.lateral_views: {:?}", select.lateral_views);
             println!("  body.prewhere: {:?}", select.prewhere);
-
             println!("  body.selection (where part): {:?}", select.selection);
-            let Some(expr) = &select.selection else { return SqlCommand::UNDEFINED };
-
-            let mut where_clause:WhereClause = WhereClause::default();
-
-            if let Expr::BinaryOp { left, op, right, .. } = expr {
-                let col_name = match left.as_ref() {
-                    Expr::Identifier(ident) => Some(ident.value.as_str()),
-                    _ => None,
-                }.unwrap();
-
-                let operator = match op {
-                    BinaryOperator::Gt => Operator::GREATER,
-                    BinaryOperator::Lt => Operator::LESSER,
-                    BinaryOperator::Eq => Operator::EQUAL,
-                    BinaryOperator::NotEq => Operator::NOTEQUAL,
-                    BinaryOperator::GtEq => Operator::GREATEROREQ,
-                    BinaryOperator::LtEq => Operator::LESSEROREQ,
-                    _ => Operator::UNDEFINED
-                };
-
-                let rhs_value: Option<&ValueWithSpan> = match right.as_ref() {
-                    Expr::Value(vws) => Some(vws),
-                    _ => None,
-                };
-                let x = rhs_value.unwrap();
-
-                let value_datatype: datatype::DataType = match &x.value {
-                    Value::Number(num_str, _) => {
-                        let n: i64 = match num_str.parse() {
-                            Ok(n) => n,
-                            Err(e) => {
-                                return SqlCommand::UNDEFINED
-                            }
-                        };
-                        datatype::DataType::BigInt { x: n }
-                    }
-                    Value::SingleQuotedString(ident) => {
-                        datatype::DataType::VarChar {x: String::from(ident), y: ident.len()}
-                    }
-                    Value::DoubleQuotedString(ident) => {
-                        datatype::DataType::VarChar {x: String::from(ident), y: ident.len()}
-                    }
-                    _ => datatype::DataType::Undefined,
-                };
-                where_clause = WhereClause {
-                    column: String::from(col_name),
-                    operator,
-                    value: value_datatype,
-                };
-
-                println!("where {:?}", where_clause);
-            }
-
             println!("  body.connect_by: {:?}", select.connect_by);
             println!("  body.group_by: {:?}", select.group_by);
             println!("  body.cluster_by: {:?}", select.cluster_by);
@@ -240,8 +169,15 @@ mod tests {
     use crate::server::server::tokenizer;
 
     #[test]
-    fn test_tokenizer() {
-        let command: &str = "Select distinct avg(amount), name, lastname from employee where id='foo'";
+    fn test_tokenizer_select() {
+        let command: &str =
+            "Select distinct avg(amount), name, lastname from employee where id='foo'";
+        tokenizer(command);
+    }
+
+    #[test]
+    fn test_tokenizer_create_table() {
+        let command: &str = "CREATE TABLE Persons ( PersonID BigInt PRIMARY KEY, LastName VarChar(255) NOT NULL, FirstName VarChar(255), Address VarChar(255), City VarChar(255));";
         tokenizer(command);
     }
 }

@@ -20,14 +20,14 @@ These are the datatypes we are currently supporting.
 * TinyInt { 8 bit },
 * Decimal { 32 bit },
 * Float { 64 bit },
-* Char { String, SizeOf(Pointer) },
+* VarChar { String, SizeOf(Pointer) },
 * Bool { bool },
 * Date { 64 bit } ... nope - not supported yet,
 * Time { 64 bit } ... nope - not supported yet,
 * DateTime { 64 bit } ... nope - not supported yet
 
 
-## The basic functionality of mia
+## The basic functionality of Mia
 
 		TCP/IP
 		 7878
@@ -37,7 +37,7 @@ These are the datatypes we are currently supporting.
 		  ||
 		  ||
 		  ||
-		  ||      -----> Ledger (stores commands on disc)
+		  ||      -----> Ledger (stores command tokens on disc)
 		  ||
 		  ||      -----> moi-file Updater (stores data on disc)
               ||      -----> ledger updates field DataOnDisc
@@ -68,3 +68,26 @@ There is a plan on building a ledger viewer.
 ## Syntax
 "DROP TABLE IF EXISTS table_name;" is not supported use "DROP TABLE table_name" instead.
 This is true for Dropping Databases as well.
+
+What we do support:
+
+SELECT DISTINCT avg(amount), sum(name), lastname
+    FROM employee
+    WHERE id = 'foo'
+    GROUP BY lastname
+    ORDER BY lastname;
+
+SELECT lastname
+    FROM employee
+    WHERE id = 1
+    ORDER BY lastname DESC;
+
+SELECT firstname, lastname
+    FROM employee
+    WHERE id = 1
+    GROUP BY firstname, lastname;
+
+SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate
+    FROM Orders
+    INNER JOIN Customers ON Orders.CustomerID=Customers.CustomerID;
+

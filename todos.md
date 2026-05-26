@@ -5,7 +5,7 @@
 
 ### Base Commands
  + use sqlparser with
-   + select
+
    + create
    + drop
    + alter
@@ -14,16 +14,8 @@
    + delete
    + truncate
 
-### Joins
-+ Inner Join
-+ Outer Join
-+ Left Join
-+ Right Join
-+ Self Join
-+ Full Join
 
 ### KeyWords
-
 
 ### Functions and Operators
 
@@ -74,9 +66,6 @@
   + TRIM
   + UPPER
   + LIKE
-
-## MISC
-+ WhereClause can not handle anything else than BigInt - should be able to handle VarChars too
 
 ## Datatypes
   + CHAR

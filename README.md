@@ -21,20 +21,18 @@ We don't have a website yet - we are working on it, but lets get the database ru
 
 ## Roadmap
 ### Current Version is: 0.0.x
-| Version | Goal                                                                                           |
-|--|------------------------------------------------------------------------------------------------|
+| Version | Goal                                                                                                                        |
+|--|-----------------------------------------------------------------------------------------------------------------------------|
 | 0.1.0 | all basic sql commands have been implemented* and are working with the shell. The database responds to those basic commands |
-| 0.2.0 | adding datatypes blob/text - config file added                                                 |
-| 0.3.0 | moi files are created, updated and read on startup                                             |
-| 0.4.0 | the ledger is implemented                                                                      |
-| 0.5.0 | updating the b-tree on the fly                                                                 |
-| 0.6.0 | implementing functions, conditionals,  expressions, date and time commands                     |
-| 0.7.0 | implementing joins and views                                                                   |
-| 0.8.0 | implementing user management / ssh as shell                                                                |
-| 0.9.0 | backup importer for ledger and other databases                                                                                               |
-| 1.0.0 | sharding / clusters                                                 |
-
-                                                                                       |
+| 0.2.0 | adding datatypes blob/text - config file added                                                                              |
+| 0.3.0 | moi files are created, updated and read on startup                                                                          |
+| 0.4.0 | the ledger is implemented                                                                                                   |
+| 0.5.0 | updating the b-tree on the fly / more b-trees for basic data                                                                |
+| 0.6.0 | implementing functions, conditionals,  expressions, date and time commands                                                  |
+| 0.7.0 | implementing joins and views                                                                                                |
+| 0.8.0 | implementing user management / ssh as shell                                                                                 |
+| 0.9.0 | backup importer for ledger and other databases                                                                              |
+| 1.0.0 | sharding / clusters                                                                                                         |
 
 
 \* no nested commands / no joins / no groups / no orders / no having 
