@@ -3,11 +3,8 @@ use crate::command::sqlcommands::SqlCommand;
 use crate::command::sqloperator::Operator;
 use crate::command::whereclause::WhereClause;
 use crate::database::datatype;
-use sqlparser::ast::{
-    BinaryOperator, Expr, Function as SqlFunction, FunctionArg, FunctionArgExpr,
-    FunctionArgumentList, FunctionArguments, Ident, ObjectName, ObjectNamePart, Query, Select,
-    SelectItem, TableFactor, TableWithJoins, Value, ValueWithSpan,
-};
+use sqlparser::ast::{BinaryOperator, Expr, Function as SqlFunction, FunctionArg, FunctionArgExpr, FunctionArgumentList, FunctionArguments, Ident, ObjectName, ObjectNamePart, Query, Select, SelectItem, TableFactor, TableWithJoins, Top, Value, ValueWithSpan};
+use sqlparser::ast::FunctionArgumentClause::Limit;
 use sqlparser::tokenizer::Token;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -89,6 +86,8 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
         }
     };
 
+    println!("{:?}",select_stmt);
+
     let ident = retrieve_identifier(&select_stmt);
 
     let tablename_opt: Option<&str> = match select_stmt.from.as_slice() {
@@ -132,6 +131,28 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
     let group_by = extract_group_by(select_stmt);
     let order_by = extract_order_by(&query);
     let columns = extract_columns(select_stmt);
+    let mut limit = -1;
+
+
+    println!("{:?}", &select_stmt.top);
+    let top:(bool,bool, Option<Constant>) = match &select_stmt.top{
+        None => {}
+        Some(top) => {
+            top.quantity.as_ref();
+        }
+    };
+
+/*    if let Some(limit_expr) = &query.limit() {
+        if let Expr::Value(ValueWithSpan {
+            value: Value::Number(n, _),
+            ..
+        }) = limit_expr
+        {
+            if let Ok(limit_val) = n.parse::<i32>() {
+                limit = limit_val;
+            }
+        }
+    }*/
 
     let command = SqlCommand::SELECT {
         command: String::from(ident),
@@ -142,6 +163,7 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
         order_by,
         joins,
         where_clause,
+        limit,
     };
     command
 }
@@ -492,6 +514,26 @@ mod tests {
     #[test]
     fn select_with_order_by_asc() {
         let command = parse_select(
+            "SELECT *
+             FROM employee
+             WHERE id = 1
+             ORDER BY lastname ASC",
+        );
+
+        match command {
+            SqlCommand::SELECT {
+                order_by, columns, ..
+            } => {
+                assert_eq!(columns, vec!["*"]);
+                assert_eq!(order_by, vec!["lastname ASC".to_string()]);
+            }
+            _ => panic!("expected SELECT"),
+        }
+    }
+
+    #[test]
+    fn select_with_asterix_by_asc() {
+        let command = parse_select(
             "SELECT lastname
              FROM employee
              WHERE id = 1
@@ -501,6 +543,19 @@ mod tests {
         match command {
             SqlCommand::SELECT { order_by, .. } => {
                 assert_eq!(order_by, vec!["lastname ASC".to_string()]);
+            }
+            _ => panic!("expected SELECT"),
+        }
+    }
+
+    #[test]
+    fn select_with_limit_keyword() {
+        let command = parse_select("SELECT Top 3 lastname FROM Customers WHERE Country = 'Germany';");
+
+        match command {
+            SqlCommand::SELECT { columns, limit, .. } => {
+                assert_eq!(columns, vec!["lastname"]);
+                assert_eq!(limit, 3);
             }
             _ => panic!("expected SELECT"),
         }
@@ -596,12 +651,11 @@ mod tests {
         }
     }
 
-
     #[test]
     fn select_without_where_clause() {
         let command = parse_select(
             "SELECT name
-             FROM employee"
+             FROM employee",
         );
 
         match command {

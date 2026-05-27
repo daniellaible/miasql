@@ -6,7 +6,7 @@
 ### Base Commands
  + use sqlparser with
 
-   + create
+   + create database
    + drop
    + alter
    + insert
@@ -15,9 +15,12 @@
    + truncate
 
 
+
 ### KeyWords
 
 ### Functions and Operators
+
+ + Limit needs to be implemented in Select parser 
 
 #### Operators
  + And
@@ -31,7 +34,7 @@
  + Exists ?
  + Any
  + All
- + 
+ + Limit
 
 #### Math:
   + Trim
@@ -76,7 +79,7 @@
   + MEDIUMBLOB
   + LONGBLOB
   + TEXT
-  + MEDIUMTEXT
+  + MEDIUM TEXT
   + LONGTEXT
 
 

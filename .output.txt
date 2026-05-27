@@ -1,0 +1,203 @@
+Command finished with exit code 101.
+Command output:
+   Compiling miasql v0.0.8 (C:\MyProjects\rust\miasql)
+warning: unused import: `Statement`
+ --> src\command\createtable.rs:1:72
+  |
+1 | use sqlparser::ast::{ColumnOption, CreateTable, Ident, ObjectNamePart, Statement, TableConstraint};
+  |                                                                        ^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::database::datatype::DataType`
+ --> src\command\createtable.rs:4:5
+  |
+4 | use crate::database::datatype::DataType;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `sqlparser::ast::FunctionArgumentClause::Limit`
+  --> src\command\select.rs:11:5
+   |
+11 | use sqlparser::ast::FunctionArgumentClause::Limit;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::database::datatype::DataType`
+ --> src\command\sqlcommands.rs:5:5
+  |
+5 | use crate::database::datatype::DataType;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: variant `CREATE_TABLE` should have an upper camel case name
+  --> src\command\sqlcommands.rs:23:5
+   |
+23 |     CREATE_TABLE {
+   |     ^^^^^^^^^^^^ help: convert the identifier to upper camel case: `CreateTable`
+   |
+   = note: `#[warn(non_camel_case_types)]` (part of `#[warn(nonstandard_style)]`) on by default
+
+warning: variant `CREATE_DATABASE` should have an upper camel case name
+  --> src\command\sqlcommands.rs:29:5
+   |
+29 |     CREATE_DATABASE {command: String, database: String},
+   |     ^^^^^^^^^^^^^^^ help: convert the identifier to upper camel case: `CreateDatabase`
+
+warning: variant `DROP_TABLE` should have an upper camel case name
+  --> src\command\sqlcommands.rs:30:5
+   |
+30 |     DROP_TABLE {command: String, table: String},
+   |     ^^^^^^^^^^ help: convert the identifier to upper camel case: `DropTable`
+
+warning: variant `DROP_DATABASE` should have an upper camel case name
+  --> src\command\sqlcommands.rs:31:5
+   |
+31 |     DROP_DATABASE{command: String, database: String},
+   |     ^^^^^^^^^^^^^ help: convert the identifier to upper camel case: `DropDatabase`
+
+warning: variant `NOT_NULL` should have an upper camel case name
+ --> src\command\constraint.rs:4:5
+  |
+4 |     NOT_NULL,
+  |     ^^^^^^^^ help: convert the identifier to upper camel case: `NotNull`
+
+warning: variant `PRIMARY_KEY` should have an upper camel case name
+ --> src\command\constraint.rs:6:5
+  |
+6 |     PRIMARY_KEY,
+  |     ^^^^^^^^^^^ help: convert the identifier to upper camel case: `PrimaryKey`
+
+warning: variant `FOREIGN_KEY` should have an upper camel case name
+ --> src\command\constraint.rs:7:5
+  |
+7 |     FOREIGN_KEY,
+  |     ^^^^^^^^^^^ help: convert the identifier to upper camel case: `ForeignKey`
+
+warning: unused import: `std::any::Any`
+ --> src\server\server.rs:8:5
+  |
+8 | use std::any::Any;
+  |     ^^^^^^^^^^^^^
+
+warning: variable does not need to be mutable
+  --> src\server\server.rs:12:51
+   |
+12 | pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database>) -> std::io::Result<()> {
+   |                                                   ----^^^
+   |                                                   |
+   |                                                   help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+error[E0609]: no field `limit` on type `Box<sqlparser::ast::Query>`
+   --> src\command\select.rs:138:38
+    |
+138 |     if let Some(limit_expr) = &query.limit {
+    |                                      ^^^^^ unknown field
+    |
+    = note: available fields are: `with`, `body`, `order_by`, `limit_clause`, `fetch` ... and 5 others
+
+warning: unused import: `crate::command::command::Command`
+ --> src\command\select.rs:1:5
+  |
+1 | use crate::command::command::Command;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused variable: `result`
+  --> src\command\createtable.rs:97:13
+   |
+97 |         let result = match ast.into_iter().next().unwrap() {
+   |             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_result`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `result`
+   --> src\command\createtable.rs:110:13
+    |
+110 |         let result = match ast.into_iter().next().unwrap() {
+    |             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_result`
+
+warning: unused variable: `e`
+   --> src\command\select.rs:365:25
+    |
+365 |                     Err(e) => {
+    |                         ^ help: if this is intentional, prefix it with an underscore: `_e`
+
+warning: unused variable: `dbs`
+  --> src\command\insert.rs:11:28
+   |
+11 |     fn parse(stmt: String, dbs: Vec<Database>) -> SqlCommand {
+   |                            ^^^ help: if this is intentional, prefix it with an underscore: `_dbs`
+
+warning: unused variable: `dbs`
+  --> src\command\update.rs:11:28
+   |
+11 |     fn parse(stmt: String, dbs: Vec<Database>) -> SqlCommand {
+   |                            ^^^ help: if this is intentional, prefix it with an underscore: `_dbs`
+
+warning: variable does not need to be mutable
+  --> src\command\update.rs:48:27
+   |
+48 | fn get_column_value_pairs(mut stmt: &String) -> Vec<String> {
+   |                           ----^^^^
+   |                           |
+   |                           help: remove this `mut`
+
+warning: unused variable: `dbs`
+  --> src\command\delete.rs:13:28
+   |
+13 |     fn parse(stmt: String, dbs: Vec<Database>) -> SqlCommand {
+   |                            ^^^ help: if this is intentional, prefix it with an underscore: `_dbs`
+
+warning: unused variable: `command`
+  --> src\command\delete.rs:48:13
+   |
+48 |         let command = Delete::parse(stmt.to_string(), dbs);
+   |             ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_command`
+
+warning: unused variable: `dbs`
+  --> src\command\droptable.rs:11:28
+   |
+11 |     fn parse(stmt: String, dbs: Vec<Database>) -> SqlCommand {
+   |                            ^^^ help: if this is intentional, prefix it with an underscore: `_dbs`
+
+warning: unused variable: `dbs`
+  --> src\command\dropdatabase.rs:11:28
+   |
+11 |     fn parse(stmt: String, dbs: Vec<Database>) -> SqlCommand {
+   |                            ^^^ help: if this is intentional, prefix it with an underscore: `_dbs`
+
+warning: unused variable: `dbs`
+  --> src\server\server.rs:12:51
+   |
+12 | pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database>) -> std::io::Result<()> {
+   |                                                   ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_dbs`
+
+warning: unused variable: `command`
+  --> src\server\server.rs:24:13
+   |
+24 |         let command: SqlCommand = tokenizer(input);
+   |             ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_command`
+
+warning: unused variable: `command`
+  --> src\server\server.rs:97:17
+   |
+97 |             let command: SqlCommand = command::createtable::parse(create.clone());
+   |                 ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_command`
+
+warning: unused variable: `command`
+   --> src\server\server.rs:105:17
+    |
+105 |             let command: SqlCommand = command::select::parse(query.clone());
+    |                 ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_command`
+
+warning: value assigned to `all_databases` is never read
+  --> src\main.rs:41:44
+   |
+41 |     let mut all_databases: Vec<Database> = Vec::new();
+   |                                            ^^^^^^^^^^
+   |
+   = help: maybe it is overwritten before being read?
+   = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+For more information about this error, try `rustc --explain E0609`.
+warning: `miasql` (bin "miasql" test) generated 29 warnings
+error: could not compile `miasql` (bin "miasql" test) due to 1 previous error; 29 warnings emitted
