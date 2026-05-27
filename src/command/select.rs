@@ -4,7 +4,7 @@ use crate::command::sqloperator::Operator;
 use crate::command::whereclause::WhereClause;
 use crate::database::datatype;
 use sqlparser::ast::{BinaryOperator, Expr, Function as SqlFunction, FunctionArg, FunctionArgExpr, FunctionArgumentList, FunctionArguments, Ident, ObjectName, ObjectNamePart, Query, Select, SelectItem, TableFactor, TableWithJoins, Top, Value, ValueWithSpan};
-use sqlparser::ast::FunctionArgumentClause::Limit;
+use sqlparser::ast::TopQuantity;
 use sqlparser::tokenizer::Token;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -131,28 +131,7 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
     let group_by = extract_group_by(select_stmt);
     let order_by = extract_order_by(&query);
     let columns = extract_columns(select_stmt);
-    let mut limit = -1;
-
-
-    println!("{:?}", &select_stmt.top);
-    let top:(bool,bool, Option<Constant>) = match &select_stmt.top{
-        None => {}
-        Some(top) => {
-            top.quantity.as_ref();
-        }
-    };
-
-/*    if let Some(limit_expr) = &query.limit() {
-        if let Expr::Value(ValueWithSpan {
-            value: Value::Number(n, _),
-            ..
-        }) = limit_expr
-        {
-            if let Ok(limit_val) = n.parse::<i32>() {
-                limit = limit_val;
-            }
-        }
-    }*/
+    let limit: i32 = extract_top(select_stmt);
 
     let command = SqlCommand::SELECT {
         command: String::from(ident),
@@ -166,6 +145,16 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
         limit,
     };
     command
+}
+
+fn extract_top(select_stmt: &Select) -> i32 {
+    let Some(top) = &select_stmt.top else {
+        return -1;
+    };
+
+    let debug = format!("{:?}", top);
+    let digits: String = debug.chars().filter(|c| c.is_ascii_digit()).collect();
+    digits.parse::<i32>().unwrap_or(-1)
 }
 
 fn extract_table_and_joins(select_stmt: &Select) -> Option<(String, Vec<JoinClause>)> {

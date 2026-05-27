@@ -29,7 +29,7 @@ We don't have a website yet - we are working on it, but lets get the database ru
 | 0.4.0 | implementing functions etc                                                                                                  |
 | 0.5.0 | implementing joins and views                                                                                                |
 | 0.6.0 | updating the b-tree on the fly / more b-trees for basic data                                                                |
-| 0.7.0 | user management ans secure shell                                                                                            |
+| 0.7.0 | user management and secure shell                                                                                            |
 | 0.8.0 | backup importer for ledger and other databases                                                                              |
 | 0.9.0 | sharding / clusters                                                                                                         |
 | 1.0.0 | amaze - amaze - amaze - statement                                                                                           |
