@@ -1,19 +1,34 @@
 # MiaSQL
 
 ## Preface
+
 MiaSQL was born out of curiosity. Daniel wanted to understand the way SQL databases work.
 Therefor he decided to program his own db project. He published his project on github and nobody noticed.
 
-The word 'mia' means 'my' in Esperanto. To name the software in Esperanto was chosen deliberately. Esperanto was created as a world 
-language, a language to unite. Mia was created with the same intentions, to provide a tool for all people, a tool that is free 
-from third party tinkering, a tool that does not need to earn dividends for some shareholders. 
+The word 'mia' means 'my' in Esperanto. To name the software in Esperanto was chosen deliberately. Esperanto was created as a world
+language, a language to unite. Mia was created with the same intentions, to provide a tool for all people, a tool that is free
+from third party tinkering, a tool that does not need to earn dividends for some shareholders.
 
+## General Information
 
-## Datatypes
+## Licencing
 
-We do not support VarChar. We only support Char as datatype. VarChar seems to be an anachronism.  
+## Installing Mia
+### Installing Mia on Windows
 
-These are the datatypes we are currently supporting. 
+### Installing Mia on Linux
+
+### Installing Mia on Mac
+
+### Connecting to Mia
+Connecting to the database is simple - just use PuTTY and connect to your db-server on port 7878.
+
+## Language Structure
+### Basic Language Settings
+#### Datatypes
+We do not support VarChar. We only support Char as datatype. VarChar seems to be an anachronism.
+
+These are the datatypes we are currently supporting.
 * BigInt { 64 bit },
 * Int { 32 bit },
 * SmallInt { 16 bit },
@@ -25,7 +40,27 @@ These are the datatypes we are currently supporting.
 * Date { 64 bit } ... nope - not supported yet,
 * Time { 64 bit } ... nope - not supported yet,
 * DateTime { 64 bit } ... nope - not supported yet
+#### Data Queries
+#### Data Manipulations
 
+### Operators and Functions 
+
+### Security
+
+## The Ledger
+The ledger is a file on your hard-drive. Every database has a ledger. The ledger stores all
+commands which are altering the database and it's data. So the ledger stores not only
+CREATE and ALTER commands but also INSERT commands etc... . SELECT commands and user permissions are
+not stored in the ledger. The first entry in the ledger is always a CREATE DATABASE command.
+The ledger is the build-in backup system of the database.
+
+There is a plan on building a ledger viewer.
+
+## Connectors and APIs
+Connecting to the database is simple - just use PuTTY and connect to your db-server on port 7878.
+## Clusters
+
+## Shards
 
 ## The basic functionality of Mia
 
@@ -43,27 +78,13 @@ These are the datatypes we are currently supporting.
               ||      -----> ledger updates field DataOnDisc
 		  ||
 		  ||      -----> update b-tree (stores tables in memory)		
-		  ||
+		  ||      -----> update cluster or shards
 		  ||
 		  ||
 		 \  /
 		  \/		
 	   
 	       Response  
-
-## Connecting to the Database
-Connecting to the database is simple - just use PuTTY and connect to your db-server on port 7878.
-
-
-## The Ledger
-The ledger is a file on your hard-drive. Every database has a ledger. The ledger stores all
-commands which are altering the database and it's data. So the ledger stores not only
-CREATE and ALTER commands but also INSERT commands etc... . SELECT commands and user permissions are 
-not stored in the ledger. The first entry in the ledger is always a CREATE DATABASE command.
-The ledger is the build-in backup system of the database.
-
-There is a plan on building a ledger viewer.
-
 
 ## Syntax
 "DROP TABLE IF EXISTS table_name;" is not supported use "DROP TABLE table_name" instead.

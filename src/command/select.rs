@@ -1,12 +1,14 @@
+#![crate_name = "doc"]
+
 use crate::command::command::Command;
 use crate::command::sqlcommands::SqlCommand;
 use crate::command::sqloperator::Operator;
 use crate::command::whereclause::WhereClause;
 use crate::database::datatype;
 use sqlparser::ast::{BinaryOperator, Expr, Function as SqlFunction, FunctionArg, FunctionArgExpr, FunctionArgumentList, FunctionArguments, Ident, ObjectName, ObjectNamePart, Query, Select, SelectItem, TableFactor, TableWithJoins, Top, Value, ValueWithSpan};
-use sqlparser::ast::TopQuantity;
 use sqlparser::tokenizer::Token;
 
+/// This truct specifies what kind of Join command was tokenized
 #[derive(Clone, Debug, PartialEq)]
 pub enum JoinType {
     Inner,
@@ -15,6 +17,7 @@ pub enum JoinType {
     Full,
 }
 
+/// This is the abstract representation of a Join command
 #[derive(Clone, Debug, PartialEq)]
 pub struct JoinClause {
     pub join_type: JoinType,
@@ -23,6 +26,7 @@ pub struct JoinClause {
     pub right_column: String,
 }
 
+/// This stores the part between the SELECT and FROM in a select statement
 #[derive(Debug, Clone, PartialEq)]
 pub enum Projection {
     Wildcard,
@@ -30,6 +34,7 @@ pub enum Projection {
     Function { name: String, column: String },
 }
 
+/// This enum represents the different kinds of functions that can be used in a select statement
 #[derive(Debug, Clone, PartialEq)]
 pub enum FunctionKind {
     Avg,
@@ -69,12 +74,14 @@ pub enum FunctionKind {
     Truncate,
 }
 
+/// This struct represents a function call in a select statement
 #[derive(Debug, Clone, PartialEq)]
 pub struct ParsedFunction {
     pub kind: FunctionKind,
     pub column: String,
 }
 
+/// This is the tokenizer
 pub fn parse(query: Box<Query>) -> SqlCommand {
     let body = *query.body.clone();
     let select = body.as_select();

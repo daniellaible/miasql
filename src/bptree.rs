@@ -2,7 +2,6 @@
 //!
 //! Features
 //! - Internal nodes + leaf nodes (leaves linked for efficient range scans)
-//! - insert / get / remove / range
 //! - Split on insert; merge/redistribute on delete
 //! - Always maintains B+ invariants, keeping tree height as low as possible
 //!
@@ -13,8 +12,8 @@
 //!
 //! Complexity
 //! - get:    O(log n)
-//! - insert: O(log n) amortized
-//! - remove: O(log n) amortized
+//! - insert: O(log n) 
+//! - remove: O(log n) 
 //! - range:  O(log n + k)
 //!
 //! Safety

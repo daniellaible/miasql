@@ -3,12 +3,15 @@ use crate::database::database::Database;
 
 mod bptree;
 
+/// # Datamanipulations
+/// In this module you find all the files that do datamanipulation in the RAM.
 mod database {
     pub mod database;
     pub mod datatype;
     pub mod table;
 }
 
+/// # Parsing modules
 mod command {
     pub mod sqloperator;
     pub mod createtable;
@@ -21,8 +24,9 @@ mod command {
     pub mod update;
     pub mod delete;
     pub mod constraint;
-    pub mod droptable;
+    /// This module handles the tokenization of the DROP DATABASE | TABLE  command
     pub mod drop;
+    /// This module handles the tokenization of the CREATE DATABASE command
     pub mod createdatabase;
 }
 

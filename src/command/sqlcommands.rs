@@ -27,8 +27,14 @@ pub enum SqlCommand {
         database: String,
         comment: String,
     },
-    DROP_TABLE {command: String, table: String},
-    DROP_DATABASE{command: String, database: String},
+    DROP_TABLE {
+        command: String,
+        table: String
+    },
+    DROP_DATABASE{
+        command: String,
+        database: String
+    },
     ALTER {command: String, table: String, columns: Vec<String>, values: Vec<String>, where_clause: WhereClause },
     INSERT {command: String, table: String, columns: Vec<String>, values: Vec<Vec<String>>, where_clause: WhereClause },
     UPDATE {command: String, table: String, columns: Vec<String>, values: Vec<String>, where_clause: WhereClause },

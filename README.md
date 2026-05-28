@@ -8,6 +8,13 @@ You can interact with the database via a socket connection and use this shell to
 We are working on the documentation - it will be on the website.
 Until then please check the manual.md file.
 
+The B-Tree itself (table) is always single-threaded, so there is always only one worker on one B-Tree,
+however, there can be multiple B-Trees in RAM storage - this will be then multithreaded.
+
+With clusters there are multiple instances of the same table (B-Tree) available for the users.
+On Shards you have different tables of the same database available (no read and write from the disc),
+on Clusters you have the same data available for parallel use.
+
 To connect to the database open a PuTTY like shell with port 7878 - there you can enter your sql commands.
 In the future this will become a ssh connection, but right now we will be using a regular shell.
 
