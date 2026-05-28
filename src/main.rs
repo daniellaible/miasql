@@ -23,6 +23,7 @@ mod command {
     pub mod constraint;
     pub mod droptable;
     pub mod dropdatabase;
+    pub mod createdatabase;
 }
 
 mod server{

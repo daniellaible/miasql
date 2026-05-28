@@ -180,4 +180,10 @@ mod tests {
         let command: &str = "CREATE TABLE Persons ( PersonID BigInt PRIMARY KEY, LastName VarChar(255) NOT NULL, FirstName VarChar(255), Address VarChar(255), City VarChar(255));";
         tokenizer(command);
     }
+
+    #[test]
+    fn test_tokenizer_create_database(){
+        let command: &str = "CREATE DATABASE employee";
+        tokenizer(command);
+    }
 }
