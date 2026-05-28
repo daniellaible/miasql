@@ -25,6 +25,7 @@ pub struct JoinClause {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Projection {
+    Wildcard,
     Column(String),
     Function { name: String, column: String },
 }
@@ -221,6 +222,7 @@ fn extract_table_and_joins(select_stmt: &Select) -> Option<(String, Vec<JoinClau
 
 fn parse_projection(item: &SelectItem) -> Option<Projection> {
     match item {
+        SelectItem::Wildcard(_) => Some(Projection::Wildcard),
         SelectItem::UnnamedExpr(Expr::Identifier(ident)) => {
             Some(Projection::Column(ident.value.clone()))
         }
@@ -388,8 +390,11 @@ fn retrieve_where_clause(where_ast: &Expr) -> Option<WhereClause> {
 fn extract_columns(select_stmt: &Select) -> Vec<String> {
     let mut columns = Vec::new();
 
+    println!("{:?}", &select_stmt.projection);
+
     for item in &select_stmt.projection {
         match parse_projection(item) {
+            Some(Projection::Wildcard) => columns.push("*".to_string()),
             Some(Projection::Column(name)) => columns.push(name),
             Some(Projection::Function { name, column }) => {
                 columns.push(format!("{}({})", name, column));

@@ -18,8 +18,6 @@ pub enum SqlCommand {
         limit: i32,
 
     },
-    /// command is always CREATE_DATABASE, in table the table name is stored and in columns is a vector stored that contains tupels
-    /// that are structured like Vec<(column_name, datatype, Vec<constraint1, constraint2 ...>)>
     CREATE_TABLE {
         command: String,
         table: String,
