@@ -98,6 +98,9 @@ fn tokenizer(stmt: &str) -> SqlCommand {
             println!("table name: {}", create.name);
             println!("columns: {:?}", create.columns);
         }
+        Statement::CreateDatabase { .. }=> {
+            let command: SqlCommand = command::createdatabase::parse(ast);
+        }
         Statement::Insert(insert) => {
             println!("table: {:?}", insert.table);
         }

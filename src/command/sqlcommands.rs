@@ -24,7 +24,7 @@ pub enum SqlCommand {
         columns: Vec<(String, String, Vec<Constraint>)>,
         foreign_keys: Vec<ParsedForeignKey>,
     },
-    CREATE_DATABASE {command: String, database: String},
+    CREATE_DATABASE {command: String, database: String, comment: String, },
     DROP_TABLE {command: String, table: String},
     DROP_DATABASE{command: String, database: String},
     ALTER {command: String, table: String, columns: Vec<String>, values: Vec<String>, where_clause: WhereClause },
