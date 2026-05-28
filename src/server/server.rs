@@ -81,6 +81,7 @@ fn tokenizer(stmt: &str) -> SqlCommand {
     let dialect = GenericDialect {};
     let ast = Parser::parse_sql(&dialect, stmt).unwrap();
     println!("{:#?}", ast[0].clone());
+    let mut command: SqlCommand = SqlCommand::UNDEFINED;
 
     match ast[0].clone() {
         Statement::AlterTable(alter) => {
@@ -94,19 +95,19 @@ fn tokenizer(stmt: &str) -> SqlCommand {
             println!("end_token: {:?}", alter.end_token);
         }
         Statement::CreateTable(create) => {
-            let command: SqlCommand = command::createtable::parse(create.clone());
+            command = command::createtable::parse(create.clone());
         }
         Statement::CreateDatabase { .. }=> {
-            let command: SqlCommand = command::createdatabase::parse(ast);
+            command = command::createdatabase::parse(ast);
         }
         Statement::Drop { .. } => {
-            //let command: SqlCommand = command::drop::parse(ast);
+            command = command::drop::parse(ast);
         }
         Statement::Insert(insert) => {
             println!("table: {:?}", insert.table);
         }
         Statement::Query(query) => {
-            let command: SqlCommand = command::select::parse(query.clone());
+            command = command::select::parse(query.clone());
 
             println!("with: {:?}", query.with);
             let body = *query.body.clone();
@@ -156,9 +157,6 @@ fn tokenizer(stmt: &str) -> SqlCommand {
             println!("settings: {:?}", query.settings);
             println!("format_clause: {:?}", query.format_clause);
             println!("pipe_operators: {:?}", query.pipe_operators);
-        }
-        Statement::Drop { names, .. } => {
-            println!("dropping: {:?}", names);
         }
         Statement::Update(update) => {
             println!("table: {:?}", update.table);

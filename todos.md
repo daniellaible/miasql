@@ -6,7 +6,6 @@
 ### Base Commands
  + use sqlparser with
 
-   + drop
    + alter
    + insert
    + update
