@@ -22,7 +22,7 @@ mod command {
     pub mod delete;
     pub mod constraint;
     pub mod droptable;
-    pub mod dropdatabase;
+    pub mod drop;
     pub mod createdatabase;
 }
 

@@ -95,11 +95,12 @@ fn tokenizer(stmt: &str) -> SqlCommand {
         }
         Statement::CreateTable(create) => {
             let command: SqlCommand = command::createtable::parse(create.clone());
-            println!("table name: {}", create.name);
-            println!("columns: {:?}", create.columns);
         }
         Statement::CreateDatabase { .. }=> {
             let command: SqlCommand = command::createdatabase::parse(ast);
+        }
+        Statement::Drop { .. } => {
+            //let command: SqlCommand = command::drop::parse(ast);
         }
         Statement::Insert(insert) => {
             println!("table: {:?}", insert.table);
@@ -187,6 +188,18 @@ mod tests {
     #[test]
     fn test_tokenizer_create_database(){
         let command: &str = "CREATE DATABASE employee";
+        tokenizer(command);
+    }
+
+    #[test]
+    fn test_tokenizer_drop_database(){
+        let command: &str = "DROP DATABASE employee";
+        tokenizer(command);
+    }
+
+    #[test]
+    fn test_tokenizer_drop_table(){
+        let command: &str = "DROP TABLE employee";
         tokenizer(command);
     }
 }

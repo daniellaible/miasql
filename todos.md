@@ -6,7 +6,6 @@
 ### Base Commands
  + use sqlparser with
 
-   + create database
    + drop
    + alter
    + insert
@@ -20,7 +19,7 @@
 
 ### Functions and Operators
 
- + Limit needs to be implemented in Select parser 
+ + whereclause needs to be a vector for ands and ors aso.
 
 #### Operators
  + And
