@@ -2,16 +2,17 @@ use sqlparser::ast::{BinaryOperator, Delete, Expr, FromTable, TableFactor, Value
 use crate::command::sqlcommands::SqlCommand;
 use crate::command::sqloperator::Operator;
 use crate::command::whereclause::WhereClause;
+use crate::database::datatype::DataType;
 
-pub fn parse(del_stmt: Delete) -> SqlCommand {
+pub fn parse(del_stmt: Delete) -> Result<SqlCommand, String> {
     let table = extract_table_name(&del_stmt.from)?;
     let where_clause = extract_where_clause(del_stmt.selection.as_ref())?;
 
-    SqlCommand::DELETE {
+    Ok(SqlCommand::DELETE {
         command: String::from("DELETE"),
         table,
         where_clause,
-    }
+    })
 }
 
 fn extract_where_clause(selection: Option<&Expr>) -> Result<WhereClause, String> {
@@ -19,52 +20,59 @@ fn extract_where_clause(selection: Option<&Expr>) -> Result<WhereClause, String>
 
     match expr {
         Expr::BinaryOp { left, op, right } => {
-            let column = extract_expr_as_string(left)?;
-            let operator:Operator = extract_operator(op);
-            let value = extract_expr_as_string(right)?;
+            let column = extract_identifier_as_string(left)?;
+            let operator: Operator = extract_operator(op);
+            let value = extract_expr_as_datatype(right)?;
 
-/*            return WhereClause {
+            Ok(WhereClause {
                 column,
-                operator: operator,
-                BigInt{x:1},
-            };*/
+                operator,
+                value,
+            })
         }
         _ => Err("Unsupported WHERE clause expression".to_string()),
     }
 }
 
 fn extract_operator(op: &BinaryOperator) -> Operator {
-    let operator = match op {
+    match op {
         BinaryOperator::Eq => Operator::EQUAL,
         BinaryOperator::NotEq => Operator::NOTEQUAL,
         BinaryOperator::Gt => Operator::GREATER,
         BinaryOperator::Lt => Operator::LESSER,
         BinaryOperator::GtEq => Operator::GREATEROREQ,
         BinaryOperator::LtEq => Operator::LESSEROREQ,
-        _ => {Operator::UNDEFINED}
-    };
-    operator
+        _ => Operator::UNDEFINED,
+    }
 }
 
-fn extract_expr_as_string(expr: &Expr) -> Result<String, String> {
+fn extract_identifier_as_string(expr: &Expr) -> Result<String, String> {
     match expr {
         Expr::Identifier(ident) => Ok(ident.value.clone()),
-
         Expr::CompoundIdentifier(parts) => Ok(parts
             .iter()
             .map(|ident| ident.value.clone())
             .collect::<Vec<_>>()
             .join(".")),
+        _ => Err(format!("Expected column identifier, got: {:?}", expr)),
+    }
+}
 
+fn extract_expr_as_datatype(expr: &Expr) -> Result<DataType, String> {
+    match expr {
         Expr::Value(v) => match &v.value {
-            Value::Number(n, _) => Ok(n.clone()),
-            Value::SingleQuotedString(s) => Ok(s.clone()),
-            Value::Boolean(b) => Ok(b.to_string()),
-            Value::Null => Ok("NULL".to_string()),
+            Value::Number(n, _) => {
+                // choose the right numeric type for your Datatype
+                let parsed = n.parse::<i64>()
+                    .map_err(|_| format!("Invalid integer literal: {}", n))?;
+                Ok(DataType::BigInt { x: parsed })
+            }
+            Value::SingleQuotedString(s) => Ok(DataType::VarChar { x: s.clone(), y: 255 }),
+            Value::Boolean(b) => Ok(DataType::Bool{ x: *b }),
+            Value::Null => Ok(DataType::Null),
             other => Err(format!("Unsupported literal value: {:?}", other)),
         },
-
-        _ => Err(format!("Unsupported expression: {:?}", expr)),
+        _ => Err(format!("Expected literal value, got: {:?}", expr)),
     }
 }
 
@@ -83,7 +91,7 @@ fn extract_table_name(from: &FromTable) -> Result<String, String> {
             let table_name = name
                 .0
                 .iter()
-                .map(|ident| ident.value.clone())
+                .map(|part| part.to_string())
                 .collect::<Vec<_>>()
                 .join(".");
 
