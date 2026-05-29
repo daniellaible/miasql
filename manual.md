@@ -46,8 +46,20 @@ These are the datatypes we are currently supporting.
 * Date { 64 bit } ... nope - not supported yet,
 * Time { 64 bit } ... nope - not supported yet,
 * DateTime { 64 bit } ... nope - not supported yet
+
 #### Data Queries
+
 #### Data Manipulations
+
+##### Delete
+
+Syntax of a delete statement:
+> DELETE FROM < table > WHERE < selector >
+
+Delete needs a table and a where-clause (selector). Without a where-clause other db-systems truncate the whole table. 
+Mia does not allow such unintended behavior, therefore, use truncate to delete all data from the table
+but use the delete statement to delete only specific data.
+
 
 ### Operators and Functions 
 
