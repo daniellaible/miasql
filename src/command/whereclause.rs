@@ -38,7 +38,7 @@ impl WhereClause {
         WhereClause {
             column: String::default(),
             operator: Operator::UNDEFINED,
-            value: DataType::Undefined,
+            value: DataTy  pe::Undefined,
         }
     }
 

@@ -112,6 +112,9 @@ fn tokenizer(stmt: &str) -> SqlCommand {
         Statement::Update(update) => {
             println!("table: {:?}", update.table);
         }
+        Statement::Delete(delete) => {
+            println!("delete: {:?}", delete);
+        }
         _ => println!("other statement"),
     }
     SqlCommand::UNDEFINED
@@ -147,8 +150,14 @@ mod tests {
     }
 
     #[test]
-    fn test_tokenizer_drop_table(){
-        let command: &str = "DROP TABLE employee";
+    fn test_tokenizer_delete_row(){
+        let command: &str = "DELETE FROM employee WHERE id=1";
+        tokenizer(command);
+    }
+
+    #[test]
+    fn test_tokenizer_all_rows(){
+        let command: &str = "DELETE FROM employee";
         tokenizer(command);
     }
 }

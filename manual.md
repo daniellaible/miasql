@@ -3,7 +3,7 @@
 ## Preface
 
 MiaSQL was born out of curiosity. Daniel wanted to understand the way SQL databases work.
-Therefor he decided to program his own db project. He published his project on github and nobody noticed.
+Therefore, he decided to program his own db project. He published his project on github and nobody noticed.
 
 The word 'mia' means 'my' in Esperanto. To name the software in Esperanto was chosen deliberately. Esperanto was created as a world
 language, a language to unite. Mia was created with the same intentions, to provide a tool for all people, a tool that is free
@@ -12,6 +12,8 @@ from third party tinkering, a tool that does not need to earn dividends for some
 ## General Information
 
 ## Licencing
+### Community Licence
+### Enterprise Licence
 
 ## Installing Mia
 ### Installing Mia on Windows
@@ -19,6 +21,10 @@ from third party tinkering, a tool that does not need to earn dividends for some
 ### Installing Mia on Linux
 
 ### Installing Mia on Mac
+
+### Configuring Mia
+If you are using the installer, you will be guided through the configuration process.
+If you are not using the installer, you will need to configure Mia manually via a yaml file.
 
 ### Connecting to Mia
 Connecting to the database is simple - just use PuTTY and connect to your db-server on port 7878.
@@ -48,7 +54,7 @@ These are the datatypes we are currently supporting.
 ### Security
 
 ## The Ledger
-The ledger is a file on your hard-drive. Every database has a ledger. The ledger stores all
+The ledger is a file on your hard-drive. Every Mia-DB has a ledger. The ledger stores all
 commands which are altering the database and it's data. So the ledger stores not only
 CREATE and ALTER commands but also INSERT commands etc... . SELECT commands and user permissions are
 not stored in the ledger. The first entry in the ledger is always a CREATE DATABASE command.
@@ -61,6 +67,10 @@ Connecting to the database is simple - just use PuTTY and connect to your db-ser
 ## Clusters
 
 ## Shards
+
+## Backup and Recovery
+
+## Additional software to support Mia
 
 ## The basic functionality of Mia
 
@@ -102,6 +112,11 @@ SELECT lastname
     FROM employee
     WHERE id = 1
     ORDER BY lastname DESC;
+
+SELECT *
+FROM employee
+WHERE id = 1
+ORDER BY lastname DESC;
 
 SELECT firstname, lastname
     FROM employee

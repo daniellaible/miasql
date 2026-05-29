@@ -1,50 +1,94 @@
-use crate::command::command::Command;
+use sqlparser::ast::{BinaryOperator, Delete, Expr, FromTable, TableFactor, Value};
 use crate::command::sqlcommands::SqlCommand;
+use crate::command::sqloperator::Operator;
 use crate::command::whereclause::WhereClause;
-use crate::database::database::Database;
-use regex::Regex;
 
-#[derive(Debug)]
-pub struct Delete {
-}
+pub fn parse(del_stmt: Delete) -> SqlCommand {
+    let table = extract_table_name(&del_stmt.from)?;
+    let where_clause = extract_where_clause(del_stmt.selection.as_ref())?;
 
-
-impl Command for Delete {
-    fn parse(stmt: String, dbs: Vec<Database>) -> SqlCommand {
-        let table = get_table(&stmt);
-        let clause: WhereClause = WhereClause::parse(&stmt);
-        SqlCommand::DELETE {
-            command:String::from("DELETE"),
-            table,
-            where_clause: clause,
-        }
+    SqlCommand::DELETE {
+        command: String::from("DELETE"),
+        table,
+        where_clause,
     }
 }
 
-fn get_table(stmt: &String) -> String {
-    let regex = Regex::new(r"(?i)FROM\s+(.*?)\s+WHERE").unwrap();
-    let captures = regex.captures(&stmt).unwrap();
-    let table = captures.get(1).unwrap().as_str();
-    table.to_string()
-}
+fn extract_where_clause(selection: Option<&Expr>) -> Result<WhereClause, String> {
+    let expr = selection.ok_or_else(|| "DELETE statement has no WHERE clause".to_string())?;
 
-impl Delete {
-    pub fn default() -> Self {
-        Delete {
+    match expr {
+        Expr::BinaryOp { left, op, right } => {
+            let column = extract_expr_as_string(left)?;
+            let operator:Operator = extract_operator(op);
+            let value = extract_expr_as_string(right)?;
+
+/*            return WhereClause {
+                column,
+                operator: operator,
+                BigInt{x:1},
+            };*/
         }
+        _ => Err("Unsupported WHERE clause expression".to_string()),
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::command::command::Command;
-    use crate::command::delete::Delete;
-    use crate::database::database::Database;
+fn extract_operator(op: &BinaryOperator) -> Operator {
+    let operator = match op {
+        BinaryOperator::Eq => Operator::EQUAL,
+        BinaryOperator::NotEq => Operator::NOTEQUAL,
+        BinaryOperator::Gt => Operator::GREATER,
+        BinaryOperator::Lt => Operator::LESSER,
+        BinaryOperator::GtEq => Operator::GREATEROREQ,
+        BinaryOperator::LtEq => Operator::LESSEROREQ,
+        _ => {Operator::UNDEFINED}
+    };
+    operator
+}
 
-    #[test]
-    fn simple_delete_with_where() {
-        let dbs: Vec<Database> = vec!();
-        let stmt = "DELETE FROM Customers WHERE id=1;";
-        let command = Delete::parse(stmt.to_string(), dbs);
+fn extract_expr_as_string(expr: &Expr) -> Result<String, String> {
+    match expr {
+        Expr::Identifier(ident) => Ok(ident.value.clone()),
+
+        Expr::CompoundIdentifier(parts) => Ok(parts
+            .iter()
+            .map(|ident| ident.value.clone())
+            .collect::<Vec<_>>()
+            .join(".")),
+
+        Expr::Value(v) => match &v.value {
+            Value::Number(n, _) => Ok(n.clone()),
+            Value::SingleQuotedString(s) => Ok(s.clone()),
+            Value::Boolean(b) => Ok(b.to_string()),
+            Value::Null => Ok("NULL".to_string()),
+            other => Err(format!("Unsupported literal value: {:?}", other)),
+        },
+
+        _ => Err(format!("Unsupported expression: {:?}", expr)),
+    }
+}
+
+fn extract_table_name(from: &FromTable) -> Result<String, String> {
+    let tables = match from {
+        FromTable::WithFromKeyword(tables) => tables,
+        FromTable::WithoutKeyword(tables) => tables,
+    };
+
+    let first_table = tables
+        .first()
+        .ok_or_else(|| "DELETE statement has no table".to_string())?;
+
+    match &first_table.relation {
+        TableFactor::Table { name, .. } => {
+            let table_name = name
+                .0
+                .iter()
+                .map(|ident| ident.value.clone())
+                .collect::<Vec<_>>()
+                .join(".");
+
+            Ok(table_name)
+        }
+        _ => Err("Unsupported table factor in DELETE".to_string()),
     }
 }
