@@ -113,6 +113,7 @@ fn tokenizer(stmt: &str) -> SqlCommand {
             println!("table: {:?}", update.table);
         }
         Statement::Delete(delete) => {
+            command = command::delete::parse(delete.clone());
             println!("delete: {:?}", delete);
         }
         _ => println!("other statement"),

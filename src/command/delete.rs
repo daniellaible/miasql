@@ -4,15 +4,15 @@ use crate::command::sqloperator::Operator;
 use crate::command::whereclause::WhereClause;
 use crate::database::datatype::DataType;
 
-pub fn parse(del_stmt: Delete) -> Result<SqlCommand, String> {
-    let table = extract_table_name(&del_stmt.from)?;
-    let where_clause = extract_where_clause(del_stmt.selection.as_ref())?;
+pub fn parse(del_stmt: Delete) -> SqlCommand {
+    let table = extract_table_name(&del_stmt.from).unwrap();
+    let where_clause = extract_where_clause(del_stmt.selection.as_ref()).unwrap();
 
-    Ok(SqlCommand::DELETE {
+    SqlCommand::DELETE {
         command: String::from("DELETE"),
         table,
         where_clause,
-    })
+    }
 }
 
 fn extract_where_clause(selection: Option<&Expr>) -> Result<WhereClause, String> {
@@ -116,7 +116,7 @@ mod tests {
         let ast = Parser::parse_sql(&dialect, sql).unwrap();
 
         match ast.into_iter().next().unwrap() {
-            Statement::Delete(delete) => parse(delete),
+            Statement::Delete(delete) => Ok(parse(delete)),
             _ => panic!("expected delete statement"),
         }
     }
