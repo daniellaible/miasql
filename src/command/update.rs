@@ -2,7 +2,7 @@ use crate::command::sqlcommands::SqlCommand;
 use crate::command::sqloperator::Operator;
 use crate::command::whereclause::WhereClause;
 use crate::database::datatype;
-use sqlparser::ast::{Assignment, AssignmentTarget, BinaryOperator, Expr, Update, ValueWithSpan};
+use sqlparser::ast::{Assignment, AssignmentTarget, BinaryOperator, Expr, TableFactor, TableObject, TableWithJoins, Update, ValueWithSpan};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct UpdateSet {
@@ -11,6 +11,12 @@ pub struct UpdateSet {
 }
 
 pub fn parse(update: Update) -> SqlCommand {
+    let table = match parse_table(&update.table) {
+        Some(table) => table,
+        None => return SqlCommand::UNDEFINED,
+    };
+
+
     let where_clause = match &update.selection {
         Some(expr) => match retrieve_where_clause(expr) {
             Some(clause) => clause,
@@ -18,6 +24,8 @@ pub fn parse(update: Update) -> SqlCommand {
         },
         None => return SqlCommand::UNDEFINED,
     };
+
+
 
     let mut sets: Vec<UpdateSet> = vec![];
 
@@ -30,6 +38,7 @@ pub fn parse(update: Update) -> SqlCommand {
 
     SqlCommand::UPDATE {
         command: String::from("UPDATE"),
+        table,
         sets,
         where_clause,
     }
@@ -59,6 +68,19 @@ fn parse_assignment(assignment: &Assignment) -> Option<UpdateSet> {
     };
 
     Some(UpdateSet { column, value })
+}
+
+fn parse_table(table_with_joins: &TableWithJoins) -> Option<String> {
+    match &table_with_joins.relation {
+        TableFactor::Table { name, .. } => Some(
+            name.0
+                .iter()
+                .map(|part| part.to_string())
+                .collect::<Vec<_>>()
+                .join("."),
+        ),
+        _ => None,
+    }
 }
 
 fn retrieve_where_clause(where_ast: &Expr) -> Option<WhereClause> {
@@ -165,10 +187,12 @@ mod tests {
         match command {
             SqlCommand::UPDATE {
                 command,
+                table,
                 sets,
                 where_clause,
             } => {
                 assert_eq!(command, "UPDATE");
+                assert_eq!(table, "Customers");
                 assert_eq!(sets.len(), 2);
                 assert_eq!(sets[0].column, "ContactName");
                 assert_eq!(sets[0].value, "Alfred Schmidt");
@@ -192,10 +216,12 @@ mod tests {
         match command {
             SqlCommand::UPDATE {
                 command,
+                table,
                 sets,
                 where_clause,
             } => {
                 assert_eq!(command, "UPDATE");
+                assert_eq!(table, "Customers");
                 assert_eq!(sets.len(), 1);
                 assert_eq!(sets[0].column, "ContactName");
                 assert_eq!(sets[0].value, "Alfred Schmidt");

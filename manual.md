@@ -113,6 +113,7 @@ Truncate deletes all data from a table without deleting the table itself.
 ##### Insert
 
 ##### Update
+>
 
 ##### Delete
 Syntax of a delete statement:

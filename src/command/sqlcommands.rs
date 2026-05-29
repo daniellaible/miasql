@@ -47,6 +47,7 @@ pub enum SqlCommand {
     },
     UPDATE {
         command: String,
+        table: String,
         sets: Vec<UpdateSet>,
         where_clause: WhereClause
     },
