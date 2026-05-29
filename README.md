@@ -5,8 +5,8 @@ MiaSQL will be an open-source database that will be free to use for non-profit o
 You can interact with the database via a socket connection and use this shell to enter your commands.
 
 ## Documentation
-We are working on the documentation - it will be on the website.
-Until then please check the manual.md file.
+We are working on the documentation – it will be on the website.
+On how to use the database, please look at the manual.md file. 
 
 The B-Tree itself (table) is always single-threaded, so there is always only one worker on one B-Tree,
 however, there can be multiple B-Trees in RAM storage - this will be then multithreaded.

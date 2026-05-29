@@ -49,14 +49,56 @@ These are the datatypes we are currently supporting.
 
 #### Data Queries
 
+##### Select
+
+Syntax of a basic select statement:
+> SELECT < column1, column2, ... > FROM < table_name > WHERE condition;
+
+Syntax of a basic select statement for all columns:
+> SELECT * FROM < table_name > WHERE condition;  
+
+Select all unique entries from a table
+> SELECT DISTINCT < table_name > FROM < table_name >;
+
+Select with an order
+> SELECT <column1, column2, ... > FROM < table_name> ORDER BY column1, column2, ... ASC|DESC;
+
+Select with grouping
+> SELECT < column1, aggregate_function(column2), column3, ... > FROM < table_name > WHERE < condition > GROUP BY < column1, column3 > ORDER BY < column_name >;
+
+Syntax top command
+> SELECT TOP number FROM table_name WHERE condition;
+
+Todo: here we need the Joins | aggregate functions | regular functions
+
 #### Data Manipulations
+
+##### Create
+
+###### Create Table
+
+###### Create Database
 
 ##### Delete
 
-Syntax of a delete statement:
-> DELETE FROM < table > WHERE < selector >
+##### Drop
 
-Delete needs a table and a where-clause (selector). Without a where-clause other db-systems truncate the whole table. 
+###### Drop Table
+
+###### Drop Database
+
+##### Truncate
+
+##### Alter
+
+##### Insert
+
+##### Update
+
+Syntax of a delete statement:
+> DELETE FROM < table > WHERE < condition >
+
+Delete needs a table and a where-clause (condition). Without a where-clause other db-systems truncate the whole table. 
 Mia does not allow such unintended behavior, therefore, use truncate to delete all data from the table
 but use the delete statement to delete only specific data.
 

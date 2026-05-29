@@ -35,10 +35,14 @@ pub enum SqlCommand {
         command: String,
         database: String
     },
+    DELETE {
+        command: String,
+        table: String,
+        where_clause: WhereClause
+    },
     ALTER {command: String, table: String, columns: Vec<String>, values: Vec<String>, where_clause: WhereClause },
     INSERT {command: String, table: String, columns: Vec<String>, values: Vec<Vec<String>>, where_clause: WhereClause },
     UPDATE {command: String, table: String, columns: Vec<String>, values: Vec<String>, where_clause: WhereClause },
-    DELETE {command: String, table: String, where_clause: WhereClause },
     TRUNCATE {command: String, table: String, columns: Vec<String>, values: Vec<String>, where_clause: WhereClause },
     UNDEFINED
 } 
