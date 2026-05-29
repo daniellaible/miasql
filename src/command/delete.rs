@@ -100,3 +100,239 @@ fn extract_table_name(from: &FromTable) -> Result<String, String> {
         _ => Err("Unsupported table factor in DELETE".to_string()),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::parse;
+    use crate::command::sqlcommands::SqlCommand;
+    use crate::command::sqloperator::Operator;
+    use crate::database::datatype::DataType;
+    use sqlparser::ast::Statement;
+    use sqlparser::dialect::GenericDialect;
+    use sqlparser::parser::Parser;
+
+    fn parse_delete(sql: &str) -> Result<SqlCommand, String> {
+        let dialect = GenericDialect {};
+        let ast = Parser::parse_sql(&dialect, sql).unwrap();
+
+        match ast.into_iter().next().unwrap() {
+            Statement::Delete(delete) => parse(delete),
+            _ => panic!("expected delete statement"),
+        }
+    }
+
+    #[test]
+    fn delete_with_equal_numeric_where_clause() {
+        let command = parse_delete("DELETE FROM employee WHERE id = 1").unwrap();
+
+        match command {
+            SqlCommand::DELETE { command, table, where_clause } => {
+                assert_eq!(command, "DELETE");
+                assert_eq!(table, "employee");
+                assert_eq!(where_clause.column, "id");
+                assert_eq!(where_clause.operator, Operator::EQUAL);
+                assert_eq!(where_clause.value, DataType::BigInt { x: 1 });
+            }
+            _ => panic!("expected DELETE"),
+        }
+    }
+
+    #[test]
+    fn delete_with_not_equal_numeric_where_clause() {
+        let command = parse_delete("DELETE FROM employee WHERE id != 10").unwrap();
+
+        match command {
+            SqlCommand::DELETE { table, where_clause, .. } => {
+                assert_eq!(table, "employee");
+                assert_eq!(where_clause.column, "id");
+                assert_eq!(where_clause.operator, Operator::NOTEQUAL);
+                assert_eq!(where_clause.value, DataType::BigInt { x: 10 });
+            }
+            _ => panic!("expected DELETE"),
+        }
+    }
+
+    #[test]
+    fn delete_with_greater_than_where_clause() {
+        let command = parse_delete("DELETE FROM employee WHERE id > 100").unwrap();
+
+        match command {
+            SqlCommand::DELETE { where_clause, .. } => {
+                assert_eq!(where_clause.column, "id");
+                assert_eq!(where_clause.operator, Operator::GREATER);
+                assert_eq!(where_clause.value, DataType::BigInt { x: 100 });
+            }
+            _ => panic!("expected DELETE"),
+        }
+    }
+
+    #[test]
+    fn delete_with_less_than_where_clause() {
+        let command = parse_delete("DELETE FROM employee WHERE id < 5").unwrap();
+
+        match command {
+            SqlCommand::DELETE { where_clause, .. } => {
+                assert_eq!(where_clause.column, "id");
+                assert_eq!(where_clause.operator, Operator::LESSER);
+                assert_eq!(where_clause.value, DataType::BigInt { x: 5 });
+            }
+            _ => panic!("expected DELETE"),
+        }
+    }
+
+    #[test]
+    fn delete_with_greater_or_equal_where_clause() {
+        let command = parse_delete("DELETE FROM employee WHERE id >= 7").unwrap();
+
+        match command {
+            SqlCommand::DELETE { where_clause, .. } => {
+                assert_eq!(where_clause.column, "id");
+                assert_eq!(where_clause.operator, Operator::GREATEROREQ);
+                assert_eq!(where_clause.value, DataType::BigInt { x: 7 });
+            }
+            _ => panic!("expected DELETE"),
+        }
+    }
+
+    #[test]
+    fn delete_with_less_or_equal_where_clause() {
+        let command = parse_delete("DELETE FROM employee WHERE id <= 3").unwrap();
+
+        match command {
+            SqlCommand::DELETE { where_clause, .. } => {
+                assert_eq!(where_clause.column, "id");
+                assert_eq!(where_clause.operator, Operator::LESSEROREQ);
+                assert_eq!(where_clause.value, DataType::BigInt { x: 3 });
+            }
+            _ => panic!("expected DELETE"),
+        }
+    }
+
+    #[test]
+    fn delete_with_string_where_clause() {
+        let command = parse_delete("DELETE FROM employee WHERE lastname = 'Miller'").unwrap();
+
+        match command {
+            SqlCommand::DELETE { where_clause, .. } => {
+                assert_eq!(where_clause.column, "lastname");
+                assert_eq!(where_clause.operator, Operator::EQUAL);
+                assert_eq!(
+                    where_clause.value,
+                    DataType::VarChar {
+                        x: "Miller".to_string(),
+                        y: 255,
+                    }
+                );
+            }
+            _ => panic!("expected DELETE"),
+        }
+    }
+
+    #[test]
+    fn delete_with_boolean_true_where_clause() {
+        let command = parse_delete("DELETE FROM employee WHERE active = true").unwrap();
+
+        match command {
+            SqlCommand::DELETE { where_clause, .. } => {
+                assert_eq!(where_clause.column, "active");
+                assert_eq!(where_clause.operator, Operator::EQUAL);
+                assert_eq!(where_clause.value, DataType::Bool { x: true });
+            }
+            _ => panic!("expected DELETE"),
+        }
+    }
+
+    #[test]
+    fn delete_with_boolean_false_where_clause() {
+        let command = parse_delete("DELETE FROM employee WHERE active = false").unwrap();
+
+        match command {
+            SqlCommand::DELETE { where_clause, .. } => {
+                assert_eq!(where_clause.column, "active");
+                assert_eq!(where_clause.operator, Operator::EQUAL);
+                assert_eq!(where_clause.value, DataType::Bool { x: false });
+            }
+            _ => panic!("expected DELETE"),
+        }
+    }
+
+    #[test]
+    fn delete_with_null_where_clause() {
+        let command = parse_delete("DELETE FROM employee WHERE deleted_at = NULL").unwrap();
+
+        match command {
+            SqlCommand::DELETE { where_clause, .. } => {
+                assert_eq!(where_clause.column, "deleted_at");
+                assert_eq!(where_clause.operator, Operator::EQUAL);
+                assert_eq!(where_clause.value, DataType::Null);
+            }
+            _ => panic!("expected DELETE"),
+        }
+    }
+
+    #[test]
+    fn delete_with_qualified_table_name() {
+        let command = parse_delete("DELETE FROM mydb.employee WHERE id = 1").unwrap();
+
+        match command {
+            SqlCommand::DELETE { table, where_clause, .. } => {
+                assert_eq!(table, "mydb.employee");
+                assert_eq!(where_clause.column, "id");
+                assert_eq!(where_clause.value, DataType::BigInt { x: 1 });
+            }
+            _ => panic!("expected DELETE"),
+        }
+    }
+
+    #[test]
+    fn delete_with_qualified_column_name() {
+        let command = parse_delete("DELETE FROM employee WHERE employee.id = 1").unwrap();
+
+        match command {
+            SqlCommand::DELETE { where_clause, .. } => {
+                assert_eq!(where_clause.column, "employee.id");
+                assert_eq!(where_clause.operator, Operator::EQUAL);
+                assert_eq!(where_clause.value, DataType::BigInt { x: 1 });
+            }
+            _ => panic!("expected DELETE"),
+        }
+    }
+
+    #[test]
+    fn delete_preserves_uppercase_identifiers() {
+        let command = parse_delete("DELETE FROM EMPLOYEE WHERE ID = 1").unwrap();
+
+        match command {
+            SqlCommand::DELETE { table, where_clause, .. } => {
+                assert_eq!(table, "EMPLOYEE");
+                assert_eq!(where_clause.column, "ID");
+                assert_eq!(where_clause.value, DataType::BigInt { x: 1 });
+            }
+            _ => panic!("expected DELETE"),
+        }
+    }
+
+    #[test]
+    fn delete_without_where_clause_returns_error() {
+        let err = parse_delete("DELETE FROM employee").unwrap_err();
+        assert_eq!(err, "DELETE statement has no WHERE clause");
+    }
+
+    #[test]
+    fn delete_with_non_binary_where_clause_returns_error() {
+        let err = parse_delete("DELETE FROM employee WHERE NOT active").unwrap_err();
+        assert_eq!(err, "Unsupported WHERE clause expression");
+    }
+
+    #[test]
+    fn delete_with_arithmetic_expression_on_right_side_returns_error() {
+        let err = parse_delete("DELETE FROM employee WHERE id = 1 + 2").unwrap_err();
+        assert!(err.starts_with("Expected literal value, got:"));
+    }
+
+    #[test]
+    fn delete_with_function_call_on_left_side_returns_error() {
+        let err = parse_delete("DELETE FROM employee WHERE LOWER(name) = 'x'").unwrap_err();
+        assert!(err.starts_with("Expected column identifier, got:"));
+    }
+}
