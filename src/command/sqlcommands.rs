@@ -1,6 +1,7 @@
 use crate::command::constraint::Constraint;
 use crate::command::createtable::ParsedForeignKey;
 use crate::command::select::{JoinClause};
+use crate::command::update::UpdateSet;
 use crate::command::whereclause::WhereClause;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -44,8 +45,12 @@ pub enum SqlCommand {
         command: String,
         tables: Vec<String>
     },
+    UPDATE {
+        command: String,
+        sets: Vec<UpdateSet>,
+        where_clause: WhereClause
+    },
     ALTER {command: String, table: String, columns: Vec<String>, values: Vec<String>, where_clause: WhereClause },
     INSERT {command: String, table: String, columns: Vec<String>, values: Vec<Vec<String>>, where_clause: WhereClause },
-    UPDATE {command: String, table: String, columns: Vec<String>, values: Vec<String>, where_clause: WhereClause },
     UNDEFINED
 } 

@@ -77,7 +77,7 @@ fn tokenizer(stmt: &str) -> SqlCommand {
             command = command::select::parse(query.clone());
         }
         Statement::Update(update) => {
-            command = SqlCommand::UNDEFINED;
+            command = command::update::parse(update.clone());
             println!("table: {:?}", update.table);
         }
         Statement::Delete(delete) => {
@@ -133,6 +133,12 @@ mod tests {
     #[test]
     fn test_tokenizer_truncate() {
         let command: &str = "TRUNCATE TABLE employee";
+        tokenizer(command);
+    }
+
+    #[test]
+    fn test_tokenizer_update() {
+        let command: &str = "UPDATE Customers SET ContactName = 'Alfred Schmidt', City= 'Frankfurt'WHERE CustomerID = 1;";
         tokenizer(command);
     }
 }

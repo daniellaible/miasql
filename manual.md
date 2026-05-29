@@ -33,22 +33,21 @@ Connecting to the database is simple - just use PuTTY and connect to your db-ser
 ### Basic Language Settings
 
 ##### Bye | Quit
+> Bye  | Quit 
+
 This closes your session with the Mia Server
 
-#### Use <database_name>
+#### Use
+> USE <database_name>
+
 This specifies which database you want to use
 
-#### Help
-Gives you access to the help site
-
 #### Show tables
+> SHOW TABLES
+
 Returns a list of all tables of the selected database. You select a database by using the USE command.
 
-
-
-
 #### Datatypes
-We do not support VarChar. We only support Char as datatype. VarChar seems to be an anachronism.
 
 These are the datatypes we are currently supporting.
 * BigInt { 64 bit },
@@ -104,6 +103,10 @@ Todo: here we need the Joins | aggregate functions | regular functions
 ###### Drop Database
 
 ##### Truncate
+Syntax of the Truncate command
+> TRUNCATE TABLE < column1, column2 ... >;
+
+Truncate deletes all data from a table without deleting the table itself. 
 
 ##### Alter
 
@@ -111,6 +114,7 @@ Todo: here we need the Joins | aggregate functions | regular functions
 
 ##### Update
 
+##### Delete
 Syntax of a delete statement:
 > DELETE FROM < table > WHERE < condition >
 
