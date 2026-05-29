@@ -4,9 +4,8 @@ use crate::database::database::Database;
 use sqlparser::ast::Statement;
 use sqlparser::dialect::GenericDialect;
 use sqlparser::parser::Parser;
-use sqlparser::tokenizer::Token;
 use std::any::Any;
-use tokio::io::AsyncReadExt;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
 pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database>) -> std::io::Result<()> {
@@ -21,59 +20,22 @@ pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database>) -> st
         let mut input = str::from_utf8(&buf[..n]).unwrap();
         input = input.trim();
 
-        let command: SqlCommand = tokenizer(input);
-
-        /*let command: String = input.to_uppercase();
-
-        if command == "QUIT" || command == "BYE" {
+        let mut management_command = String::from(input.clone());
+        management_command = management_command.to_uppercase();
+        if management_command == "QUIT" || management_command == "BYE" {
             return Ok(());
-        } else if command == "SHUTDOWN" {
-            return Ok(());
-        } else if command == "HELP" {
-        } else if command == "SHOW DATABASES" {
-        } else if command == "SHOW TABLES" {
+        } else if management_command == "HELP" {
+            //print to console
+        } else if management_command == "SHOW DATABASES" {
+            println!("SHOW DATABASES");
+        } else if management_command == "USE " {
+            println!("User uses db");
+        } else if management_command == "SHOW TABLES " {
+            println!("Show tables");
         } else {
-            let mut sql: SqlCommand = SqlCommand::UNDEFINED;
-
-            if command.starts_with("SELECT") {
-                sql = Select::parse(String::from(command), dbs.clone());
-            } else if command.starts_with("INSERT") {
-                sql = Insert::parse(String::from(command), dbs.clone());
-            } else if command.starts_with("UPDATE") {
-                sql = Update::parse(String::from(command), dbs.clone());
-            } else if command.starts_with("DELETE") {
-                sql = Delete::parse(String::from(command), dbs.clone());
-            } else if command.starts_with("CREATE") {
-                println!("CREATE recognized");
-                println!("Could be CREATE DATABASE or CREATE TABLE");
-            } else if command.starts_with("ALTER") {
-                println!("ALTER recognized");
-                println!("ALTER command is a bitch");
-
-            } else if command.starts_with("DROP") {
-                let clone = command.clone().trim().to_uppercase().to_string();
-
-                if clone.contains(" TABLE ") {
-                    sql = DropTable::parse(String::from(command), dbs.clone());
-                } else if clone.contains(" DATABASE ") {
-                    sql = DropDatabase::parse(String::from(command), dbs.clone());
-                } else {
-                    println!("Unable to interpret the command");
-                }
-
-            } else if command.starts_with("TRUNCATE") {
-                println!("TRUNCATE recognized");
-            } else if command.starts_with("GRANT") {
-                println!("GRANT recognized");
-            } else if command.starts_with("REVOKE") {
-                println!("REVOKE recognized");
-            } else if command.starts_with("USE") {
-                println!("USE recognized");
-                println!("Needs to be the first command");
-            }
+            let command: SqlCommand = tokenizer(input);
         }
-
-        stream.write_all(&buf[..n]).await?;*/
+        stream.write_all(&buf[..n]).await?;
     }
 }
 
@@ -93,23 +55,29 @@ fn tokenizer(stmt: &str) -> SqlCommand {
             println!("on_cluster: {:?}", alter.on_cluster);
             println!("table_type: {:?}", alter.table_type);
             println!("end_token: {:?}", alter.end_token);
+            command = SqlCommand::UNDEFINED;
         }
         Statement::CreateTable(create) => {
             command = command::createtable::parse(create.clone());
         }
-        Statement::CreateDatabase { .. }=> {
+        Statement::Truncate(truncate) => {
+            command = command::truncate::parse(truncate);
+        }
+        Statement::CreateDatabase { .. } => {
             command = command::createdatabase::parse(ast);
         }
         Statement::Drop { .. } => {
             command = command::drop::parse(ast);
         }
         Statement::Insert(insert) => {
+            command = SqlCommand::UNDEFINED;
             println!("table: {:?}", insert.table);
         }
         Statement::Query(query) => {
             command = command::select::parse(query.clone());
         }
         Statement::Update(update) => {
+            command = SqlCommand::UNDEFINED;
             println!("table: {:?}", update.table);
         }
         Statement::Delete(delete) => {
@@ -118,7 +86,7 @@ fn tokenizer(stmt: &str) -> SqlCommand {
         }
         _ => println!("other statement"),
     }
-    SqlCommand::UNDEFINED
+    command
 }
 
 #[cfg(test)]
@@ -139,26 +107,32 @@ mod tests {
     }
 
     #[test]
-    fn test_tokenizer_create_database(){
+    fn test_tokenizer_create_database() {
         let command: &str = "CREATE DATABASE employee";
         tokenizer(command);
     }
 
     #[test]
-    fn test_tokenizer_drop_database(){
+    fn test_tokenizer_drop_database() {
         let command: &str = "DROP DATABASE employee";
         tokenizer(command);
     }
 
     #[test]
-    fn test_tokenizer_delete_row(){
+    fn test_tokenizer_delete_row() {
         let command: &str = "DELETE FROM employee WHERE id=1";
         tokenizer(command);
     }
 
     #[test]
-    fn test_tokenizer_all_rows(){
-        let command: &str = "DELETE FROM employee";
+    fn test_tokenizer_all_rows() {
+        let command: &str = "DELETE FROM employee WHERE id = 1";
+        tokenizer(command);
+    }
+
+    #[test]
+    fn test_tokenizer_truncate() {
+        let command: &str = "TRUNCATE TABLE employee";
         tokenizer(command);
     }
 }

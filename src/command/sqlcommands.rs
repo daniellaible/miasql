@@ -40,9 +40,12 @@ pub enum SqlCommand {
         table: String,
         where_clause: WhereClause
     },
+    TRUNCATE {
+        command: String,
+        tables: Vec<String>
+    },
     ALTER {command: String, table: String, columns: Vec<String>, values: Vec<String>, where_clause: WhereClause },
     INSERT {command: String, table: String, columns: Vec<String>, values: Vec<Vec<String>>, where_clause: WhereClause },
     UPDATE {command: String, table: String, columns: Vec<String>, values: Vec<String>, where_clause: WhereClause },
-    TRUNCATE {command: String, table: String, columns: Vec<String>, values: Vec<String>, where_clause: WhereClause },
     UNDEFINED
 } 

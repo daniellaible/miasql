@@ -24,6 +24,7 @@ mod command {
     pub mod update;
     pub mod delete;
     pub mod constraint;
+    pub mod truncate;
     /// This module handles the tokenization of the DROP DATABASE | TABLE  command
     pub mod drop;
     /// This module handles the tokenization of the CREATE DATABASE command

@@ -31,6 +31,22 @@ Connecting to the database is simple - just use PuTTY and connect to your db-ser
 
 ## Language Structure
 ### Basic Language Settings
+
+##### Bye | Quit
+This closes your session with the Mia Server
+
+#### Use <database_name>
+This specifies which database you want to use
+
+#### Help
+Gives you access to the help site
+
+#### Show tables
+Returns a list of all tables of the selected database. You select a database by using the USE command.
+
+
+
+
 #### Datatypes
 We do not support VarChar. We only support Char as datatype. VarChar seems to be an anachronism.
 
