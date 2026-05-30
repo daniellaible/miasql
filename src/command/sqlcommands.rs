@@ -57,6 +57,12 @@ pub enum SqlCommand {
         columns: Vec<String>,
         values: Vec<Vec<String>>,
     },
-    ALTER {command: String, table: String, columns: Vec<String>, values: Vec<String>, where_clause: WhereClause },
+    ALTER {
+        command: String,
+        table: String,
+        columns: Vec<String>,
+        values: Vec<String>,
+        where_clause: WhereClause
+    },
     UNDEFINED
 } 

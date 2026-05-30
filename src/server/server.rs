@@ -22,7 +22,7 @@ pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database>) -> st
 
         let mut management_command = String::from(input.clone());
         management_command = management_command.to_uppercase();
-        
+
         if management_command == "QUIT" || management_command == "BYE" {
             return Ok(());
         } else if management_command == "SHOW DATABASES" {
@@ -135,5 +135,12 @@ mod tests {
         let command: &str = "UPDATE Customers SET ContactName = 'Alfred Schmidt', City= 'Frankfurt'WHERE CustomerID = 1;";
         let result = tokenizer(command);
         println!("result: {:?}", result);
+    }
+
+    #[test]
+    fn test_tokenizer_insert() {
+        let command3: &str = "INSERT INTO Customers (CustomerName, ContactName, Address, City, PostalCode, Country) VALUES ('Cardinal', 'Tom B. Erichsen', 'Skagen 21', 'Stavanger', '4006', 'Norway'), ('Greasy Burger', 'Per Olsen', 'Gateveien 15', 'Sandnes', '4306', 'Norway'),('Tasty Tee', 'Finn Egan', 'Streetroad 19B', 'Liverpool', 'L1 0AA', 'UK');";
+        let result3  = tokenizer(command3);
+        println!("result: {:?}", result3);
     }
 }
