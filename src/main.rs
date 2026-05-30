@@ -1,18 +1,18 @@
 use tokio::net::TcpListener;
 use crate::database::database::Database;
 
-mod bptree;
-
 /// # Datamanipulations
 /// In this module you find all the files that do datamanipulation in the RAM.
 mod database {
     pub mod database;
     pub mod datatype;
     pub mod table;
+    mod bptree;
 }
 
 /// # Parsing modules
 mod command {
+    pub mod alter;
     pub mod sqloperator;
     pub mod createtable;
     pub mod whereclause;

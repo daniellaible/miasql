@@ -3,6 +3,7 @@ use crate::command::createtable::ParsedForeignKey;
 use crate::command::select::{JoinClause};
 use crate::command::update::UpdateSet;
 use crate::command::whereclause::WhereClause;
+use crate::database::datatype::DataType;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum SqlCommand {
@@ -57,12 +58,34 @@ pub enum SqlCommand {
         columns: Vec<String>,
         values: Vec<Vec<String>>,
     },
-    ALTER {
+    ALTER_ADD_COLUMN {
         command: String,
         table: String,
-        columns: Vec<String>,
-        values: Vec<String>,
-        where_clause: WhereClause
+        columns: Vec<(String, DataType, Vec<Constraint>)>,
+    },
+    ALTER_DROP_COLUMN {
+        command: String,
+        table: String,
+        columns: Vec<(String)>,
+    },
+    ALTER_RENAME_COLUMN {
+        command: String,
+        table: String,
+        old: String,
+        new: String,
+    },
+    ALTER_MODIFY_COLUMN {
+        command: String,
+        table: String,
+        column: String,
+        data_type: DataType,
+        constraints: Vec<Constraint>,
+    },
+
+    ALTER_TABLE_RENAME {
+        command: String,
+        table: String,
+        new_name: String,
     },
     UNDEFINED
 } 

@@ -12,8 +12,8 @@ from third party tinkering, a tool that does not need to earn dividends for some
 ## General Information
 
 ## Licencing
-### Community Licence
-### Enterprise Licence
+### Community License
+### Enterprise License
 
 ## Installing Mia
 ### Installing Mia on Windows

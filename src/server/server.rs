@@ -46,6 +46,7 @@ fn tokenizer(stmt: &str) -> SqlCommand {
 
     match ast[0].clone() {
         Statement::AlterTable(alter) => {
+            command = command::alter::parse(alter.clone());
         }
         Statement::CreateTable(create) => {
             command = command::createtable::parse(create.clone());

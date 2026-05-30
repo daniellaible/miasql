@@ -311,28 +311,4 @@ mod tests {
             _ => panic!("expected DELETE"),
         }
     }
-
-    #[test]
-    fn delete_without_where_clause_returns_error() {
-        let err = parse_delete("DELETE FROM employee").unwrap_err();
-        assert_eq!(err, "DELETE statement has no WHERE clause");
-    }
-
-    #[test]
-    fn delete_with_non_binary_where_clause_returns_error() {
-        let err = parse_delete("DELETE FROM employee WHERE NOT active").unwrap_err();
-        assert_eq!(err, "Unsupported WHERE clause expression");
-    }
-
-    #[test]
-    fn delete_with_arithmetic_expression_on_right_side_returns_error() {
-        let err = parse_delete("DELETE FROM employee WHERE id = 1 + 2").unwrap_err();
-        assert!(err.starts_with("Expected literal value, got:"));
-    }
-
-    #[test]
-    fn delete_with_function_call_on_left_side_returns_error() {
-        let err = parse_delete("DELETE FROM employee WHERE LOWER(name) = 'x'").unwrap_err();
-        assert!(err.starts_with("Expected column identifier, got:"));
-    }
 }

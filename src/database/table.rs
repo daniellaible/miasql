@@ -15,8 +15,8 @@
 //! - each database consists at least of one B+Tree
 //!
 
-use crate::bptree;
-use crate::bptree::BPlusTree;
+use crate::database::bptree;
+use crate::database::bptree::BPlusTree;
 use crate::database::datatype::DataType;
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufReader, Read, Write};
@@ -452,7 +452,7 @@ impl Table {
 #[cfg(test)]
 mod tests {
     use super::{Table, read_table_from_disc, save_table_to_disc};
-    use crate::bptree::BPlusTree;
+    use crate::database::bptree::BPlusTree;
     use crate::database::datatype::DataType;
     use uuid::Uuid;
 
