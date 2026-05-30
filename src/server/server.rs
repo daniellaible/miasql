@@ -22,10 +22,9 @@ pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database>) -> st
 
         let mut management_command = String::from(input.clone());
         management_command = management_command.to_uppercase();
+        
         if management_command == "QUIT" || management_command == "BYE" {
             return Ok(());
-        } else if management_command == "HELP" {
-            //print to console
         } else if management_command == "SHOW DATABASES" {
             println!("SHOW DATABASES");
         } else if management_command == "USE " {
@@ -47,15 +46,6 @@ fn tokenizer(stmt: &str) -> SqlCommand {
 
     match ast[0].clone() {
         Statement::AlterTable(alter) => {
-            println!("table name: {}", alter.name);
-            println!("if_exists: {}", alter.if_exists);
-            println!("only: {}", alter.only);
-            println!("operations: {:?}", alter.operations);
-            println!("location: {:?}", alter.location);
-            println!("on_cluster: {:?}", alter.on_cluster);
-            println!("table_type: {:?}", alter.table_type);
-            println!("end_token: {:?}", alter.end_token);
-            command = SqlCommand::UNDEFINED;
         }
         Statement::CreateTable(create) => {
             command = command::createtable::parse(create.clone());
@@ -70,19 +60,16 @@ fn tokenizer(stmt: &str) -> SqlCommand {
             command = command::drop::parse(ast);
         }
         Statement::Insert(insert) => {
-            command = SqlCommand::UNDEFINED;
-            println!("table: {:?}", insert.table);
+            command = command::insert::parse(insert.clone());
         }
         Statement::Query(query) => {
             command = command::select::parse(query.clone());
         }
         Statement::Update(update) => {
             command = command::update::parse(update.clone());
-            println!("table: {:?}", update.table);
         }
         Statement::Delete(delete) => {
             command = command::delete::parse(delete.clone());
-            println!("delete: {:?}", delete);
         }
         _ => println!("other statement"),
     }
@@ -97,48 +84,56 @@ mod tests {
     fn test_tokenizer_select() {
         let command: &str =
             "Select distinct avg(amount), name, lastname from employee where id='foo'";
-        tokenizer(command);
+        let result = tokenizer(command);
+        println!("result: {:?}", result);
     }
 
     #[test]
     fn test_tokenizer_create_table() {
         let command: &str = "CREATE TABLE Persons ( PersonID BigInt PRIMARY KEY, LastName VarChar(255) NOT NULL, FirstName VarChar(255), Address VarChar(255), City VarChar(255));";
-        tokenizer(command);
+        let result = tokenizer(command);
+        println!("result: {:?}", result);
     }
 
     #[test]
     fn test_tokenizer_create_database() {
         let command: &str = "CREATE DATABASE employee";
-        tokenizer(command);
+        let result = tokenizer(command);
+        println!("result: {:?}", result);
     }
 
     #[test]
     fn test_tokenizer_drop_database() {
         let command: &str = "DROP DATABASE employee";
-        tokenizer(command);
+        let result = tokenizer(command);
+        println!("result: {:?}", result);
     }
 
     #[test]
     fn test_tokenizer_delete_row() {
         let command: &str = "DELETE FROM employee WHERE id=1";
-        tokenizer(command);
+        let result = tokenizer(command);
+        println!("result: {:?}", result);
     }
 
     #[test]
     fn test_tokenizer_all_rows() {
         let command: &str = "DELETE FROM employee WHERE id = 1";
-        tokenizer(command);
+        let result = tokenizer(command);
+        println!("result: {:?}", result);
     }
 
     #[test]
     fn test_tokenizer_truncate() {
         let command: &str = "TRUNCATE TABLE employee";
-        tokenizer(command);
+        let result = tokenizer(command);
+        println!("result: {:?}", result);
     }
 
     #[test]
     fn test_tokenizer_update() {
         let command: &str = "UPDATE Customers SET ContactName = 'Alfred Schmidt', City= 'Frankfurt'WHERE CustomerID = 1;";
-        tokenizer(command);
+        let result = tokenizer(command);
+        println!("result: {:?}", result);
     }
 }

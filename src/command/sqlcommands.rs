@@ -51,7 +51,12 @@ pub enum SqlCommand {
         sets: Vec<UpdateSet>,
         where_clause: WhereClause
     },
+    INSERT {
+        command: String,
+        table: String,
+        columns: Vec<String>,
+        values: Vec<Vec<String>>,
+    },
     ALTER {command: String, table: String, columns: Vec<String>, values: Vec<String>, where_clause: WhereClause },
-    INSERT {command: String, table: String, columns: Vec<String>, values: Vec<Vec<String>>, where_clause: WhereClause },
     UNDEFINED
 } 
