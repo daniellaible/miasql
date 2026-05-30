@@ -1,4 +1,3 @@
-use crate::command::command::Command;
 use crate::command::sqlcommands::SqlCommand;
 use sqlparser::ast::{Expr, Insert, SetExpr, TableObject, Value};
 

@@ -1,4 +1,3 @@
-
 #[derive(Clone, Debug, PartialEq)]
 pub enum Constraint {
     NOT_NULL,

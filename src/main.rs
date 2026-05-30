@@ -18,7 +18,6 @@ mod command {
     pub mod whereclause;
     pub mod select;
     pub mod insert;
-    pub mod command;
     pub mod sqlcommands;
     pub mod permissions;
     pub mod update;

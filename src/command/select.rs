@@ -1,6 +1,3 @@
-#![crate_name = "doc"]
-
-use crate::command::command::Command;
 use crate::command::sqlcommands::SqlCommand;
 use crate::command::sqloperator::Operator;
 use crate::command::whereclause::WhereClause;
