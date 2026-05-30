@@ -144,4 +144,18 @@ mod tests {
         let result3  = tokenizer(command3);
         println!("result: {:?}", result3);
     }
+
+    #[test]
+    fn test_tokenizer_alter() {
+        let command: &str = "ALTER TABLE Customers ADD Email varchar(255) NOT NULL;";
+        let command2: &str = "ALTER TABLE Customers DROP COLUMN Email;";
+        let command3: &str = "ALTER TABLE Workforce RENAME COLUMN Worker TO Employee;";
+        let command4: &str = "ALTER TABLE Customers MODIFY Email varchar(100) NOT NULL;";
+        let command5: &str = "ALTER TABLE Customers RENAME TO Clients;";
+        tokenizer(command);
+        tokenizer(command2);
+        tokenizer(command3);
+        tokenizer(command4);
+        tokenizer(command5);
+    }
 }
