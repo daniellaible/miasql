@@ -18,9 +18,6 @@ pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database>) -> st
             return Ok(());
         }
 
-        let mut config = ConfigSingelton::instance().lock().unwrap();
-        println!("{:#?}", config.version);
-
         let mut input = str::from_utf8(&buf[..n]).unwrap();
         input = input.trim();
 

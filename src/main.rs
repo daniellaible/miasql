@@ -1,39 +1,41 @@
-use tokio::net::TcpListener;
 use crate::database::database::Database;
+use crate::server::config::ConfigSingelton;
+use std::io::BufRead;
+use tokio::net::TcpListener;
 
 /// # Datamanipulations
 /// In this module you find all the files that do datamanipulation in the RAM.
 mod database {
+    mod bptree;
     pub mod database;
     pub mod datatype;
     pub mod table;
-    mod bptree;
 }
 
 /// # Parsing modules
 mod command {
     pub mod alter;
-    pub mod sqloperator;
-    pub mod createtable;
-    pub mod whereclause;
-    pub mod select;
-    pub mod insert;
-    pub mod sqlcommands;
-    pub mod permissions;
-    pub mod update;
-    pub mod delete;
     pub mod constraint;
-    pub mod truncate;
-    /// This module handles the tokenization of the DROP DATABASE | TABLE  command
-    pub mod drop;
     /// This module handles the tokenization of the CREATE DATABASE command
     pub mod createdatabase;
+    pub mod createtable;
+    pub mod delete;
+    /// This module handles the tokenization of the DROP DATABASE | TABLE  command
+    pub mod drop;
+    pub mod insert;
+    pub mod permissions;
+    pub mod select;
+    pub mod sqlcommands;
+    pub mod sqloperator;
+    pub mod truncate;
+    pub mod update;
+    pub mod whereclause;
 }
 
-mod server{
-    pub mod server;
+mod server {
     pub mod config;
     pub mod configreader;
+    pub mod server;
 }
 
 fn main() {
@@ -41,7 +43,10 @@ fn main() {
 }
 
 #[tokio::main]
-async fn run_server() -> std::io::Result<()>{
+async fn run_server() -> std::io::Result<()> {
+    let mut config = ConfigSingelton::instance().lock().unwrap();
+    server::configreader::load_config_file(config);
+
     let listener = TcpListener::bind("127.0.0.1:7878").await?;
     println!("listening on 127.0.0.1:7878");
 
@@ -53,19 +58,14 @@ async fn run_server() -> std::io::Result<()>{
 
         all_databases = load_all_dbs();
 
-        let result = tokio::task::spawn_blocking(move || {
-            crate::server::server::handle_client(stream, &all_databases);
-        }).await.unwrap();
-
-/*        tokio::spawn(async move {
+        tokio::spawn(async move {
             if let Err(e) = crate::server::server::handle_client(stream, &all_databases).await {
                 eprintln!("client error: {e}");
             }
-        });*/
+        });
     }
 }
 
 fn load_all_dbs() -> Vec<Database> {
     Vec::new()
 }
-
