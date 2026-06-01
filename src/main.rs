@@ -32,6 +32,8 @@ mod command {
 
 mod server{
     pub mod server;
+    pub mod config;
+    pub mod configreader;
 }
 
 fn main() {
@@ -51,11 +53,15 @@ async fn run_server() -> std::io::Result<()>{
 
         all_databases = load_all_dbs();
 
-        tokio::spawn(async move {
+        let result = tokio::task::spawn_blocking(move || {
+            crate::server::server::handle_client(stream, &all_databases);
+        }).await.unwrap();
+
+/*        tokio::spawn(async move {
             if let Err(e) = crate::server::server::handle_client(stream, &all_databases).await {
                 eprintln!("client error: {e}");
             }
-        });
+        });*/
     }
 }
 

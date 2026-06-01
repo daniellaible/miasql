@@ -7,6 +7,7 @@ use sqlparser::parser::Parser;
 use std::any::Any;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
+use crate::server::config::ConfigSingelton;
 
 pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database>) -> std::io::Result<()> {
     let mut buf = [0u8; 4096];
@@ -16,6 +17,9 @@ pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database>) -> st
         if n == 0 {
             return Ok(());
         }
+
+        let mut config = ConfigSingelton::instance().lock().unwrap();
+        println!("{:#?}", config.version);
 
         let mut input = str::from_utf8(&buf[..n]).unwrap();
         input = input.trim();
