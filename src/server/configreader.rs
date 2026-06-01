@@ -34,7 +34,15 @@ pub fn load_config_file(mut config_singelton: MutexGuard<Config>) {
                     },
                     None => println!("config version: missing"),
                 }
+            }else if(ident == "MASTERQUEUE SIZE") {
+            match Some(splits.next()) {
+                Some(license) => {
+                    config_singelton.masterqueue_capacity = license.unwrap().trim().parse::<u32>().unwrap_or_default();
+                    println!("masterqueue: {:?}", config_singelton.masterqueue_capacity);
+                },
+                None => println!("config version: missing"),
             }
+        }
         }
     }
 }

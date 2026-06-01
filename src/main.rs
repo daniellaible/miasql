@@ -36,17 +36,21 @@ mod server {
     pub mod config;
     pub mod configreader;
     pub mod server;
+    pub mod queue;
 }
 
 fn main() {
+    import_config();
     run_server();
+}
+
+fn import_config() {
+    let config = ConfigSingelton::instance().lock().unwrap();
+    server::configreader::load_config_file(config);
 }
 
 #[tokio::main]
 async fn run_server() -> std::io::Result<()> {
-    let mut config = ConfigSingelton::instance().lock().unwrap();
-    server::configreader::load_config_file(config);
-
     let listener = TcpListener::bind("127.0.0.1:7878").await?;
     println!("listening on 127.0.0.1:7878");
 

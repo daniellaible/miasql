@@ -5,9 +5,11 @@ use sqlparser::ast::Statement;
 use sqlparser::dialect::GenericDialect;
 use sqlparser::parser::Parser;
 use std::any::Any;
+use std::mem;
+use std::sync::Mutex;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
-use crate::server::config::ConfigSingelton;
+use crate::server::queue::{TransactionProtocol, COUNTER};
 
 pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database>) -> std::io::Result<()> {
     let mut buf = [0u8; 4096];
@@ -75,7 +77,27 @@ fn tokenizer(stmt: &str) -> SqlCommand {
         }
         _ => println!("other statement"),
     }
-    command
+
+    let transaction_id = getTransactionCounter() ;
+
+    let transaction_protocol:TransactionProtocol = TransactionProtocol {
+        transaction_id,
+        command,
+        isMoiFileUpdated: false,
+        isLedgerUpdated: false,
+        isBTreeUpdated: false,
+        isClusterUpdated: false,
+        isShardUpdated: false,
+        isErrorDetected : false,
+        errorMsg: None,
+    };
+
+    println!("{:?}", transaction_protocol);
+    SqlCommand::UNDEFINED
+}
+
+fn getTransactionCounter() -> u64 {
+    COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
 }
 
 #[cfg(test)]
