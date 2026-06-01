@@ -26,18 +26,18 @@ pub static COUNTER: AtomicU64 = AtomicU64::new(0);
 
 pub struct MasterQueueSingelton;
 
-static INSTANCE: OnceLock<Mutex<MasterQueue>> = OnceLock::new();
+static INSTANCE: OnceLock<MasterQueue> = OnceLock::new();
 
 impl MasterQueueSingelton {
 
-   pub fn instance() -> &'static Mutex<MasterQueue> {
+   pub fn instance() -> &'static MasterQueue {
        let config = ConfigSingelton::instance().lock().unwrap();
        let ringbuffer: VecDeque<TransactionProtocol> = VecDeque::with_capacity(config.masterqueue_capacity as usize);
 
        INSTANCE.get_or_init(
-            || Mutex::new(MasterQueue
+            || MasterQueue
             {
                 queue: Mutex::new(ringbuffer),
-            }))
+            })
     }
 }

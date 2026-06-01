@@ -93,6 +93,9 @@ fn tokenizer(stmt: &str) -> SqlCommand {
     };
 
     println!("{:?}", transaction_protocol);
+    let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
+    masterqueue.queue.lock().unwrap().push_back(transaction_protocol);
+
     SqlCommand::UNDEFINED
 }
 
