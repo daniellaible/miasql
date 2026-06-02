@@ -5,7 +5,7 @@ use crate::command::update::UpdateSet;
 use crate::command::whereclause::WhereClause;
 use crate::database::datatype::DataType;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Copy)]
 pub enum SqlCommand {
     SELECT {
         command: String,

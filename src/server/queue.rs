@@ -18,7 +18,7 @@ pub struct TransactionProtocol{
 }
 
 #[derive(Debug)]
-pub struct MasterQueue {
+pub struct MasterQueue<> {
     pub queue: Mutex<VecDeque<TransactionProtocol>>,
 }
 
@@ -32,7 +32,7 @@ impl MasterQueueSingelton {
 
    pub fn instance() -> &'static MasterQueue {
        let config = ConfigSingelton::instance().lock().unwrap();
-       let ringbuffer: VecDeque<TransactionProtocol> = VecDeque::with_capacity(config.masterqueue_capacity as usize);
+       let mut ringbuffer: VecDeque<TransactionProtocol> = VecDeque::with_capacity(config.masterqueue_capacity as usize);
 
        INSTANCE.get_or_init(
             || MasterQueue

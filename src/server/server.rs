@@ -80,7 +80,7 @@ fn tokenizer(stmt: &str) -> SqlCommand {
 
     let transaction_id = getTransactionCounter() ;
 
-    let transaction_protocol:TransactionProtocol = TransactionProtocol {
+    let mut transaction_protocol: TransactionProtocol = TransactionProtocol {
         transaction_id,
         command,
         isMoiFileUpdated: false,
@@ -92,11 +92,39 @@ fn tokenizer(stmt: &str) -> SqlCommand {
         errorMsg: None,
     };
 
-    println!("{:?}", transaction_protocol);
+
     let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
-    masterqueue.queue.lock().unwrap().push_back(transaction_protocol);
+    masterqueue.queue.lock().unwrap().push_back(&mut transaction_protocol);
+    updateMoiFile(&mut transaction_protocol);
+    updateLedgerFile();
+    updateBTreeFile();
+    updateClusterFile();
+    updateShardFile();
 
     SqlCommand::UNDEFINED
+}
+
+fn updateShardFile() {
+    todo!()
+
+}
+
+fn updateClusterFile() {
+    todo!()
+
+}
+
+fn updateBTreeFile() {
+    todo!()
+
+}
+
+fn updateLedgerFile() {
+    todo!()
+}
+
+fn updateMoiFile(transaction_protocol: &mut TransactionProtocol) {
+    transaction_protocol.isMoiFileUpdated = true;
 }
 
 fn getTransactionCounter() -> u64 {
