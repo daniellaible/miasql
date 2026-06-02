@@ -1,3 +1,4 @@
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 use crate::{server};
 use crate::command::sqlcommands::SqlCommand;
 use crate::database::database::Database;
@@ -6,9 +7,11 @@ use tokio::net::TcpStream;
 use crate::server::processor;
 
 pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database>) -> std::io::Result<()> {
+
     let mut buf = [0u8; 4096];
 
     loop {
+
         let n = stream.read(&mut buf).await?;
         if n == 0 {
             return Ok(());
@@ -30,9 +33,14 @@ pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database>) -> st
         } else if management_command == "SHOW TABLES " {
             println!("Show tables");
         } else {
+            let now = Instant::now();
             let command: SqlCommand = server::parser::tokenizer::tokeniz(&*management_command);
             processor::processor::process_transaction(command);
+            let elapsed = now.elapsed();
+            println!("time: {:?}", elapsed );
         }
+
+
     }
 }
 

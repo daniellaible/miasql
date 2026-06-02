@@ -1,6 +1,7 @@
 use crate::command::sqlcommands::SqlCommand;
 use crate::server::queue::{TransactionProtocol, COUNTER};
 use std::thread;
+use crate::ledger;
 
 pub fn process_transaction(command: SqlCommand) {
 
@@ -100,15 +101,7 @@ fn update_btree_file(transaction_id: u64) {
 
 fn update_ledger_file(transaction_id: u64) {
     println!("update ledger");
-    let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
-    let mut queue = masterqueue.queue.lock().unwrap();
-
-    if let Some(transaction_protocol) = queue
-        .iter_mut()
-        .find(|tp| tp.transaction_id == transaction_id)
-    {
-        transaction_protocol.is_ledger_updated = false;
-    }
+    ledger::writer::write_ledger(transaction_id);
 }
 
 fn update_moi_file(transaction_id: u64) {

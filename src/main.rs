@@ -37,6 +37,10 @@ mod moi{
     pub mod filehandler;
 }
 
+mod ledger{
+    pub mod writer;
+}
+
 mod server {
     pub mod processor{
         pub mod processor;

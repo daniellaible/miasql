@@ -6,6 +6,7 @@ pub struct Config {
     pub mia_version: String,
     pub licence_type: String,
     pub masterqueue_capacity: u32,
+    pub ledger_location: String,
 }
 
 pub struct ConfigSingelton;
@@ -21,6 +22,7 @@ impl ConfigSingelton {
                 mia_version: String::new(),
                 licence_type: String::from("community"),
                 masterqueue_capacity: 10,
+                ledger_location: String::new(),
             }))
     }
 }
