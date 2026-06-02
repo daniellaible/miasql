@@ -33,6 +33,10 @@ mod command {
     pub mod whereclause;
 }
 
+mod moi{
+    pub mod filehandler;
+}
+
 mod server {
     pub mod processor{
         pub mod processor;

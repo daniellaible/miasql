@@ -25,7 +25,7 @@ pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database>) -> st
             return Ok(());
         } else if management_command == "SHOW DATABASES" {
             println!("SHOW DATABASES");
-        } else if management_command == "USE " {
+        } else if management_command.starts_with("USE ") {
             println!("User uses db");
         } else if management_command == "SHOW TABLES " {
             println!("Show tables");
@@ -37,71 +37,71 @@ pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database>) -> st
 }
 
 
-/*#[cfg(test)]
+#[cfg(test)]
 mod tests {
-    use crate::server::server::tokenizer;
+    use crate::server;
 
     #[test]
     fn test_tokenizer_select() {
         let command: &str =
             "Select distinct avg(amount), name, lastname from employee where id='foo'";
-        let result = tokenizer(command);
+        let result = server::parser::tokenizer::tokeniz(command);
         //println!("result: {:?}", result);
     }
 
     #[test]
     fn test_tokenizer_create_table() {
         let command: &str = "CREATE TABLE Persons ( PersonID BigInt PRIMARY KEY, LastName VarChar(255) NOT NULL, FirstName VarChar(255), Address VarChar(255), City VarChar(255));";
-        let result = tokenizer(command);
+        let result = server::parser::tokenizer::tokeniz(command);
         //println!("result: {:?}", result);
     }
 
     #[test]
     fn test_tokenizer_create_database() {
         let command: &str = "CREATE DATABASE employee";
-        let result = tokenizer(command);
+        let result = server::parser::tokenizer::tokeniz(command);
         //println!("result: {:?}", result);
     }
 
     #[test]
     fn test_tokenizer_drop_database() {
         let command: &str = "DROP DATABASE employee";
-        let result = tokenizer(command);
+        let result = server::parser::tokenizer::tokeniz(command);
         //println!("result: {:?}", result);
     }
 
     #[test]
     fn test_tokenizer_delete_row() {
         let command: &str = "DELETE FROM employee WHERE id=1";
-        let result = tokenizer(command);
+        let result = server::parser::tokenizer::tokeniz(command);
         //println!("result: {:?}", result);
     }
 
     #[test]
     fn test_tokenizer_all_rows() {
         let command: &str = "DELETE FROM employee WHERE id = 1";
-        let result = tokenizer(command);
+        let result = server::parser::tokenizer::tokeniz(command);
         //println!("result: {:?}", result);
     }
 
     #[test]
     fn test_tokenizer_truncate() {
         let command: &str = "TRUNCATE TABLE employee";
-        let result = tokenizer(command);
+        let result = server::parser::tokenizer::tokeniz(command);
         //println!("result: {:?}", result);
     }
 
     #[test]
     fn test_tokenizer_update() {
         let command: &str = "UPDATE Customers SET ContactName = 'Alfred Schmidt', City= 'Frankfurt'WHERE CustomerID = 1;";
-        let result = tokenizer(command);
+        let result = server::parser::tokenizer::tokeniz(command);
         //println!("result: {:?}", result);
     }
 
     #[test]
     fn test_tokenizer_insert() {
         let command3: &str = "INSERT INTO Customers (CustomerName, ContactName, Address, City, PostalCode, Country) VALUES ('Cardinal', 'Tom B. Erichsen', 'Skagen 21', 'Stavanger', '4006', 'Norway'), ('Greasy Burger', 'Per Olsen', 'Gateveien 15', 'Sandnes', '4306', 'Norway'),('Tasty Tee', 'Finn Egan', 'Streetroad 19B', 'Liverpool', 'L1 0AA', 'UK');";
-        let result3 = tokenizer(command3);
+        let result3 = server::parser::tokenizer::tokeniz(command3);
     }
 
     #[test]
@@ -111,10 +111,10 @@ mod tests {
         let command3: &str = "ALTER TABLE Workforce RENAME COLUMN Worker TO Employee;";
         let command4: &str = "ALTER TABLE Customers MODIFY Email varchar(100) NOT NULL;";
         let command5: &str = "ALTER TABLE Customers RENAME TO Clients;";
-        tokenizer(command);
-        tokenizer(command2);
-        tokenizer(command3);
-        tokenizer(command4);
-        tokenizer(command5);
+        server::parser::tokenizer::tokeniz(command);
+        server::parser::tokenizer::tokeniz(command2);
+        server::parser::tokenizer::tokeniz(command3);
+        server::parser::tokenizer::tokeniz(command4);
+        server::parser::tokenizer::tokeniz(command5);
     }
-}*/
+}

@@ -1,5 +1,6 @@
 use crate::command::sqlcommands::SqlCommand;
 use crate::server::queue::{TransactionProtocol, COUNTER};
+use std::thread;
 
 pub fn process_transaction(command: SqlCommand) {
 
@@ -24,11 +25,34 @@ pub fn process_transaction(command: SqlCommand) {
             .unwrap()
             .push_back(transaction_protocol);
 
-        update_moi_file(transaction_id);
-        update_ledger_file(transaction_id);
-        update_btree_file(transaction_id);
-        update_cluster_file(transaction_id);
-        update_shard_file(transaction_id);
+
+
+        let moi_join_handle = thread::spawn(move || {
+            update_moi_file(transaction_id);
+        });
+
+        let ledger_join_handle = thread::spawn(move || {
+            update_ledger_file(transaction_id);
+        });
+
+        let btree_join_handle = thread::spawn(move || {
+            update_btree_file(transaction_id);
+        });
+
+        let cluster_join_handle = thread::spawn(move || {
+            update_cluster_file(transaction_id);
+        });
+
+        let shard_join_handle = thread::spawn(move || {
+            update_shard_file(transaction_id);
+        });
+
+
+        moi_join_handle.join().unwrap();
+        ledger_join_handle.join().unwrap();
+        btree_join_handle.join().unwrap();
+        cluster_join_handle.join().unwrap();
+        shard_join_handle.join().unwrap();
     }
 
     let finished_transaction = remove_transaction(transaction_id);
@@ -36,6 +60,7 @@ pub fn process_transaction(command: SqlCommand) {
 }
 
 fn update_shard_file(transaction_id: u64) {
+    println!("update shard");
     let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
     let mut queue = masterqueue.queue.lock().unwrap();
 
@@ -48,6 +73,7 @@ fn update_shard_file(transaction_id: u64) {
 }
 
 fn update_cluster_file(transaction_id: u64) {
+    println!("update cluster");
     let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
     let mut queue = masterqueue.queue.lock().unwrap();
 
@@ -60,6 +86,7 @@ fn update_cluster_file(transaction_id: u64) {
 }
 
 fn update_btree_file(transaction_id: u64) {
+    println!("update b-tree");
     let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
     let mut queue = masterqueue.queue.lock().unwrap();
 
@@ -72,6 +99,7 @@ fn update_btree_file(transaction_id: u64) {
 }
 
 fn update_ledger_file(transaction_id: u64) {
+    println!("update ledger");
     let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
     let mut queue = masterqueue.queue.lock().unwrap();
 
@@ -84,6 +112,7 @@ fn update_ledger_file(transaction_id: u64) {
 }
 
 fn update_moi_file(transaction_id: u64) {
+    println!("update moi file");
     let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
     let mut queue = masterqueue.queue.lock().unwrap();
 
