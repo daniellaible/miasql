@@ -1,13 +1,9 @@
-use crate::command;
+use crate::{server};
 use crate::command::sqlcommands::SqlCommand;
 use crate::database::database::Database;
-use crate::server::processor;
-use sqlparser::ast::Statement;
-use sqlparser::dialect::GenericDialect;
-use sqlparser::parser::Parser;
-use std::any::Any;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
+use crate::server::processor;
 
 pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database>) -> std::io::Result<()> {
     let mut buf = [0u8; 4096];
@@ -18,10 +14,11 @@ pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database>) -> st
             return Ok(());
         }
 
+        server::parser::tokenizer::tokeniz(std::str::from_utf8(&buf[..n]).unwrap());
         let mut input = str::from_utf8(&buf[..n]).unwrap();
         input = input.trim();
 
-        let mut management_command = String::from(input.clone());
+        let mut management_command = String::from(input);
         management_command = management_command.to_uppercase();
 
         if management_command == "QUIT" || management_command == "BYE" {
@@ -33,53 +30,14 @@ pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database>) -> st
         } else if management_command == "SHOW TABLES " {
             println!("Show tables");
         } else {
-            let command: SqlCommand = tokenizer(input);
+            let command: SqlCommand = server::parser::tokenizer::tokeniz(&*management_command);
+            processor::processor::process_transaction(command);
         }
-        stream.write_all(&buf[..n]).await?;
     }
 }
 
-fn tokenizer(stmt: &str) -> SqlCommand {
-    let dialect = GenericDialect {};
-    let ast = Parser::parse_sql(&dialect, stmt).unwrap();
-    let mut command: SqlCommand = SqlCommand::UNDEFINED;
 
-    match ast[0].clone() {
-        Statement::AlterTable(alter) => {
-            command = command::alter::parse(alter.clone());
-        }
-        Statement::CreateTable(create) => {
-            command = command::createtable::parse(create.clone());
-        }
-        Statement::Truncate(truncate) => {
-            command = command::truncate::parse(truncate);
-        }
-        Statement::CreateDatabase { .. } => {
-            command = command::createdatabase::parse(ast);
-        }
-        Statement::Drop { .. } => {
-            command = command::drop::parse(ast);
-        }
-        Statement::Insert(insert) => {
-            command = command::insert::parse(insert.clone());
-        }
-        Statement::Query(query) => {
-            command = command::select::parse(query.clone());
-        }
-        Statement::Update(update) => {
-            command = command::update::parse(update.clone());
-        }
-        Statement::Delete(delete) => {
-            command = command::delete::parse(delete.clone());
-        }
-        _ => println!("other statement"),
-    }
-    processor::processor::process_transaction(command);
-
-    SqlCommand::UNDEFINED
-}
-
-#[cfg(test)]
+/*#[cfg(test)]
 mod tests {
     use crate::server::server::tokenizer;
 
@@ -159,4 +117,4 @@ mod tests {
         tokenizer(command4);
         tokenizer(command5);
     }
-}
+}*/

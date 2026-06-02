@@ -261,7 +261,7 @@ mod tests {
                 assert_eq!(table, "Customers");
                 assert_eq!(column, String::from("Email"));
                 assert_eq!(data_type, DataType::VarChar{x: String::new(),y:100});
-                assert_eq!(constraints[0], Constraint::NOT_NULL );
+                assert_eq!(constraints[0], Constraint::NOT_NULL);
             }
             _ => panic!("expected INSERT"),
         }

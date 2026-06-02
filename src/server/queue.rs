@@ -9,13 +9,13 @@ use crate::server::config::config::ConfigSingelton;
 pub struct TransactionProtocol{
     pub transaction_id: u64,
     pub command: SqlCommand,
-    pub isMoiFileUpdated: bool,
-    pub isLedgerUpdated: bool,
-    pub isBTreeUpdated: bool,
-    pub isClusterUpdated: bool,
-    pub isShardUpdated: bool,
-    pub isErrorDetected : bool,
-    pub errorMsg: Option<String>,
+    pub is_moi_file_updated: bool,
+    pub is_ledger_updated: bool,
+    pub is_btree_updated: bool,
+    pub is_cluster_updated: bool,
+    pub is_shard_updated: bool,
+    pub is_error_detected: bool,
+    pub error_msg: Option<String>,
 }
 
 #[derive(Debug)]
@@ -33,7 +33,7 @@ impl MasterQueueSingelton {
 
    pub fn instance() -> &'static MasterQueue {
        let config = ConfigSingelton::instance().lock().unwrap();
-       let mut ringbuffer: VecDeque<TransactionProtocol> = VecDeque::with_capacity(config.masterqueue_capacity as usize);
+       let ringbuffer: VecDeque<TransactionProtocol> = VecDeque::with_capacity(config.masterqueue_capacity as usize);
 
        INSTANCE.get_or_init(
             || MasterQueue

@@ -41,6 +41,9 @@ mod server {
         pub mod config;
         pub mod configreader;
     }
+    pub mod parser{
+        pub mod tokenizer;
+    }
 
     pub mod server;
     pub mod queue;
@@ -48,7 +51,7 @@ mod server {
 
 fn main() {
     import_config();
-    run_server();
+    let _ = run_server();
 }
 
 fn import_config() {

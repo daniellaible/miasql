@@ -3,17 +3,17 @@ use crate::server::queue::{TransactionProtocol, COUNTER};
 
 pub fn process_transaction(command: SqlCommand) {
 
-    let transaction_id = getTransactionCounter();
+    let transaction_id = get_transaction_counter();
     let transaction_protocol: TransactionProtocol = TransactionProtocol {
         transaction_id,
         command,
-        isMoiFileUpdated: false,
-        isLedgerUpdated: false,
-        isBTreeUpdated: false,
-        isClusterUpdated: false,
-        isShardUpdated: false,
-        isErrorDetected : false,
-        errorMsg: None,
+        is_moi_file_updated: false,
+        is_ledger_updated: false,
+        is_btree_updated: false,
+        is_cluster_updated: false,
+        is_shard_updated: false,
+        is_error_detected: false,
+        error_msg: None,
     };
 
     {
@@ -24,18 +24,18 @@ pub fn process_transaction(command: SqlCommand) {
             .unwrap()
             .push_back(transaction_protocol);
 
-        updateMoiFile(transaction_id);
-        updateLedgerFile(transaction_id);
-        updateBTreeFile(transaction_id);
-        updateClusterFile(transaction_id);
-        updateShardFile(transaction_id);
+        update_moi_file(transaction_id);
+        update_ledger_file(transaction_id);
+        update_btree_file(transaction_id);
+        update_cluster_file(transaction_id);
+        update_shard_file(transaction_id);
     }
 
-    let finished_transaction = removeTransaction(transaction_id);
+    let finished_transaction = remove_transaction(transaction_id);
     println!("finished transaction: {:?}", finished_transaction);
 }
 
-fn updateShardFile(transaction_id: u64) {
+fn update_shard_file(transaction_id: u64) {
     let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
     let mut queue = masterqueue.queue.lock().unwrap();
 
@@ -43,11 +43,11 @@ fn updateShardFile(transaction_id: u64) {
         .iter_mut()
         .find(|tp| tp.transaction_id == transaction_id)
     {
-        transaction_protocol.isShardUpdated = false;
+        transaction_protocol.is_shard_updated = false;
     }
 }
 
-fn updateClusterFile(transaction_id: u64) {
+fn update_cluster_file(transaction_id: u64) {
     let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
     let mut queue = masterqueue.queue.lock().unwrap();
 
@@ -55,11 +55,11 @@ fn updateClusterFile(transaction_id: u64) {
         .iter_mut()
         .find(|tp| tp.transaction_id == transaction_id)
     {
-        transaction_protocol.isClusterUpdated = false;
+        transaction_protocol.is_cluster_updated = false;
     }
 }
 
-fn updateBTreeFile(transaction_id: u64) {
+fn update_btree_file(transaction_id: u64) {
     let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
     let mut queue = masterqueue.queue.lock().unwrap();
 
@@ -67,11 +67,11 @@ fn updateBTreeFile(transaction_id: u64) {
         .iter_mut()
         .find(|tp| tp.transaction_id == transaction_id)
     {
-        transaction_protocol.isBTreeUpdated = false;
+        transaction_protocol.is_btree_updated = false;
     }
 }
 
-fn updateLedgerFile(transaction_id: u64) {
+fn update_ledger_file(transaction_id: u64) {
     let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
     let mut queue = masterqueue.queue.lock().unwrap();
 
@@ -79,11 +79,11 @@ fn updateLedgerFile(transaction_id: u64) {
         .iter_mut()
         .find(|tp| tp.transaction_id == transaction_id)
     {
-        transaction_protocol.isLedgerUpdated = false;
+        transaction_protocol.is_ledger_updated = false;
     }
 }
 
-fn updateMoiFile(transaction_id: u64) {
+fn update_moi_file(transaction_id: u64) {
     let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
     let mut queue = masterqueue.queue.lock().unwrap();
 
@@ -91,15 +91,15 @@ fn updateMoiFile(transaction_id: u64) {
         .iter_mut()
         .find(|tp| tp.transaction_id == transaction_id)
     {
-        transaction_protocol.isMoiFileUpdated = false;
+        transaction_protocol.is_moi_file_updated = false;
     }
 }
 
-fn getTransactionCounter() -> u64 {
+fn get_transaction_counter() -> u64 {
     COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
 }
 
-fn removeTransaction (transaction_id: u64) -> Option<TransactionProtocol>{
+fn remove_transaction(transaction_id: u64) -> Option<TransactionProtocol>{
     let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
     let mut queue = masterqueue.queue.lock().unwrap();
 

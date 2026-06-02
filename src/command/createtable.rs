@@ -18,7 +18,7 @@ pub fn parse(create: CreateTable) -> SqlCommand {
      let mut columns: Vec<(String, String, Vec<Constraint>)> = Vec::new();
      for col_def in iter_columns {
          let name = col_def.name.value.to_string();
-         let dataType = col_def.data_type.to_string();
+         let data_type = col_def.data_type.to_string();
 
          let iter_options = col_def.options.iter();
          let mut column_constraints:Vec<Constraint> = Vec::new();
@@ -33,7 +33,7 @@ pub fn parse(create: CreateTable) -> SqlCommand {
              column_constraints.push(constraint.clone());
          }
          let column_def:(String, String
-                         , Vec<Constraint>) = (name, dataType, column_constraints);
+                         , Vec<Constraint>) = (name, data_type, column_constraints);
          columns.push(column_def);
      }
 

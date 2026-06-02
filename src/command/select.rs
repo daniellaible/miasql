@@ -295,7 +295,7 @@ fn extract_group_by(select_stmt: &Select) -> Vec<String> {
 fn extract_order_by(query: &Query) -> Vec<String> {
     let mut result = Vec::new();
 
-    for order_by in &query.order_by {
+    if let Some(order_by) = &query.order_by {
         match &order_by.kind {
             sqlparser::ast::OrderByKind::Expressions(exprs) => {
                 for order_expr in exprs {
@@ -364,7 +364,7 @@ fn retrieve_where_clause(where_ast: &Expr) -> Option<WhereClause> {
             Value::Number(num_str, _) => {
                 let n: i64 = match num_str.parse() {
                     Ok(n) => n,
-                    Err(e) => {
+                    Err(_e) => {
                         return None;
                     }
                 };

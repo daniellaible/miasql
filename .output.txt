@@ -53,10 +53,10 @@ warning: variant `DROP_DATABASE` should have an upper camel case name
 31 |     DROP_DATABASE{command: String, database: String},
    |     ^^^^^^^^^^^^^ help: convert the identifier to upper camel case: `DropDatabase`
 
-warning: variant `NOT_NULL` should have an upper camel case name
+warning: variant `NotNull` should have an upper camel case name
  --> src\command\constraint.rs:4:5
   |
-4 |     NOT_NULL,
+4 |     NotNull,
   |     ^^^^^^^^ help: convert the identifier to upper camel case: `NotNull`
 
 warning: variant `PRIMARY_KEY` should have an upper camel case name
@@ -115,10 +115,10 @@ warning: unused variable: `result`
 110 |         let result = match ast.into_iter().next().unwrap() {
     |             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_result`
 
-warning: unused variable: `e`
+warning: unused variable: `_e`
    --> src\command\select.rs:365:25
     |
-365 |                     Err(e) => {
+365 |                     Err(_e) => {
     |                         ^ help: if this is intentional, prefix it with an underscore: `_e`
 
 warning: unused variable: `dbs`
