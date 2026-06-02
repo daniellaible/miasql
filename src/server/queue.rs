@@ -2,7 +2,8 @@ use std::sync::{Mutex, OnceLock};
 use std::collections::VecDeque;
 use std::sync::atomic::AtomicU64;
 use crate::command::sqlcommands::SqlCommand;
-use crate::server::config::ConfigSingelton;
+use crate::server::config::config::ConfigSingelton;
+
 
 #[derive(Debug, Clone)]
 pub struct TransactionProtocol{

@@ -3,7 +3,7 @@ use std::io;
 use std::io::BufRead;
 use std::path::Path;
 use std::sync::MutexGuard;
-use crate::server::config::Config;
+use crate::server::config::config::Config;
 
 pub fn load_config_file(mut config_singelton: MutexGuard<Config>) {
     if let Ok(lines) = read_lines("C:\\Miasql\\config.mcon") {

@@ -1,7 +1,8 @@
 use crate::database::database::Database;
-use crate::server::config::ConfigSingelton;
 use std::io::BufRead;
 use tokio::net::TcpListener;
+use crate::server::config::config::ConfigSingelton;
+use crate::server::config::configreader;
 
 /// # Datamanipulations
 /// In this module you find all the files that do datamanipulation in the RAM.
@@ -33,8 +34,14 @@ mod command {
 }
 
 mod server {
-    pub mod config;
-    pub mod configreader;
+    pub mod processor{
+        pub mod processor;
+    }
+    pub mod config{
+        pub mod config;
+        pub mod configreader;
+    }
+
     pub mod server;
     pub mod queue;
 }
@@ -46,7 +53,7 @@ fn main() {
 
 fn import_config() {
     let config = ConfigSingelton::instance().lock().unwrap();
-    server::configreader::load_config_file(config);
+    configreader::load_config_file(config);
 }
 
 #[tokio::main]

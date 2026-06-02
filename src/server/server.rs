@@ -1,15 +1,13 @@
 use crate::command;
 use crate::command::sqlcommands::SqlCommand;
 use crate::database::database::Database;
+use crate::server::processor;
 use sqlparser::ast::Statement;
 use sqlparser::dialect::GenericDialect;
 use sqlparser::parser::Parser;
 use std::any::Any;
-use std::mem;
-use std::sync::Mutex;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
-use crate::server::queue::{TransactionProtocol, COUNTER};
 
 pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database>) -> std::io::Result<()> {
     let mut buf = [0u8; 4096];
@@ -44,7 +42,6 @@ pub async fn handle_client(mut stream: TcpStream, mut dbs: &Vec<Database>) -> st
 fn tokenizer(stmt: &str) -> SqlCommand {
     let dialect = GenericDialect {};
     let ast = Parser::parse_sql(&dialect, stmt).unwrap();
-    println!("{:#?}", ast[0].clone());
     let mut command: SqlCommand = SqlCommand::UNDEFINED;
 
     match ast[0].clone() {
@@ -77,58 +74,9 @@ fn tokenizer(stmt: &str) -> SqlCommand {
         }
         _ => println!("other statement"),
     }
-
-    let transaction_id = getTransactionCounter() ;
-
-    let mut transaction_protocol: TransactionProtocol = TransactionProtocol {
-        transaction_id,
-        command,
-        isMoiFileUpdated: false,
-        isLedgerUpdated: false,
-        isBTreeUpdated: false,
-        isClusterUpdated: false,
-        isShardUpdated: false,
-        isErrorDetected : false,
-        errorMsg: None,
-    };
-
-
-    let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
-    masterqueue.queue.lock().unwrap().push_back(&mut transaction_protocol);
-    updateMoiFile(&mut transaction_protocol);
-    updateLedgerFile();
-    updateBTreeFile();
-    updateClusterFile();
-    updateShardFile();
+    processor::processor::process_transaction(command);
 
     SqlCommand::UNDEFINED
-}
-
-fn updateShardFile() {
-    todo!()
-
-}
-
-fn updateClusterFile() {
-    todo!()
-
-}
-
-fn updateBTreeFile() {
-    todo!()
-
-}
-
-fn updateLedgerFile() {
-    todo!()
-}
-
-fn updateMoiFile(transaction_protocol: &mut TransactionProtocol) {
-    transaction_protocol.isMoiFileUpdated = true;
-}
-
-fn getTransactionCounter() -> u64 {
-    COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
 }
 
 #[cfg(test)]
@@ -140,63 +88,62 @@ mod tests {
         let command: &str =
             "Select distinct avg(amount), name, lastname from employee where id='foo'";
         let result = tokenizer(command);
-        println!("result: {:?}", result);
+        //println!("result: {:?}", result);
     }
 
     #[test]
     fn test_tokenizer_create_table() {
         let command: &str = "CREATE TABLE Persons ( PersonID BigInt PRIMARY KEY, LastName VarChar(255) NOT NULL, FirstName VarChar(255), Address VarChar(255), City VarChar(255));";
         let result = tokenizer(command);
-        println!("result: {:?}", result);
+        //println!("result: {:?}", result);
     }
 
     #[test]
     fn test_tokenizer_create_database() {
         let command: &str = "CREATE DATABASE employee";
         let result = tokenizer(command);
-        println!("result: {:?}", result);
+        //println!("result: {:?}", result);
     }
 
     #[test]
     fn test_tokenizer_drop_database() {
         let command: &str = "DROP DATABASE employee";
         let result = tokenizer(command);
-        println!("result: {:?}", result);
+        //println!("result: {:?}", result);
     }
 
     #[test]
     fn test_tokenizer_delete_row() {
         let command: &str = "DELETE FROM employee WHERE id=1";
         let result = tokenizer(command);
-        println!("result: {:?}", result);
+        //println!("result: {:?}", result);
     }
 
     #[test]
     fn test_tokenizer_all_rows() {
         let command: &str = "DELETE FROM employee WHERE id = 1";
         let result = tokenizer(command);
-        println!("result: {:?}", result);
+        //println!("result: {:?}", result);
     }
 
     #[test]
     fn test_tokenizer_truncate() {
         let command: &str = "TRUNCATE TABLE employee";
         let result = tokenizer(command);
-        println!("result: {:?}", result);
+        //println!("result: {:?}", result);
     }
 
     #[test]
     fn test_tokenizer_update() {
         let command: &str = "UPDATE Customers SET ContactName = 'Alfred Schmidt', City= 'Frankfurt'WHERE CustomerID = 1;";
         let result = tokenizer(command);
-        println!("result: {:?}", result);
+        //println!("result: {:?}", result);
     }
 
     #[test]
     fn test_tokenizer_insert() {
         let command3: &str = "INSERT INTO Customers (CustomerName, ContactName, Address, City, PostalCode, Country) VALUES ('Cardinal', 'Tom B. Erichsen', 'Skagen 21', 'Stavanger', '4006', 'Norway'), ('Greasy Burger', 'Per Olsen', 'Gateveien 15', 'Sandnes', '4306', 'Norway'),('Tasty Tee', 'Finn Egan', 'Streetroad 19B', 'Liverpool', 'L1 0AA', 'UK');";
-        let result3  = tokenizer(command3);
-        println!("result: {:?}", result3);
+        let result3 = tokenizer(command3);
     }
 
     #[test]
