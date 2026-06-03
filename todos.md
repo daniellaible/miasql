@@ -1,23 +1,19 @@
 
 # To Do's
+ + Write the lines into a ledger
 
-## Commands
+
+## Bugs
+ + Create Database comment functionality results in a bug
+ + MiaLedger path is not coming from the config file.
+ + MiaLedger ledger number is a constant right now
+
 
 ### Base Commands
- + use sqlparser with
-
-   + alter
-   + insert
-   + update
-   + delete
-   + truncate
-
-
 
 ### KeyWords
 
 ### Functions and Operators
-
  + whereclause needs to be a vector for ands and ors aso.
 
 #### Operators
@@ -82,5 +78,5 @@
 
 
 ## Database
-+ column definitions need to have constraints, not only just names 
+
 
