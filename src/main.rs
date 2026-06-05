@@ -1,8 +1,8 @@
-use crate::database::database::Database;
 use std::io::BufRead;
 use tokio::net::TcpListener;
 use crate::server::config::config::ConfigSingelton;
 use crate::server::config::configreader;
+
 
 /// # Datamanipulations
 /// In this module you find all the files that do datamanipulation in the RAM.
@@ -52,13 +52,16 @@ mod server {
     pub mod parser{
         pub mod tokenizer;
     }
-
+    pub mod core{
+        pub mod core;
+    }
     pub mod server;
     pub mod queue;
 }
 
 fn main() {
     import_config();
+    //let _ = run_core();
     let _ = run_server();
 }
 
@@ -72,22 +75,18 @@ async fn run_server() -> std::io::Result<()> {
     let listener = TcpListener::bind("127.0.0.1:7878").await?;
     println!("listening on 127.0.0.1:7878");
 
-    let mut all_databases: Vec<Database> = Vec::new();
+
 
     loop {
         let (stream, addr) = listener.accept().await?;
         println!("client connected: {addr}");
 
-        all_databases = load_all_dbs();
 
         tokio::spawn(async move {
-            if let Err(e) = crate::server::server::handle_client(stream, &all_databases).await {
+            if let Err(e) = crate::server::server::handle_client(stream).await {
                 eprintln!("client error: {e}");
             }
         });
     }
 }
 
-fn load_all_dbs() -> Vec<Database> {
-    Vec::new()
-}

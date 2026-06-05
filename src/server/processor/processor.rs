@@ -26,15 +26,17 @@ pub fn process_transaction(command: SqlCommand) {
             .unwrap()
             .push_back(transaction_protocol);
 
-
-
         let moi_join_handle = thread::spawn(move || {
             update_moi_file(transaction_id);
         });
 
-        let ledger_join_handle = thread::spawn(move || {
+        // Not needed right now - however mostly implemented. But we need a way to store the ledger counter,
+        // The easiest and fastst way would probably be withing a systems table. But we don't have implemented them yet
+        // therefore we ignore the ledger file now and finish implementing it when we have system tables.
+        
+/*         let ledger_join_handle = thread::spawn(move || {
             update_ledger_file(transaction_id);
-        });
+        });*/
 
         let btree_join_handle = thread::spawn(move || {
             update_btree_file(transaction_id);
@@ -48,9 +50,9 @@ pub fn process_transaction(command: SqlCommand) {
             update_shard_file(transaction_id);
         });
 
-
         moi_join_handle.join().unwrap();
-        ledger_join_handle.join().unwrap();
+        // Turned off . don't foregt to turn it back on when ready
+        //ledger_join_handle.join().unwrap();
         btree_join_handle.join().unwrap();
         cluster_join_handle.join().unwrap();
         shard_join_handle.join().unwrap();
@@ -100,8 +102,17 @@ fn update_btree_file(transaction_id: u64) {
 }
 
 fn update_ledger_file(transaction_id: u64) {
-    println!("update ledger");
     ledger::writer::write_ledger(transaction_id);
+
+    let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
+    let mut queue = masterqueue.queue.lock().unwrap();
+
+    if let Some(transaction_protocol) = queue
+        .iter_mut()
+        .find(|tp| tp.transaction_id == transaction_id)
+    {
+        transaction_protocol.is_ledger_updated = true;
+    }
 }
 
 fn update_moi_file(transaction_id: u64) {

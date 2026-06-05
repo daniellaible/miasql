@@ -1,13 +1,11 @@
 
 # To Do's
- + Write the lines into a ledger
-
++ MiaLedger path is not coming from the config file.
++ MiaLedger ledger number is a constant right now
++ MiaLedger should start a new file when reaching the 4GB limitation
 
 ## Bugs
  + Create Database comment functionality results in a bug
- + MiaLedger path is not coming from the config file.
- + MiaLedger ledger number is a constant right now
-
 
 ### Base Commands
 

@@ -1,9 +1,11 @@
-use std::fs::OpenOptions;
+use std::fs::{File, OpenOptions};
 use std::path::Path;
-use std::io::{BufWriter, Write};
+use std::io::{BufRead, BufWriter, Write};
+use rev_buf_reader::RevBufReader;
 use crate::command::sqlcommands::SqlCommand;
 
-pub(crate) fn write_ledger(transaction_id: u64) -> Result<bool, std::io::Error> {
+pub fn write_ledger(transaction_id: u64) -> Result<bool, std::io::Error> {
+
     let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
     let mut queue = masterqueue.queue.lock().unwrap();
 
@@ -94,6 +96,7 @@ fn to_printable_line(command: &SqlCommand) -> String {
         }
     }
 }
+
 
 #[cfg(test)]
 mod tests {
