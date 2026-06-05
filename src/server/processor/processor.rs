@@ -1,14 +1,15 @@
 use crate::command::sqlcommands::SqlCommand;
 use crate::server::queue::{TransactionProtocol, COUNTER};
 use std::thread;
-use crate::ledger;
+use std::time::Instant;
+use crate::{ledger, server};
 
 pub fn process_transaction(command: SqlCommand) {
 
     let transaction_id = get_transaction_counter();
     let transaction_protocol: TransactionProtocol = TransactionProtocol {
         transaction_id,
-        command,
+        command: command.clone(),
         is_moi_file_updated: false,
         is_ledger_updated: false,
         is_btree_updated: false,
@@ -33,7 +34,7 @@ pub fn process_transaction(command: SqlCommand) {
         // Not needed right now - however mostly implemented. But we need a way to store the ledger counter,
         // The easiest and fastst way would probably be withing a systems table. But we don't have implemented them yet
         // therefore we ignore the ledger file now and finish implementing it when we have system tables.
-        
+
 /*         let ledger_join_handle = thread::spawn(move || {
             update_ledger_file(transaction_id);
         });*/

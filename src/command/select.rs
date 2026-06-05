@@ -364,7 +364,7 @@ fn retrieve_where_clause(where_ast: &Expr) -> Option<WhereClause> {
             Value::Number(num_str, _) => {
                 let n: i64 = match num_str.parse() {
                     Ok(n) => n,
-                    Err(_e) => {
+                    Err( _e) => {
                         return None;
                     }
                 };

@@ -1,6 +1,6 @@
 use std::sync::{Mutex, OnceLock};
 use std::collections::VecDeque;
-use std::sync::atomic::AtomicU64;
+use std::sync::atomic::{AtomicU64, Ordering};
 use crate::command::sqlcommands::SqlCommand;
 use crate::server::config::config::ConfigSingelton;
 

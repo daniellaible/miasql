@@ -1,4 +1,6 @@
 use std::io::BufRead;
+use std::thread::sleep;
+use std::time::Duration;
 use tokio::net::TcpListener;
 use crate::server::config::config::ConfigSingelton;
 use crate::server::config::configreader;
@@ -70,12 +72,13 @@ fn import_config() {
     configreader::load_config_file(config);
 }
 
+
+
 #[tokio::main]
 async fn run_server() -> std::io::Result<()> {
+    server::core::core::Core::start_core();
     let listener = TcpListener::bind("127.0.0.1:7878").await?;
     println!("listening on 127.0.0.1:7878");
-
-
 
     loop {
         let (stream, addr) = listener.accept().await?;
