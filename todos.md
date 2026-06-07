@@ -5,6 +5,8 @@
 + MiaLedger is turned of in the processor a the moment. Turn it back on, when ready
 + MiaLedger should start a new file when reaching the 4GB limitation
 + There should be a logger
++ columns definitions in the tables need constraints
++ loading and writing to db should consider constrainst of a table
 ## Bugs
  + Create Database comment functionality results in a bug
 

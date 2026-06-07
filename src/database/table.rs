@@ -1,20 +1,3 @@
-//! This class represents a database of the database
-//!
-//! Use this class to access tables in the database.
-//!
-//! Parameters for creating a tabl are:
-//! - table_name
-//! - the B+Tree to store the data in
-//! - unique uuid that two tables with the same name but within different databases can be accessed
-//! - the name of the database columns
-//! - the datatype of the different columns
-//!
-//! Features
-//! - each database has a name
-//! - each database has a uuid
-//! - each database consists at least of one B+Tree
-//!
-
 use crate::database::bptree;
 use crate::database::bptree::BPlusTree;
 use crate::database::datatype::DataType;
@@ -22,6 +5,7 @@ use std::fs::{File, OpenOptions};
 use std::io::{self, BufReader, Read, Write};
 use std::time::Instant;
 use uuid::Uuid;
+use crate::command::constraint::Constraint;
 use crate::database::datatype;
 
 fn write_u16_be<W: Write>(w: &mut W, v: u16) -> io::Result<()> {
@@ -340,7 +324,7 @@ pub fn read_table_from_disc(path: String, _uuid: Uuid) -> Table {
     let mut table: Table = Table::default();
     table.set_table_name(String::from(cleaned_name));
     table.set_uuid(Uuid::default());
-    table.column_names = column_names;
+    //table.column_names = column_names;
     table.column_types = column_types;
     table.tree = tree;
 
@@ -349,13 +333,14 @@ pub fn read_table_from_disc(path: String, _uuid: Uuid) -> Table {
     table
 }
 
-#[derive(Clone)]
+
 pub struct Table {
     table_name: String,
     tree: BPlusTree<i64, Vec<DataType>, 3>,
     uuid: Uuid,
     column_names: Vec<String>,
     column_types: Vec<DataType>,
+    constraint: (i32, Vec<Constraint>)
 }
 
 impl Table {
@@ -366,6 +351,7 @@ impl Table {
             uuid: Default::default(),
             column_names: vec![],
             column_types: vec![],
+            constraint: (0, vec![]),
         }
     }
 
@@ -380,6 +366,7 @@ impl Table {
         uuid: Uuid,
         names: Vec<String>,
         types: Vec<DataType>,
+        constraints: (i32, Vec<Constraint>)
     ) -> Table {
         assert!(names.len() > 0);
         if names.len() != types.len() {
@@ -396,6 +383,7 @@ impl Table {
             uuid,
             column_names: names,
             column_types: types,
+            constraint: constraints,
         }
     }
 
@@ -478,7 +466,8 @@ mod tests {
         ];
         let bp_tree = BPlusTree::default();
         let uuid = Uuid::parse_str("a1a2a3a4-b1b2-c1c2-d1d2-d3d4d5d6d7d8").unwrap();
-        let table: Table = Table::new(String::from("test"), bp_tree, uuid, names, types);
+        let constraints = (0, vec![]);
+        let table: Table = Table::new(String::from("test"), bp_tree, uuid, names, types, constraints);
 
         let name: String = table.get_table_name();
         assert_eq!(name, "test");
