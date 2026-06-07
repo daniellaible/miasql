@@ -4,7 +4,7 @@ use std::time::Duration;
 use tokio::net::TcpListener;
 use crate::server::config::config::ConfigSingelton;
 use crate::server::config::configreader;
-
+use crate::server::queue::MasterQueueSingelton;
 
 /// # Datamanipulations
 /// In this module you find all the files that do datamanipulation in the RAM.
@@ -54,16 +54,12 @@ mod server {
     pub mod parser{
         pub mod tokenizer;
     }
-    pub mod core{
-        pub mod core;
-    }
     pub mod server;
     pub mod queue;
 }
 
 fn main() {
     import_config();
-    //let _ = run_core();
     let _ = run_server();
 }
 
@@ -76,7 +72,7 @@ fn import_config() {
 
 #[tokio::main]
 async fn run_server() -> std::io::Result<()> {
-    server::core::core::Core::start_core();
+    //server::core::core::Core::start_core();
     let listener = TcpListener::bind("127.0.0.1:7878").await?;
     println!("listening on 127.0.0.1:7878");
 

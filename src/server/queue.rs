@@ -34,7 +34,6 @@ impl MasterQueueSingelton {
    pub fn instance() -> &'static MasterQueue {
        let config = ConfigSingelton::instance().lock().unwrap();
        let ringbuffer: VecDeque<TransactionProtocol> = VecDeque::with_capacity(config.masterqueue_capacity as usize);
-
        INSTANCE.get_or_init(
             || MasterQueue
             {
@@ -42,3 +41,6 @@ impl MasterQueueSingelton {
             })
     }
 }
+
+
+

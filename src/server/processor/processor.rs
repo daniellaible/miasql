@@ -1,7 +1,7 @@
+use std::thread;
 use crate::command::sqlcommands::SqlCommand;
 use crate::server::queue::{TransactionProtocol, COUNTER};
-use std::thread;
-use std::time::Instant;
+
 use crate::{ledger, server};
 
 pub fn process_transaction(command: SqlCommand) {
@@ -35,9 +35,9 @@ pub fn process_transaction(command: SqlCommand) {
         // The easiest and fastst way would probably be withing a systems table. But we don't have implemented them yet
         // therefore we ignore the ledger file now and finish implementing it when we have system tables.
 
-/*         let ledger_join_handle = thread::spawn(move || {
+         let ledger_join_handle = thread::spawn(move || {
             update_ledger_file(transaction_id);
-        });*/
+        });
 
         let btree_join_handle = thread::spawn(move || {
             update_btree_file(transaction_id);
