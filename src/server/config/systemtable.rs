@@ -10,10 +10,11 @@ pub fn import_system_tables() {
     let interal_list_all_dbs = AllDbSingelton::instance();
     let db_mem: DbMem = DbMem {
        db_name: database.get_db_name().to_string(),
-       tables
+        //todo fix
+       tables: Vec::new()
     };
    interal_list_all_dbs.databases.lock().unwrap().push(db_mem);
-   
+
    info!("System tables imported {:?}", interal_list_all_dbs.databases.lock().unwrap());
-   
+
 }
