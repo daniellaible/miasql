@@ -28,27 +28,27 @@ use std::rc::Rc;
 
 type Link<K, V, const MAX_KEYS: usize> = Rc<RefCell<Node<K, V, MAX_KEYS>>>;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 enum Node<K, V, const MAX_KEYS: usize> {
     Internal(InternalNode<K, V, MAX_KEYS>),
     Leaf(LeafNode<K, V, MAX_KEYS>),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct InternalNode<K, V, const MAX_KEYS: usize> {
     // keys.len() == children.len() - 1
     keys: Vec<K>,
     children: Vec<Link<K, V, MAX_KEYS>>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct LeafNode<K, V, const MAX_KEYS: usize> {
     keys: Vec<K>,
     values: Vec<V>,
     next: Option<Link<K, V, MAX_KEYS>>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct BPlusTree<K, V, const MAX_KEYS: usize = 32> {
     root: Link<K, V, MAX_KEYS>,
     len: usize,

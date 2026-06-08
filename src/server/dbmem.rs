@@ -1,9 +1,10 @@
 use std::sync::{Mutex, OnceLock};
+use crate::database::table::Table;
 
 #[derive(Debug)]
 pub struct DbMem {
     pub db_name: String,
-    pub tables: Vec<(String, String)>,
+    pub tables: Vec<Table>,
 }
 
 #[derive(Debug)]

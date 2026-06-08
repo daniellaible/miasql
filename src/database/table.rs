@@ -8,6 +8,13 @@ use uuid::Uuid;
 use crate::command::constraint::Constraint;
 use crate::database::datatype;
 
+#[derive(Debug)]
+pub struct Row {
+    pub id: i64,
+    pub data: Vec<DataType>,
+}
+
+#[derive(Debug)]
 pub struct Table {
     max_id: u64,
     table_name: String,
