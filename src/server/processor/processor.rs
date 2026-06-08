@@ -5,8 +5,12 @@ use crate::server::queue::{TransactionProtocol, COUNTER};
 use crate::{ledger, server};
 
 pub fn process_transaction(command: SqlCommand) {
-
-    let transaction_id = get_transaction_counter();
+    
+    println!(" ----  ");
+    println!("In the processor: {:?}", &command);
+    println!(" ----  ");
+    
+/*    let transaction_id = get_transaction_counter();
     let transaction_protocol: TransactionProtocol = TransactionProtocol {
         transaction_id,
         command: command.clone(),
@@ -17,25 +21,25 @@ pub fn process_transaction(command: SqlCommand) {
         is_shard_updated: false,
         is_error_detected: false,
         error_msg: None,
-    };
+    };*/
 
-    {
-        let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
-        masterqueue
-            .queue
-            .lock()
-            .unwrap()
-            .push_back(transaction_protocol);
+    /*    {
+            let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
+            masterqueue
+                .queue
+                .lock()
+                .unwrap()
+                .push_back(transaction_protocol);*/
 
-        let moi_join_handle = thread::spawn(move || {
+/*        let moi_join_handle = thread::spawn(move || {
             update_moi_file(transaction_id);
-        });
+        });*/
 
         // Not needed right now - however mostly implemented. But we need a way to store the ledger counter,
         // The easiest and fastst way would probably be withing a systems table. But we don't have implemented them yet
         // therefore we ignore the ledger file now and finish implementing it when we have system tables.
 
-         let ledger_join_handle = thread::spawn(move || {
+/*         let ledger_join_handle = thread::spawn(move || {
             update_ledger_file(transaction_id);
         });
 
@@ -60,7 +64,7 @@ pub fn process_transaction(command: SqlCommand) {
     }
 
     let finished_transaction = remove_transaction(transaction_id);
-    println!("finished transaction: {:?}", finished_transaction);
+    println!("finished transaction: {:?}", finished_transaction);*/
 }
 
 fn update_shard_file(transaction_id: u64) {

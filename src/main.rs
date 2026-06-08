@@ -68,15 +68,11 @@ fn import_config() {
     configreader::load_config_file(config);
 }
 
-fn load_system_db(){
-
-}
 
 
 
 #[tokio::main]
 async fn run_server() -> std::io::Result<()> {
-    //server::core::core::Core::start_core();
     let listener = TcpListener::bind("127.0.0.1:7878").await?;
     println!("listening on 127.0.0.1:7878");
 

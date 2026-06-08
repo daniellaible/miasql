@@ -1,17 +1,13 @@
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
-use crate::{server};
-use crate::command::sqlcommands::SqlCommand;
-use crate::database::database::Database;
+use crate::server;
+use crate::server::queue::{MasterQueueSingelton, TransactionProtocol};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
-use crate::server::processor;
+use crate::command::sqlcommands::SqlCommand;
 
 pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
-
     let mut buf = [0u8; 4096];
 
     loop {
-
         let n = stream.read(&mut buf).await?;
         if n == 0 {
             return Ok(());
@@ -33,15 +29,25 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
         } else if management_command == "SHOW TABLES " {
             println!("Show tables");
         } else {
-            let now = Instant::now();
-            let command: SqlCommand = server::parser::tokenizer::tokeniz(&*management_command);
-            processor::processor::process_transaction(command);
-            let elapsed = now.elapsed();
-            println!("time: {:?}", elapsed );
+            let command = server::parser::tokenizer::tokeniz(&*management_command);
+
+            if command != SqlCommand::UNDEFINED {
+                let transaction: TransactionProtocol = TransactionProtocol {
+                    transaction_id: 1000,
+                    command: server::parser::tokenizer::tokeniz(&*management_command),
+                    is_moi_file_updated: false,
+                    is_ledger_updated: false,
+                    is_btree_updated: false,
+                    is_cluster_updated: false,
+                    is_shard_updated: false,
+                    is_error_detected: false,
+                    error_msg: None,
+                };
+                MasterQueueSingelton.add(transaction);
+            }
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -62,7 +68,7 @@ mod tests {
 
     #[test]
     fn test_tokenizer_create_database() {
-        let command: &str = "CREATE DATABASE employee";
+        let command: &str = "CREATE DATABASE employee;";
         let result = server::parser::tokenizer::tokeniz(command);
     }
 
@@ -74,7 +80,7 @@ mod tests {
 
     #[test]
     fn test_tokenizer_delete_row() {
-        let command: &str = "DELETE FROM employee WHERE id=1";
+        let command: &str = "DELETE FROM employee WHERE id=1;";
         let result = server::parser::tokenizer::tokeniz(command);
     }
 
@@ -86,7 +92,7 @@ mod tests {
 
     #[test]
     fn test_tokenizer_truncate() {
-        let command: &str = "TRUNCATE TABLE employee";
+        let command: &str = "TRUNCATE TABLE employee;";
         let result = server::parser::tokenizer::tokeniz(command);
     }
 
