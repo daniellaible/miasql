@@ -4,17 +4,17 @@ use sqlparser::ast::{Expr, Insert, SetExpr, TableObject, Value};
 pub fn parse(insert: Insert) -> SqlCommand {
     let table = match parse_table(&insert.table) {
         Some(table) => table,
-        None => return SqlCommand::UNDEFINED,
+        None => return SqlCommand::Undefined,
     };
 
     let columns = parse_columns(&insert.columns);
 
     let values = match parse_values(&insert) {
         Some(values) => values,
-        None => return SqlCommand::UNDEFINED,
+        None => return SqlCommand::Undefined,
     };
 
-    SqlCommand::INSERT {
+    SqlCommand::Insert {
         command: String::from("INSERT"),
         table,
         columns,
@@ -114,7 +114,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::INSERT {
+            SqlCommand::Insert {
                 command,
                 table,
                 columns,
@@ -140,7 +140,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::INSERT {
+            SqlCommand::Insert {
                 command,
                 table,
                 columns,
@@ -168,7 +168,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::INSERT {
+            SqlCommand::Insert {
                 command,
                 table,
                 columns,
@@ -206,7 +206,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::INSERT {
+            SqlCommand::Insert {
                 command,
                 table,
                 columns,

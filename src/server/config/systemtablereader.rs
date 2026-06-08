@@ -11,7 +11,7 @@ pub fn read_system_table() -> Database {
         for line in lines.map_while(Result::ok) {
             let mut splits = line.trim().split(";");
 
-            let id: i32 = match splits.next(){
+            let _: i32 = match splits.next(){
                 Some(id) => id.parse::<i32>().unwrap(),
                 None => return Database::default()
             };
@@ -31,9 +31,9 @@ pub fn read_system_table() -> Database {
                 None => return Database::default()
             };
 
-            let mut database = database::database::Database::default();
+            let mut database = Database::default();
             database.set_db_name(dbname.to_string());
-            database.add_table( tablename.to_string(), String::new() );
+            database.add_table( tablename.to_string(), path.to_string() );
 
             return database;
         }

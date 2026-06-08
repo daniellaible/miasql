@@ -11,7 +11,7 @@ pub fn parse(alter: AlterTable) -> SqlCommand {
 
     if alter.operations.len() != 1 {
         println!("Expected 1 operation, found {}", alter.operations.len());
-        return SqlCommand::UNDEFINED;
+        return SqlCommand::Undefined;
     }
 
     match &alter.operations[0] {
@@ -20,7 +20,7 @@ pub fn parse(alter: AlterTable) -> SqlCommand {
             let data_type = parse_data_type(&column_def.data_type);
             let constraints = parse_column_constraints(&column_def.options);
 
-            SqlCommand::ALTER_ADD_COLUMN {
+            SqlCommand::AlterAddColumn {
                 command: String::from("ALTER ADD COLUMN"),
                 table,
                 columns: vec![(column_name, data_type, constraints)],
@@ -33,7 +33,7 @@ pub fn parse(alter: AlterTable) -> SqlCommand {
                 .map(|ident| ident.value.clone())
                 .collect();
 
-            SqlCommand::ALTER_DROP_COLUMN {
+            SqlCommand::AlterDropColumn {
                 command: String::from("ALTER DROP COLUMN"),
                 table,
                 columns,
@@ -43,7 +43,7 @@ pub fn parse(alter: AlterTable) -> SqlCommand {
         AlterTableOperation::RenameColumn {
             old_column_name,
             new_column_name,
-        } => SqlCommand::ALTER_RENAME_COLUMN {
+        } => SqlCommand::AlterRenameColumn {
             command: String::from("ALTER RENAME COLUMN"),
             table,
             old: old_column_name.value.clone(),
@@ -55,7 +55,7 @@ pub fn parse(alter: AlterTable) -> SqlCommand {
             data_type,
             options,
             ..
-        } => SqlCommand::ALTER_MODIFY_COLUMN {
+        } => SqlCommand::AlterModifyColumn {
             command: String::from("ALTER MODIFY COLUMN"),
             table,
             column: col_name.value.clone(),
@@ -63,13 +63,13 @@ pub fn parse(alter: AlterTable) -> SqlCommand {
             constraints: parse_column_option_vec(options),
         },
 
-        AlterTableOperation::RenameTable { table_name } => SqlCommand::ALTER_TABLE_RENAME {
+        AlterTableOperation::RenameTable { table_name } => SqlCommand::AlterTableRename {
             command: String::from("ALTER RENAME TABLE"),
             table,
             new_name: parse_rename_table_name(table_name),
         },
 
-        _ => SqlCommand::UNDEFINED,
+        _ => SqlCommand::Undefined,
     }
 }
 
@@ -133,8 +133,8 @@ fn parse_column_constraints(options: &[sqlparser::ast::ColumnOptionDef]) -> Vec<
 
     for option in options {
         match &option.option {
-            ColumnOption::NotNull => constraints.push(Constraint::NOT_NULL),
-            ColumnOption::Unique(_) => constraints.push(Constraint::UNIQUE),
+            ColumnOption::NotNull => constraints.push(Constraint::NotNull),
+            ColumnOption::Unique(_) => constraints.push(Constraint::Unique),
             _ => {}
         }
     }
@@ -147,8 +147,8 @@ fn parse_column_option_vec(options: &[ColumnOption]) -> Vec<Constraint> {
 
     for option in options {
         match option {
-            ColumnOption::NotNull => constraints.push(Constraint::NOT_NULL),
-            ColumnOption::Unique(_) => constraints.push(Constraint::UNIQUE),
+            ColumnOption::NotNull => constraints.push(Constraint::NotNull),
+            ColumnOption::Unique(_) => constraints.push(Constraint::Unique),
             _ => {}
         }
     }
@@ -183,7 +183,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_ADD_COLUMN {
+            SqlCommand::AlterAddColumn {
                 command,
                 table,
                 columns,
@@ -192,7 +192,7 @@ mod tests {
                 assert_eq!(command, "ALTER ADD COLUMN");
                 assert_eq!(table, "Customers");
                 assert_eq!(columns.len(), 1);
-                assert_eq!(columns[0], (String::from("Email"), DataType::VarChar{x: String::new(),y:255}, vec![Constraint::NOT_NULL]));
+                assert_eq!(columns[0], (String::from("Email"), DataType::VarChar{x: String::new(),y:255}, vec![Constraint::NotNull]));
             }
             _ => panic!("expected INSERT"),
         }
@@ -205,7 +205,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_DROP_COLUMN {
+            SqlCommand::AlterDropColumn {
                 command,
                 table,
                 columns,
@@ -227,7 +227,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_RENAME_COLUMN {
+            SqlCommand::AlterRenameColumn {
                 command,
                 table,
                 old,
@@ -250,7 +250,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_MODIFY_COLUMN {
+            SqlCommand::AlterModifyColumn {
                 command,
                 table,
                 column,
@@ -262,7 +262,7 @@ mod tests {
                 assert_eq!(table, "Customers");
                 assert_eq!(column, String::from("Email"));
                 assert_eq!(data_type, DataType::VarChar{x: String::new(),y:100});
-                assert_eq!(constraints[0], Constraint::NOT_NULL);
+                assert_eq!(constraints[0], Constraint::NotNull);
             }
             _ => panic!("expected INSERT"),
         }
@@ -275,7 +275,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_TABLE_RENAME {
+            SqlCommand::AlterTableRename {
                 command,
                 table,
                 new_name,
@@ -296,7 +296,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_ADD_COLUMN {
+            SqlCommand::AlterAddColumn {
                 command,
                 table,
                 columns,
@@ -312,7 +312,7 @@ mod tests {
                             x: String::new(),
                             y: 255
                         },
-                        vec![Constraint::NOT_NULL]
+                        vec![Constraint::NotNull]
                     )
                 );
             }
@@ -327,7 +327,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_ADD_COLUMN { table, columns, .. } => {
+            SqlCommand::AlterAddColumn { table, columns, .. } => {
                 assert_eq!(table, "Customers");
                 assert_eq!(columns.len(), 1);
                 assert_eq!(
@@ -353,7 +353,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_ADD_COLUMN { table, columns, .. } => {
+            SqlCommand::AlterAddColumn { table, columns, .. } => {
                 assert_eq!(table, "Customers");
                 assert_eq!(columns.len(), 1);
                 assert_eq!(columns[0].0, "Email");
@@ -364,7 +364,7 @@ mod tests {
                         y: 255
                     }
                 );
-                assert_eq!(columns[0].2, vec![Constraint::UNIQUE]);
+                assert_eq!(columns[0].2, vec![Constraint::Unique]);
             }
             _ => panic!("expected ALTER_ADD_COLUMN"),
         }
@@ -377,7 +377,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_ADD_COLUMN { table, columns, .. } => {
+            SqlCommand::AlterAddColumn { table, columns, .. } => {
                 assert_eq!(table, "Customers");
                 assert_eq!(columns.len(), 1);
                 assert_eq!(columns[0].0, "Age");
@@ -394,7 +394,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_ADD_COLUMN { table, columns, .. } => {
+            SqlCommand::AlterAddColumn { table, columns, .. } => {
                 assert_eq!(table, "Customers");
                 assert_eq!(columns.len(), 1);
                 assert_eq!(columns[0].0, "CustomerId");
@@ -411,7 +411,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_ADD_COLUMN { table, columns, .. } => {
+            SqlCommand::AlterAddColumn { table, columns, .. } => {
                 assert_eq!(table, "Customers");
                 assert_eq!(table, "Customers");
                 assert_eq!(columns[0].0, "Rating");
@@ -428,7 +428,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_ADD_COLUMN { columns, .. } => {
+            SqlCommand::AlterAddColumn { columns, .. } => {
                 assert_eq!(columns[0].0, "Score");
                 assert_eq!(columns[0].1, DataType::TinyInt { x: 0 });
             }
@@ -443,7 +443,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_ADD_COLUMN { columns, .. } => {
+            SqlCommand::AlterAddColumn { columns, .. } => {
                 assert_eq!(columns[0].0, "Active");
                 assert_eq!(columns[0].1, DataType::Bool { x: false });
             }
@@ -458,7 +458,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_ADD_COLUMN { columns, .. } => {
+            SqlCommand::AlterAddColumn { columns, .. } => {
                 assert_eq!(columns[0].0, "Score");
                 assert_eq!(columns[0].1, DataType::Float { x: 0.0 });
             }
@@ -473,7 +473,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_ADD_COLUMN { columns, .. } => {
+            SqlCommand::AlterAddColumn { columns, .. } => {
                 assert_eq!(columns[0].0, "Score");
                 assert_eq!(columns[0].1, DataType::Float { x: 0.0 });
             }
@@ -488,7 +488,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_ADD_COLUMN { columns, .. } => {
+            SqlCommand::AlterAddColumn { columns, .. } => {
                 assert_eq!(columns[0].0, "Score");
                 assert_eq!(columns[0].1, DataType::Float { x: 0.0 });
             }
@@ -503,7 +503,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_DROP_COLUMN {
+            SqlCommand::AlterDropColumn {
                 command,
                 table,
                 columns,
@@ -524,7 +524,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_DROP_COLUMN {
+            SqlCommand::AlterDropColumn {
                 command,
                 table,
                 columns,
@@ -545,7 +545,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_RENAME_COLUMN {
+            SqlCommand::AlterRenameColumn {
                 command,
                 table,
                 old,
@@ -567,7 +567,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_RENAME_COLUMN {
+            SqlCommand::AlterRenameColumn {
                 command,
                 table,
                 old,
@@ -589,7 +589,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_MODIFY_COLUMN {
+            SqlCommand::AlterModifyColumn {
                 command,
                 table,
                 column,
@@ -606,7 +606,7 @@ mod tests {
                         y: 100
                     }
                 );
-                assert_eq!(constraints[0], Constraint::NOT_NULL);
+                assert_eq!(constraints[0], Constraint::NotNull);
             }
             _ => panic!("expected ALTER_MODIFY_COLUMN"),
         }
@@ -619,7 +619,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_MODIFY_COLUMN {
+            SqlCommand::AlterModifyColumn {
                 table,
                 column,
                 data_type,
@@ -648,7 +648,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_MODIFY_COLUMN {
+            SqlCommand::AlterModifyColumn {
                 table,
                 column,
                 constraints,
@@ -656,7 +656,7 @@ mod tests {
             } => {
                 assert_eq!(table, "Customers");
                 assert_eq!(column, "Email");
-                assert_eq!(constraints, vec![Constraint::UNIQUE]);
+                assert_eq!(constraints, vec![Constraint::Unique]);
             }
             _ => panic!("expected ALTER_MODIFY_COLUMN"),
         }
@@ -669,7 +669,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_MODIFY_COLUMN {
+            SqlCommand::AlterModifyColumn {
                 column,
                 data_type,
                 ..
@@ -688,7 +688,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_MODIFY_COLUMN {
+            SqlCommand::AlterModifyColumn {
                 column,
                 data_type,
                 ..
@@ -707,7 +707,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_MODIFY_COLUMN {
+            SqlCommand::AlterModifyColumn {
                 column,
                 data_type,
                 ..
@@ -726,7 +726,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_TABLE_RENAME {
+            SqlCommand::AlterTableRename {
                 command,
                 table,
                 new_name,
@@ -746,7 +746,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_TABLE_RENAME {
+            SqlCommand::AlterTableRename {
                 command,
                 table,
                 new_name,
@@ -765,7 +765,7 @@ mod tests {
             "ALTER TABLE Customers ADD Email varchar(255), ADD City varchar(255);",
         );
 
-        assert_eq!(command, SqlCommand::UNDEFINED);
+        assert_eq!(command, SqlCommand::Undefined);
     }
 
     #[test]
@@ -774,7 +774,7 @@ mod tests {
             "ALTER TABLE Customers ALTER COLUMN Email SET DEFAULT 'x';",
         );
 
-        assert_eq!(command, SqlCommand::UNDEFINED);
+        assert_eq!(command, SqlCommand::Undefined);
     }
 
     #[test]
@@ -784,7 +784,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_ADD_COLUMN { columns, .. } => {
+            SqlCommand::AlterAddColumn { columns, .. } => {
                 assert_eq!(columns[0].0, "CreatedAt");
                 assert_eq!(columns[0].1, DataType::Undefined);
             }
@@ -799,7 +799,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_MODIFY_COLUMN {
+            SqlCommand::AlterModifyColumn {
                 column,
                 data_type,
                 ..
@@ -818,7 +818,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_ADD_COLUMN { table, columns, .. } => {
+            SqlCommand::AlterAddColumn { table, columns, .. } => {
                 assert_eq!(table, "Customers");
                 assert_eq!(columns[0].0, "EmailAddress");
             }
@@ -833,7 +833,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::ALTER_MODIFY_COLUMN { table, column, .. } => {
+            SqlCommand::AlterModifyColumn { table, column, .. } => {
                 assert_eq!(table, "Customers");
                 assert_eq!(column, "EmailAddress");
             }

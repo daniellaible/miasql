@@ -7,17 +7,17 @@ pub struct DbMem {
 }
 
 #[derive(Debug)]
-pub struct All_Databases {
+pub struct AllDatabases {
     pub databases: Mutex<Vec<DbMem>>,
 }
 
 pub struct AllDbSingelton;
 
-static INSTANCE: OnceLock<All_Databases> = OnceLock::new();
+static INSTANCE: OnceLock<AllDatabases> = OnceLock::new();
 
 impl AllDbSingelton {
-    pub fn instance() -> &'static All_Databases {
-        INSTANCE.get_or_init(|| All_Databases {
+    pub fn instance() -> &'static AllDatabases {
+        INSTANCE.get_or_init(|| AllDatabases {
             databases: Mutex::new(Vec::new()),
         })
     }

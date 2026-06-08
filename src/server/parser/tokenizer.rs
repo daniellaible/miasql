@@ -11,11 +11,11 @@ pub fn tokeniz(input: &str) -> SqlCommand {
 
     let ast = match &parse_result {
         Ok(ast) => parse_result.unwrap(),
-        Err(e) => return SqlCommand::UNDEFINED,
+        Err(e) => return SqlCommand::Undefined,
     };
 
-    if ast.is_empty() { return SqlCommand::UNDEFINED }
-    let mut command: SqlCommand = SqlCommand::UNDEFINED;
+    if ast.is_empty() { return SqlCommand::Undefined }
+    let mut command: SqlCommand = SqlCommand::Undefined;
 
 
     match ast[0].clone() {
@@ -46,7 +46,7 @@ pub fn tokeniz(input: &str) -> SqlCommand {
         Statement::Delete(delete) => {
             command = command::delete::parse(delete.clone());
         }
-        _ => command = SqlCommand::UNDEFINED,
+        _ => command = SqlCommand::Undefined,
     }
     command
 }

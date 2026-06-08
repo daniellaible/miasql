@@ -7,7 +7,7 @@ use crate::database::datatype::DataType;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum SqlCommand {
-    SELECT {
+    Select {
         command: String,
         table: String,
         columns: Vec<String>,
@@ -18,63 +18,63 @@ pub enum SqlCommand {
         joins: Vec<JoinClause>,
         limit: i32,
     },
-    CREATE_TABLE {
+    CreateTable {
         command: String,
         table: String,
         columns: Vec<(String, String, Vec<Constraint>)>,
         foreign_keys: Vec<ParsedForeignKey>,
     },
-    CREATE_DATABASE {
+    CreateDatabase {
         command: String,
         database: String,
         comment: String,
     },
-    DROP_TABLE {
+    DropTable {
         command: String,
         table: String
     },
-    DROP_DATABASE{
+    DropDatabase {
         command: String,
         database: String
     },
-    DELETE {
+    Delete {
         command: String,
         table: String,
         where_clause: WhereClause
     },
-    TRUNCATE {
+    Truncate {
         command: String,
         tables: Vec<String>
     },
-    UPDATE {
+    Update {
         command: String,
         table: String,
         sets: Vec<UpdateSet>,
         where_clause: WhereClause
     },
-    INSERT {
+    Insert {
         command: String,
         table: String,
         columns: Vec<String>,
         values: Vec<Vec<String>>,
     },
-    ALTER_ADD_COLUMN {
+    AlterAddColumn {
         command: String,
         table: String,
         columns: Vec<(String, DataType, Vec<Constraint>)>,
     },
-    ALTER_DROP_COLUMN {
+    AlterDropColumn {
         command: String,
         table: String,
         columns: Vec<(String)>,
     },
-    ALTER_RENAME_COLUMN {
+    AlterRenameColumn {
         command: String,
         table: String,
         old: String,
         new: String,
     },
-    ALTER_MODIFY_COLUMN {
+    AlterModifyColumn {
         command: String,
         table: String,
         column: String,
@@ -82,10 +82,10 @@ pub enum SqlCommand {
         constraints: Vec<Constraint>,
     },
 
-    ALTER_TABLE_RENAME {
+    AlterTableRename {
         command: String,
         table: String,
         new_name: String,
     },
-    UNDEFINED
+    Undefined
 } 

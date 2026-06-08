@@ -8,7 +8,7 @@ pub fn parse(del_stmt: Delete) -> SqlCommand {
     let table = extract_table_name(&del_stmt.from).unwrap();
     let where_clause = extract_where_clause(del_stmt.selection.as_ref()).unwrap();
 
-    SqlCommand::DELETE {
+    SqlCommand::Delete {
         command: String::from("DELETE"),
         table,
         where_clause,
@@ -126,7 +126,7 @@ mod tests {
         let command = parse_delete("DELETE FROM employee WHERE id = 1").unwrap();
 
         match command {
-            SqlCommand::DELETE { command, table, where_clause } => {
+            SqlCommand::Delete { command, table, where_clause } => {
                 assert_eq!(command, "DELETE");
                 assert_eq!(table, "employee");
                 assert_eq!(where_clause.column, "id");
@@ -142,7 +142,7 @@ mod tests {
         let command = parse_delete("DELETE FROM employee WHERE id != 10").unwrap();
 
         match command {
-            SqlCommand::DELETE { table, where_clause, .. } => {
+            SqlCommand::Delete { table, where_clause, .. } => {
                 assert_eq!(table, "employee");
                 assert_eq!(where_clause.column, "id");
                 assert_eq!(where_clause.operator, Operator::NOTEQUAL);
@@ -157,7 +157,7 @@ mod tests {
         let command = parse_delete("DELETE FROM employee WHERE id > 100").unwrap();
 
         match command {
-            SqlCommand::DELETE { where_clause, .. } => {
+            SqlCommand::Delete { where_clause, .. } => {
                 assert_eq!(where_clause.column, "id");
                 assert_eq!(where_clause.operator, Operator::GREATER);
                 assert_eq!(where_clause.value, DataType::BigInt { x: 100 });
@@ -171,7 +171,7 @@ mod tests {
         let command = parse_delete("DELETE FROM employee WHERE id < 5").unwrap();
 
         match command {
-            SqlCommand::DELETE { where_clause, .. } => {
+            SqlCommand::Delete { where_clause, .. } => {
                 assert_eq!(where_clause.column, "id");
                 assert_eq!(where_clause.operator, Operator::LESSER);
                 assert_eq!(where_clause.value, DataType::BigInt { x: 5 });
@@ -185,7 +185,7 @@ mod tests {
         let command = parse_delete("DELETE FROM employee WHERE id >= 7").unwrap();
 
         match command {
-            SqlCommand::DELETE { where_clause, .. } => {
+            SqlCommand::Delete { where_clause, .. } => {
                 assert_eq!(where_clause.column, "id");
                 assert_eq!(where_clause.operator, Operator::GREATEROREQ);
                 assert_eq!(where_clause.value, DataType::BigInt { x: 7 });
@@ -199,7 +199,7 @@ mod tests {
         let command = parse_delete("DELETE FROM employee WHERE id <= 3").unwrap();
 
         match command {
-            SqlCommand::DELETE { where_clause, .. } => {
+            SqlCommand::Delete { where_clause, .. } => {
                 assert_eq!(where_clause.column, "id");
                 assert_eq!(where_clause.operator, Operator::LESSEROREQ);
                 assert_eq!(where_clause.value, DataType::BigInt { x: 3 });
@@ -213,7 +213,7 @@ mod tests {
         let command = parse_delete("DELETE FROM employee WHERE lastname = 'Miller'").unwrap();
 
         match command {
-            SqlCommand::DELETE { where_clause, .. } => {
+            SqlCommand::Delete { where_clause, .. } => {
                 assert_eq!(where_clause.column, "lastname");
                 assert_eq!(where_clause.operator, Operator::EQUAL);
                 assert_eq!(
@@ -233,7 +233,7 @@ mod tests {
         let command = parse_delete("DELETE FROM employee WHERE active = true").unwrap();
 
         match command {
-            SqlCommand::DELETE { where_clause, .. } => {
+            SqlCommand::Delete { where_clause, .. } => {
                 assert_eq!(where_clause.column, "active");
                 assert_eq!(where_clause.operator, Operator::EQUAL);
                 assert_eq!(where_clause.value, DataType::Bool { x: true });
@@ -247,7 +247,7 @@ mod tests {
         let command = parse_delete("DELETE FROM employee WHERE active = false").unwrap();
 
         match command {
-            SqlCommand::DELETE { where_clause, .. } => {
+            SqlCommand::Delete { where_clause, .. } => {
                 assert_eq!(where_clause.column, "active");
                 assert_eq!(where_clause.operator, Operator::EQUAL);
                 assert_eq!(where_clause.value, DataType::Bool { x: false });
@@ -261,7 +261,7 @@ mod tests {
         let command = parse_delete("DELETE FROM employee WHERE deleted_at = NULL").unwrap();
 
         match command {
-            SqlCommand::DELETE { where_clause, .. } => {
+            SqlCommand::Delete { where_clause, .. } => {
                 assert_eq!(where_clause.column, "deleted_at");
                 assert_eq!(where_clause.operator, Operator::EQUAL);
                 assert_eq!(where_clause.value, DataType::Null);
@@ -275,7 +275,7 @@ mod tests {
         let command = parse_delete("DELETE FROM mydb.employee WHERE id = 1").unwrap();
 
         match command {
-            SqlCommand::DELETE { table, where_clause, .. } => {
+            SqlCommand::Delete { table, where_clause, .. } => {
                 assert_eq!(table, "mydb.employee");
                 assert_eq!(where_clause.column, "id");
                 assert_eq!(where_clause.value, DataType::BigInt { x: 1 });
@@ -289,7 +289,7 @@ mod tests {
         let command = parse_delete("DELETE FROM employee WHERE employee.id = 1").unwrap();
 
         match command {
-            SqlCommand::DELETE { where_clause, .. } => {
+            SqlCommand::Delete { where_clause, .. } => {
                 assert_eq!(where_clause.column, "employee.id");
                 assert_eq!(where_clause.operator, Operator::EQUAL);
                 assert_eq!(where_clause.value, DataType::BigInt { x: 1 });
@@ -303,7 +303,7 @@ mod tests {
         let command = parse_delete("DELETE FROM EMPLOYEE WHERE ID = 1").unwrap();
 
         match command {
-            SqlCommand::DELETE { table, where_clause, .. } => {
+            SqlCommand::Delete { table, where_clause, .. } => {
                 assert_eq!(table, "EMPLOYEE");
                 assert_eq!(where_clause.column, "ID");
                 assert_eq!(where_clause.value, DataType::BigInt { x: 1 });

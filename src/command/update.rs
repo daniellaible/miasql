@@ -2,7 +2,7 @@ use crate::command::sqlcommands::SqlCommand;
 use crate::command::sqloperator::Operator;
 use crate::command::whereclause::WhereClause;
 use crate::database::datatype;
-use sqlparser::ast::{Assignment, AssignmentTarget, BinaryOperator, Expr, TableFactor, TableObject, TableWithJoins, Update, ValueWithSpan};
+use sqlparser::ast::{Assignment, AssignmentTarget, BinaryOperator, Expr, TableFactor, TableWithJoins, Update, ValueWithSpan};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct UpdateSet {
@@ -13,16 +13,16 @@ pub struct UpdateSet {
 pub fn parse(update: Update) -> SqlCommand {
     let table = match parse_table(&update.table) {
         Some(table) => table,
-        None => return SqlCommand::UNDEFINED,
+        None => return SqlCommand::Undefined,
     };
 
 
     let where_clause = match &update.selection {
         Some(expr) => match retrieve_where_clause(expr) {
             Some(clause) => clause,
-            None => return SqlCommand::UNDEFINED,
+            None => return SqlCommand::Undefined,
         },
-        None => return SqlCommand::UNDEFINED,
+        None => return SqlCommand::Undefined,
     };
 
 
@@ -32,11 +32,11 @@ pub fn parse(update: Update) -> SqlCommand {
     for assignment in update.assignments.iter() {
         match parse_assignment(assignment) {
             Some(set) => sets.push(set),
-            None => return SqlCommand::UNDEFINED,
+            None => return SqlCommand::Undefined,
         }
     }
 
-    SqlCommand::UPDATE {
+    SqlCommand::Update {
         command: String::from("UPDATE"),
         table,
         sets,
@@ -185,7 +185,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::UPDATE {
+            SqlCommand::Update {
                 command,
                 table,
                 sets,
@@ -214,7 +214,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::UPDATE {
+            SqlCommand::Update {
                 command,
                 table,
                 sets,
@@ -238,6 +238,6 @@ mod tests {
     fn test_update_without_where() {
         let command = parse_select("UPDATE Customers SET ContactName = 'Alfred Schmidt'");
 
-        assert_eq!(command, SqlCommand::UNDEFINED);
+        assert_eq!(command, SqlCommand::Undefined);
     }
 }

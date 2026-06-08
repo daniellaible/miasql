@@ -1,7 +1,7 @@
 use sqlparser::ast::{ColumnOption, CreateTable, Ident, ObjectNamePart, Statement, TableConstraint};
 use crate::command::constraint::Constraint;
 use crate::command::sqlcommands::SqlCommand;
-use crate::database::datatype::DataType;
+
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ParsedForeignKey {
@@ -25,10 +25,10 @@ pub fn parse(create: CreateTable) -> SqlCommand {
          for option in iter_options {
              let column_opt = &option.option;
              let constraint:Constraint = match column_opt {
-                 ColumnOption::NotNull => Constraint::NOT_NULL,
-                 ColumnOption::Unique(_) => Constraint::UNIQUE,
-                 ColumnOption::PrimaryKey(_) => Constraint::PRIMARY_KEY,
-                 _ => Constraint::UNDEFINED,
+                 ColumnOption::NotNull => Constraint::NotNull,
+                 ColumnOption::Unique(_) => Constraint::Unique,
+                 ColumnOption::PrimaryKey(_) => Constraint::PrimaryKey,
+                 _ => Constraint::Undefined,
              };
              column_constraints.push(constraint.clone());
          }
@@ -39,7 +39,7 @@ pub fn parse(create: CreateTable) -> SqlCommand {
 
     let foreign_keys = extract_foreign_keys(create);
 
-    SqlCommand::CREATE_TABLE {
+    SqlCommand::CreateTable {
         command: String::from("CREATE TABLE"),
         table: String::from(tablename),
         columns,

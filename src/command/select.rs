@@ -2,7 +2,7 @@ use crate::command::sqlcommands::SqlCommand;
 use crate::command::sqloperator::Operator;
 use crate::command::whereclause::WhereClause;
 use crate::database::datatype;
-use sqlparser::ast::{BinaryOperator, Expr, Function as SqlFunction, FunctionArg, FunctionArgExpr, FunctionArgumentList, FunctionArguments, Ident, ObjectName, ObjectNamePart, Query, Select, SelectItem, TableFactor, TableWithJoins, Top, Value, ValueWithSpan};
+use sqlparser::ast::{BinaryOperator, Expr, Function as SqlFunction, FunctionArg, FunctionArgExpr, FunctionArgumentList, FunctionArguments, Ident, ObjectName, ObjectNamePart, Query, Select, SelectItem, TableFactor, TableWithJoins, Value, ValueWithSpan};
 use sqlparser::tokenizer::Token;
 
 /// This truct specifies what kind of Join command was tokenized
@@ -87,7 +87,7 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
         Some(x) => x,
         _ => {
             println!("Unable to parse Select command");
-            return SqlCommand::UNDEFINED;
+            return SqlCommand::Undefined;
         }
     };
 
@@ -113,7 +113,7 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
         Some(x) => x,
         None => {
             println!("Unable to parse table / joins");
-            return SqlCommand::UNDEFINED;
+            return SqlCommand::Undefined;
         }
     };
 
@@ -122,7 +122,7 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
             Some(x) => x,
             None => {
                 println!("Unable to parse where clause");
-                return SqlCommand::UNDEFINED;
+                return SqlCommand::Undefined;
             }
         },
         None => WhereClause {
@@ -138,7 +138,7 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
     let columns = extract_columns(select_stmt);
     let limit: i32 = extract_top(select_stmt);
 
-    let command = SqlCommand::SELECT {
+    let command = SqlCommand::Select {
         command: String::from(ident),
         table: String::from(tablename),
         columns,
@@ -440,7 +440,7 @@ mod tests {
         );
 
         let result = match command {
-            SqlCommand::SELECT {
+            SqlCommand::Select {
                 command,
                 table,
                 columns,
@@ -489,7 +489,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::SELECT {
+            SqlCommand::Select {
                 columns,
                 distinct,
                 group_by,
@@ -519,7 +519,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::SELECT {
+            SqlCommand::Select {
                 order_by, columns, ..
             } => {
                 assert_eq!(columns, vec!["*"]);
@@ -539,7 +539,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::SELECT { order_by, .. } => {
+            SqlCommand::Select { order_by, .. } => {
                 assert_eq!(order_by, vec!["lastname ASC".to_string()]);
             }
             _ => panic!("expected SELECT"),
@@ -551,7 +551,7 @@ mod tests {
         let command = parse_select("SELECT Top 3 lastname FROM Customers WHERE Country = 'Germany';");
 
         match command {
-            SqlCommand::SELECT { columns, limit, .. } => {
+            SqlCommand::Select { columns, limit, .. } => {
                 assert_eq!(columns, vec!["lastname"]);
                 assert_eq!(limit, 3);
             }
@@ -569,7 +569,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::SELECT {
+            SqlCommand::Select {
                 columns, group_by, ..
             } => {
                 assert_eq!(
@@ -595,7 +595,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::SELECT {
+            SqlCommand::Select {
                 columns, group_by, ..
             } => {
                 assert_eq!(
@@ -621,7 +621,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::SELECT { order_by, .. } => {
+            SqlCommand::Select { order_by, .. } => {
                 assert_eq!(
                     order_by,
                     vec!["lastname DESC".to_string(), "firstname ASC".to_string()]
@@ -640,7 +640,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::SELECT { where_clause, .. } => {
+            SqlCommand::Select { where_clause, .. } => {
                 assert_eq!(where_clause.column, "id");
                 assert_eq!(where_clause.operator, Operator::GREATEROREQ);
                 assert_eq!(where_clause.value, datatype::DataType::BigInt { x: 100 });
@@ -657,7 +657,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::SELECT { where_clause, .. } => {
+            SqlCommand::Select { where_clause, .. } => {
                 assert_eq!(where_clause.column, "");
                 assert_eq!(where_clause.operator, Operator::UNDEFINED);
                 assert_eq!(where_clause.value, datatype::DataType::Undefined);
@@ -675,7 +675,7 @@ mod tests {
          WHERE Orders.OrderID = 1",
         );
 
-        assert_eq!(command, SqlCommand::UNDEFINED);
+        assert_eq!(command, SqlCommand::Undefined);
     }
 
     #[test]
@@ -687,7 +687,7 @@ mod tests {
          WHERE Orders.OrderID = 1",
         );
 
-        assert_eq!(command, SqlCommand::UNDEFINED);
+        assert_eq!(command, SqlCommand::Undefined);
     }
     #[test]
 
@@ -699,7 +699,7 @@ mod tests {
         );
 
         match command {
-            SqlCommand::SELECT {
+            SqlCommand::Select {
                 table,
                 columns,
                 distinct,

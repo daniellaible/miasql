@@ -1,6 +1,6 @@
-use std::fs::{File, OpenOptions};
+use std::fs::{OpenOptions};
 use std::path::Path;
-use std::io::{BufRead, BufWriter, Write};
+use std::io::{BufWriter, Write};
 use crate::command::sqlcommands::SqlCommand;
 
 pub fn write_ledger(transaction_id: u64) -> Result<bool, std::io::Error> {
@@ -34,59 +34,59 @@ fn append_to_file(line: &String){
 }
 
 fn to_printable_line(command: &SqlCommand) -> String {
-    let mut line: String;
+    let line: String;
     let mut counter: u64 = 123456;
     match command {
 
-        SqlCommand::CREATE_TABLE {table, columns, foreign_keys,  .. } => {
+        SqlCommand::CreateTable {table, columns, foreign_keys,  .. } => {
             line = format!( "{counter}; CREATE_TABLE; TABLE={}; COLUMNS={:?}; FOREIGN_KEYS={:?}", table, columns, foreign_keys );
             line.replace("\"", "")
         }
-        SqlCommand::CREATE_DATABASE {database, comment, .. } => {
+        SqlCommand::CreateDatabase {database, comment, .. } => {
             line = format!("{counter}; CREATE_DATABASE; DATABASE={}; COMMENT={:?}",database, comment );
             line.replace("\"", "")
         }
-        SqlCommand::DROP_TABLE { table, ..} => {
+        SqlCommand::DropTable { table, ..} => {
             line = format!( "{counter}; DROP_TABLE; TABLE={}",  table);
             line.replace("\"", "")
         }
-        SqlCommand::DROP_DATABASE {database, .. } => {
+        SqlCommand::DropDatabase {database, .. } => {
             line = format!( "{counter}; DROP_DATABASE; DATABASE={}",  database);
             line.replace("\"", "")
         }
-        SqlCommand::DELETE {table, where_clause, .. } => {
+        SqlCommand::Delete {table, where_clause, .. } => {
             line = format!( "{counter}; DELETE; TABLE={}; WHERE={:?}",table,  where_clause);
             line.replace("\"", "")
         }
-        SqlCommand::TRUNCATE {tables, .. } => {
+        SqlCommand::Truncate {tables, .. } => {
             line = format!( "{counter}; TRUNCATE; TABLES={:?}",tables);
             line.replace("\"", "")
         }
-        SqlCommand::UPDATE {table, sets, where_clause, .. } => {
+        SqlCommand::Update {table, sets, where_clause, .. } => {
             line = format!( "{counter}; UPDATE; TABLE={}; SETS={:?}; WHERE={:?}",table, sets, where_clause);
             line.replace("\"", "")
         }
-        SqlCommand::INSERT {table, columns, values, .. } => {
+        SqlCommand::Insert {table, columns, values, .. } => {
             line = format!( "{counter}; INSERT; TABLE={}; COLUMNS={:?}; VALUES={:?}",table, columns, values);
             line.replace("\"", "")
         }
-        SqlCommand::ALTER_ADD_COLUMN {table, columns, .. } => {
+        SqlCommand::AlterAddColumn {table, columns, .. } => {
             line = format!( "{counter}; ALTER_ADD_COLUMN; TABLE={}; COLUMNS={:?}",table, columns);
             line.replace("\"", "")
         }
-        SqlCommand::ALTER_DROP_COLUMN { table, columns, .. } => {
+        SqlCommand::AlterDropColumn { table, columns, .. } => {
             line = format!( "{counter}; ALTER_DROP_COLUMN; TABLE={}; COLUMNS={:?}",table, columns);
             line.replace("\"", "")
         }
-        SqlCommand::ALTER_RENAME_COLUMN {table, old, new,.. } => {
+        SqlCommand::AlterRenameColumn {table, old, new,.. } => {
             line = format!( "{counter}; ALTER_RENAME_COLUMN; TABLE={}; OLD={}; NEW={}",table, old, new);
             line.replace("\"", "")
         }
-        SqlCommand::ALTER_MODIFY_COLUMN {table, column, data_type, constraints,.. } => {
+        SqlCommand::AlterModifyColumn {table, column, data_type, constraints,.. } => {
             line = format!( "{counter}; ALTER_RENAME_COLUMN; TABLE={}; COLUMN={}; DATATYPE={:?}; CONSTRAINTS={:?}",table, column, data_type, constraints);
             line.replace("\"", "")
         }
-        SqlCommand::ALTER_TABLE_RENAME {table, new_name,.. } => {
+        SqlCommand::AlterTableRename {table, new_name,.. } => {
             line = format!( "{counter}; ALTER_RENAME_TABLE; TABLE={}; NEW_NAME={}",table, new_name);
             line.replace("\"", "")
         }

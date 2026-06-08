@@ -1,7 +1,7 @@
 use log::info;
 use crate::server;
 use crate::server::queue::{MasterQueueSingelton, TransactionProtocol};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::{AsyncReadExt};
 use tokio::net::TcpStream;
 use crate::command::sqlcommands::SqlCommand;
 
@@ -40,7 +40,7 @@ pub fn parse_incomming(incomming: &str) {
     } else {
         let command = server::parser::tokenizer::tokeniz(&*management_command);
         info!("tokenized command: {:?}", command);
-        if command != SqlCommand::UNDEFINED {
+        if command != SqlCommand::Undefined {
             let transaction: TransactionProtocol = TransactionProtocol {
                 is_processing: false,
                 is_finished: false,

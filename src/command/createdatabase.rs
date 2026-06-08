@@ -4,18 +4,18 @@ use crate::command::sqlcommands::SqlCommand;
 pub fn parse(ast: Vec<Statement>) -> SqlCommand{
     let stmt = match ast.into_iter().next() {
         Some(s) => s,
-        None => return SqlCommand::UNDEFINED,
+        None => return SqlCommand::Undefined,
     };
 
     match stmt {
         Statement::CreateDatabase { db_name, comment, .. } => {
-            SqlCommand::CREATE_DATABASE {
+            SqlCommand::CreateDatabase {
                 command: String::from("CREATE DATABASE"),
                 database: db_name.to_string(),
                 comment: comment.unwrap_or_default(),
             }
         }
-        _ => SqlCommand::UNDEFINED,
+        _ => SqlCommand::Undefined,
     }
 }
 
@@ -36,7 +36,7 @@ mod tests {
     #[test]
     fn simple_create_database() {
         match parse_sql("CREATE DATABASE employee") {
-            SqlCommand::CREATE_DATABASE { command, database, comment } => {
+            SqlCommand::CreateDatabase { command, database, comment } => {
                 assert_eq!(command, "CREATE DATABASE");
                 assert_eq!(database, "employee");
                 assert_eq!(comment, "");
@@ -48,7 +48,7 @@ mod tests {
     #[test]
     fn create_database_uppercase() {
         match parse_sql("CREATE DATABASE MYDB") {
-            SqlCommand::CREATE_DATABASE { database, .. } => {
+            SqlCommand::CreateDatabase { database, .. } => {
                 assert_eq!(database, "MYDB");
             }
             _ => panic!("expected CREATE_DATABASE"),
@@ -58,7 +58,7 @@ mod tests {
     #[test]
     fn create_database_lowercase_keyword() {
         match parse_sql("create database mydb") {
-            SqlCommand::CREATE_DATABASE { command, database, .. } => {
+            SqlCommand::CreateDatabase { command, database, .. } => {
                 assert_eq!(command, "CREATE DATABASE");
                 assert_eq!(database, "mydb");
             }
@@ -69,7 +69,7 @@ mod tests {
     #[test]
     fn create_database_mixed_case_keyword() {
         match parse_sql("Create Database MyDb") {
-            SqlCommand::CREATE_DATABASE { database, .. } => {
+            SqlCommand::CreateDatabase { database, .. } => {
                 assert_eq!(database, "MyDb");
             }
             _ => panic!("expected CREATE_DATABASE"),
@@ -80,7 +80,7 @@ mod tests {
     fn create_database_if_not_exists() {
         // IF NOT EXISTS is ignored in our output but must not crash
         match parse_sql("CREATE DATABASE IF NOT EXISTS employee") {
-            SqlCommand::CREATE_DATABASE { command, database, .. } => {
+            SqlCommand::CreateDatabase { command, database, .. } => {
                 assert_eq!(command, "CREATE DATABASE");
                 assert_eq!(database, "employee");
             }
@@ -91,7 +91,7 @@ mod tests {
     #[test]
     fn create_database_command_field_is_always_create_database() {
         match parse_sql("CREATE DATABASE foo") {
-            SqlCommand::CREATE_DATABASE { command, .. } => {
+            SqlCommand::CreateDatabase { command, .. } => {
                 assert_eq!(command, "CREATE DATABASE");
             }
             _ => panic!("expected CREATE_DATABASE"),
@@ -101,7 +101,7 @@ mod tests {
     #[test]
     fn create_database_comment_defaults_to_empty_string() {
         match parse_sql("CREATE DATABASE foo") {
-            SqlCommand::CREATE_DATABASE { comment, .. } => {
+            SqlCommand::CreateDatabase { comment, .. } => {
                 assert_eq!(comment, "");
             }
             _ => panic!("expected CREATE_DATABASE"),
@@ -111,7 +111,7 @@ mod tests {
     #[test]
     fn create_database_with_underscore_name() {
         match parse_sql("CREATE DATABASE my_database") {
-            SqlCommand::CREATE_DATABASE { database, .. } => {
+            SqlCommand::CreateDatabase { database, .. } => {
                 assert_eq!(database, "my_database");
             }
             _ => panic!("expected CREATE_DATABASE"),
@@ -121,7 +121,7 @@ mod tests {
     #[test]
     fn create_database_with_numeric_suffix() {
         match parse_sql("CREATE DATABASE db2") {
-            SqlCommand::CREATE_DATABASE { database, .. } => {
+            SqlCommand::CreateDatabase { database, .. } => {
                 assert_eq!(database, "db2");
             }
             _ => panic!("expected CREATE_DATABASE"),
@@ -134,7 +134,7 @@ mod tests {
     fn empty_ast_returns_undefined() {
         // Passing an empty vec directly
         let result = parse(vec![]);
-        assert_eq!(result, SqlCommand::UNDEFINED);
+        assert_eq!(result, SqlCommand::Undefined);
     }
 
     #[test]
@@ -142,7 +142,7 @@ mod tests {
         let dialect = sqlparser::dialect::GenericDialect {};
         let ast = sqlparser::parser::Parser::parse_sql(&dialect, "SELECT 1").unwrap();
         let result = parse(ast);
-        assert_eq!(result, SqlCommand::UNDEFINED);
+        assert_eq!(result, SqlCommand::Undefined);
     }
 
     #[test]
@@ -153,6 +153,6 @@ mod tests {
             "CREATE TABLE foo (id INT)",
         ).unwrap();
         let result = parse(ast);
-        assert_eq!(result, SqlCommand::UNDEFINED);
+        assert_eq!(result, SqlCommand::Undefined);
     }
 }

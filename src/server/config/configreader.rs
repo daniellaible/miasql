@@ -12,7 +12,7 @@ pub fn load_config_file(mut config_singelton: MutexGuard<Config>) {
             let mut ident = splits.next().unwrap_or_default().to_uppercase();
             ident = ident.trim().to_string();
 
-            if (ident == "CONFIG VERSION") {
+            if ident == "CONFIG VERSION" {
                 match Some(splits.next()) {
                     Some(config) => {
                         config_singelton.config_version =
@@ -21,7 +21,7 @@ pub fn load_config_file(mut config_singelton: MutexGuard<Config>) {
                     }
                     None => println!("config version: missing"),
                 }
-            } else if (ident == "MIA VERSION") {
+            } else if ident == "MIA VERSION" {
                 match Some(splits.next()) {
                     Some(mia) => {
                         config_singelton.mia_version = mia.unwrap().trim().to_string();
@@ -29,7 +29,7 @@ pub fn load_config_file(mut config_singelton: MutexGuard<Config>) {
                     }
                     None => println!("config version: missing"),
                 }
-            } else if (ident == "TYPE") {
+            } else if ident == "TYPE" {
                 match Some(splits.next()) {
                     Some(license) => {
                         config_singelton.licence_type = license.unwrap().trim().to_string();
@@ -37,7 +37,7 @@ pub fn load_config_file(mut config_singelton: MutexGuard<Config>) {
                     }
                     None => println!("config version: missing"),
                 }
-            } else if (ident == "MASTERQUEUE SIZE") {
+            } else if ident == "MASTERQUEUE SIZE" {
                 match Some(splits.next()) {
                     Some(capacity) => {
                         config_singelton.masterqueue_capacity =
@@ -46,7 +46,7 @@ pub fn load_config_file(mut config_singelton: MutexGuard<Config>) {
                     }
                     None => println!("config version: missing"),
                 }
-            }else if (ident == "LEDGER LOCATION") {
+            }else if ident == "LEDGER LOCATION" {
                 match Some(splits.next()) {
                     Some(location) => {
                         config_singelton.ledger_location = location.unwrap().trim().to_string();

@@ -9,10 +9,6 @@ pub struct WhereClause {
 }
 
 impl WhereClause {
-    pub fn new(column: String, operator: Operator, value: DataType) -> Self {
-        WhereClause { column, operator, value }
-    }
-
     pub fn get_operator(&self) -> Operator {
         self.operator.clone()
     }

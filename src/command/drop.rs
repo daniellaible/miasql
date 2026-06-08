@@ -4,28 +4,28 @@ use crate::command::sqlcommands::SqlCommand;
 pub fn parse(ast: Vec<Statement>) -> SqlCommand{
     let stmt = match ast.into_iter().next() {
         Some(s) => s,
-        None => return SqlCommand::UNDEFINED,
+        None => return SqlCommand::Undefined,
     };
 
     match stmt {
         Statement::Drop { object_type, names, .. } => {
              match object_type {
                 ObjectType::Database => {
-                    SqlCommand::DROP_DATABASE {
+                    SqlCommand::DropDatabase {
                         command: String::from("DROP DATABASE"),
                         database: names[0].to_string(),
                     }
                 },
                 ObjectType::Table => {
-                    SqlCommand::DROP_TABLE {
+                    SqlCommand::DropTable {
                         command: String::from("DROP TABLE"),
                         table: names[0].to_string(),
                     }
                 }
-                _ => SqlCommand::UNDEFINED,
+                _ => SqlCommand::Undefined,
             }
         }
-        _ => SqlCommand::UNDEFINED
+        _ => SqlCommand::Undefined
     }
 }
 
@@ -45,7 +45,7 @@ mod tests {
     #[test]
     fn simple_drop_database() {
         match parse_sql("DROP DATABASE employee") {
-            SqlCommand::DROP_DATABASE { database, .. } => {
+            SqlCommand::DropDatabase { database, .. } => {
                 assert_eq!(database, "employee");
             }
             _ => panic!("Expected DROP DATABASE command"),
@@ -55,7 +55,7 @@ mod tests {
     #[test]
     fn simple_drop_table() {
         match parse_sql("DROP TABLE employee") {
-            SqlCommand::DROP_TABLE { table, .. } => {
+            SqlCommand::DropTable { table, .. } => {
                 assert_eq!(table, "employee");
             }
             _ => panic!("Expected DROP TABLE command"),

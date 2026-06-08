@@ -8,7 +8,7 @@ pub fn parse(truncate: Truncate) -> SqlCommand {
         .map(|table_target| table_target.name.to_string())
         .collect();
 
-    SqlCommand::TRUNCATE {
+    SqlCommand::Truncate {
         command: String::from("TRUNCATE"),
         tables,
     }
@@ -38,7 +38,7 @@ mod tests {
 
         assert_eq!(
             result,
-            SqlCommand::TRUNCATE {
+            SqlCommand::Truncate {
                 command: String::from("TRUNCATE"),
                 tables: vec![String::from("employee")],
             }
@@ -51,7 +51,7 @@ mod tests {
 
         assert_eq!(
             result,
-            SqlCommand::TRUNCATE {
+            SqlCommand::Truncate {
                 command: String::from("TRUNCATE"),
                 tables: vec![String::from("employee")],
             }
@@ -64,7 +64,7 @@ mod tests {
 
         assert_eq!(
             result,
-            SqlCommand::TRUNCATE {
+            SqlCommand::Truncate {
                 command: String::from("TRUNCATE"),
                 tables: vec![
                     String::from("employee"),
@@ -81,7 +81,7 @@ mod tests {
 
         assert_eq!(
             result,
-            SqlCommand::TRUNCATE {
+            SqlCommand::Truncate {
                 command: String::from("TRUNCATE"),
                 tables: vec![
                     String::from("public.employee"),
@@ -97,7 +97,7 @@ mod tests {
 
         assert_eq!(
             result,
-            SqlCommand::TRUNCATE {
+            SqlCommand::Truncate {
                 command: String::from("TRUNCATE"),
                 tables: vec![
                     String::from("\"employee\""),
@@ -113,7 +113,7 @@ mod tests {
 
         assert_eq!(
             result,
-            SqlCommand::TRUNCATE {
+            SqlCommand::Truncate {
                 command: String::from("TRUNCATE"),
                 tables: vec![
                     String::from("\"public\".\"employee\""),
@@ -128,7 +128,7 @@ mod tests {
         let result = parse_truncate_sql("TRUNCATE TABLE employee;");
 
         match result {
-            SqlCommand::TRUNCATE { command, tables } => {
+            SqlCommand::Truncate { command, tables } => {
                 assert_eq!(command, "TRUNCATE");
                 assert_eq!(tables, vec![String::from("employee")]);
             }
@@ -141,7 +141,7 @@ mod tests {
         let result = parse_truncate_sql("TRUNCATE TABLE z_table, a_table, middle_table;");
 
         match result {
-            SqlCommand::TRUNCATE { tables, .. } => {
+            SqlCommand::Truncate { tables, .. } => {
                 assert_eq!(
                     tables,
                     vec![
@@ -172,7 +172,7 @@ mod tests {
 
         assert_eq!(
             result,
-            SqlCommand::TRUNCATE {
+            SqlCommand::Truncate {
                 command: String::from("TRUNCATE"),
                 tables: vec![],
             }

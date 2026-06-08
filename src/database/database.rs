@@ -3,7 +3,6 @@
 pub struct Database {
     db_name: String,
     tables: Vec<(String,String)>,
-    users: Vec<String>,
 }
 
 impl Database {
@@ -11,7 +10,6 @@ impl Database {
         Database {
             db_name: "".to_string(),
             tables: Vec::new(),
-            users: Vec::new(),
         }
     }
 
