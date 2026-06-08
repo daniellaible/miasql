@@ -27,7 +27,7 @@ pub struct MasterQueue {
     pub queue: Mutex<VecDeque<TransactionProtocol>>,
 }
 
-pub static COUNTER: AtomicU64 = AtomicU64::new(0);
+
 
 pub struct MasterQueueSingelton;
 

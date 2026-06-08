@@ -1,17 +1,21 @@
+use std::sync::atomic::AtomicU64;
 use crate::command::sqlcommands::SqlCommand;
-use crate::server::queue::{COUNTER, TransactionProtocol};
+use crate::server::queue::{TransactionProtocol};
 use std::thread;
-
+use log::info;
 use crate::ledger;
 
 
+pub static COUNTER: AtomicU64 = AtomicU64::new(0);
+
 pub fn process_transaction(command: &SqlCommand) {
     println!(" ----  ");
-    println!("In the processor: {:?}", command);
+    println!("In the processor: {:?}", &command);
     println!(" ----  ");
 
-/*    let transaction_id = get_transaction_counter();
-    let transaction_protocol: TransactionProtocol = TransactionProtocol {
+    let transaction_id = get_transaction_counter();
+    info!("transaction_id: {}", transaction_id);
+    let mut transaction_protocol: TransactionProtocol = TransactionProtocol {
         is_processing: true,
         is_finished: false,
         transaction_id,
@@ -23,18 +27,16 @@ pub fn process_transaction(command: &SqlCommand) {
         is_shard_updated: false,
         is_error_detected: false,
         error_msg: None,
-    };*/
+    };
 
     {
-/*        let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
-        masterqueue
-            .queue
-            .lock()
-            .unwrap()
-            .push_back(transaction_protocol);
-
-        let moi_join_handle = thread::spawn(move || {
-            update_moi_file(transaction_id);
+        
+        let btree_join_handle = thread::spawn(move || {
+            update_table(transaction_protocol.transaction_id);
+        });
+        
+/*        let moi_join_handle = thread::spawn(move || {
+            update_moi_file(transaction_protocol.transaction_id);
         });*/
 
         // Not needed right now - however mostly implemented. But we need a way to store the ledger counter,
@@ -44,10 +46,7 @@ pub fn process_transaction(command: &SqlCommand) {
             update_ledger_file(transaction_id);
         });*/
 
-/*        let btree_join_handle = thread::spawn(move || {
-            update_btree_file(transaction_id);
-        });
-
+/*      
         let cluster_join_handle = thread::spawn(move || {
             update_cluster_file(transaction_id);
         });
@@ -98,7 +97,7 @@ fn update_cluster_file(transaction_id: u64) {
     }
 }
 
-fn update_btree_file(transaction_id: u64) {
+fn update_table(transaction_id: u64) {
     println!("update b-tree");
     let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
     let mut queue = masterqueue.queue.lock().unwrap();
@@ -139,7 +138,7 @@ fn update_moi_file(transaction_id: u64) {
 }
 
 fn get_transaction_counter() -> u64 {
-    COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+    COUNTER.fetch_add(1, std::sync::atomic::Ordering::SeqCst)
 }
 
 fn remove_transaction(transaction_id: u64) -> Option<TransactionProtocol> {
