@@ -1,7 +1,6 @@
 use std::fs::{File, OpenOptions};
 use std::path::Path;
 use std::io::{BufRead, BufWriter, Write};
-use rev_buf_reader::RevBufReader;
 use crate::command::sqlcommands::SqlCommand;
 
 pub fn write_ledger(transaction_id: u64) -> Result<bool, std::io::Error> {

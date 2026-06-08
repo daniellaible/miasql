@@ -2,9 +2,9 @@ use crate::command::sqlcommands::SqlCommand;
 use crate::server::config::config::ConfigSingelton;
 use crate::server::processor::processor;
 use std::collections::VecDeque;
-use std::io::stdout;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
+use log::info;
 
 #[derive(Debug, Clone)]
 pub struct TransactionProtocol {
@@ -45,25 +45,26 @@ impl MasterQueueSingelton {
         })
     }
 
+    // TODO: here we could end up in a race condition or is it actually impossible since there is just one queue
+    // and do_all_transactions is not public
+    // High frequency parallel testing
     pub fn add(&self, transaction: TransactionProtocol) {
-        println!("In the MasterQueue: {:?}", &transaction);
         MasterQueueSingelton::instance()
             .queue
             .lock()
             .unwrap()
             .push_back(transaction);
-        if !MasterQueueSingelton::instance().is_working.load(Ordering::Relaxed) {
+       if !MasterQueueSingelton::instance().is_working.load(Ordering::SeqCst) {
             do_all_transactions();
-        }
+       }
 
     }
 }
 fn do_all_transactions() {
-    MasterQueueSingelton::instance().is_working.store(true, Ordering::Relaxed);
+    MasterQueueSingelton::instance().is_working.store(true, Ordering::SeqCst);
     let mut queue = MasterQueueSingelton::instance().queue.lock().unwrap();
     while queue.len() > 0 {
-        println!("Doing transactions in the loop");
         processor::process_transaction(&queue.pop_front().unwrap().command);
     }
-    MasterQueueSingelton::instance().is_working.store(false, Ordering::Relaxed);
+    MasterQueueSingelton::instance().is_working.store(false, Ordering::SeqCst);
 }

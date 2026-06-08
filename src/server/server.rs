@@ -1,3 +1,4 @@
+use log::info;
 use crate::server;
 use crate::server::queue::{MasterQueueSingelton, TransactionProtocol};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -12,7 +13,7 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
         if n == 0 {
             return Ok(());
         }
-        
+
 
         server::parser::tokenizer::tokeniz(std::str::from_utf8(&buf[..n]).unwrap());
         let mut input = str::from_utf8(&buf[..n]).unwrap();
@@ -24,14 +25,14 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
         if management_command == "QUIT" || management_command == "BYE" {
             return Ok(());
         } else if management_command == "SHOW DATABASES" {
-            println!("SHOW DATABASES");
+            info!("SHOW DATABASES");
         } else if management_command.starts_with("USE ") {
-            println!("User uses db");
+            info!("User uses db");
         } else if management_command == "SHOW TABLES " {
-            println!("Show tables");
+            info!("Show tables");
         } else {
             let command = server::parser::tokenizer::tokeniz(&*management_command);
-
+            info!("tokenized command: {:?}", command);
             if command != SqlCommand::UNDEFINED {
                 let transaction: TransactionProtocol = TransactionProtocol {
                     is_processing: false,
