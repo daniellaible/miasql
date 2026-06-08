@@ -111,7 +111,7 @@ fn update_table(transaction_id: u64) {
 }
 
 fn update_ledger_file(transaction_id: u64) {
-    ledger::writer::write_ledger(transaction_id);
+    let _ = ledger::writer::write_ledger(transaction_id);
 
     let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
     let mut queue = masterqueue.queue.lock().unwrap();

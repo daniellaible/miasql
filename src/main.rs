@@ -53,6 +53,7 @@ mod server {
         pub mod config;
         pub mod configreader;
         pub mod systemtable;
+        pub mod systemtablereader;
     }
     pub mod parser{
         pub mod tokenizer;

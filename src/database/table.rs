@@ -8,33 +8,6 @@ use uuid::Uuid;
 use crate::command::constraint::Constraint;
 use crate::database::datatype;
 
-fn write_u16_be<W: Write>(w: &mut W, v: u16) -> io::Result<()> {
-    w.write_all(&v.to_be_bytes())
-}
-
-fn read_u16_be<R: Read>(r: &mut R) -> io::Result<u16> {
-    let mut buf = [0u8; 2];
-    r.read_exact(&mut buf)?;
-    Ok(u16::from_be_bytes(buf))
-}
-
-fn write_varchar<W: Write>(w: &mut W, s: &str) -> io::Result<()> {
-    let len: u16 = s
-        .len()
-        .try_into()
-        .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "VARCHAR too long for u16"))?;
-    write_u16_be(w, len)?;
-    w.write_all(s.as_bytes())
-}
-
-fn read_varchar<R: Read>(r: &mut R) -> io::Result<String> {
-    let len = read_u16_be(r)? as usize;
-    let mut data = vec![0u8; len];
-    r.read_exact(&mut data)?;
-    String::from_utf8(data)
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, format!("invalid UTF-8: {e}")))
-}
-
 pub fn save_table_to_disc(table: &Table, path: &String, _uuid: &Uuid) {
     let start = Instant::now();
     let mut file = OpenOptions::new()
@@ -331,6 +304,33 @@ pub fn read_table_from_disc(path: String, _uuid: Uuid) -> Table {
     let duration = start.elapsed();
     println!("Total time taken for reading: {:?}", duration);
     table
+}
+
+fn write_u16_be<W: Write>(w: &mut W, v: u16) -> io::Result<()> {
+    w.write_all(&v.to_be_bytes())
+}
+
+fn read_u16_be<R: Read>(r: &mut R) -> io::Result<u16> {
+    let mut buf = [0u8; 2];
+    r.read_exact(&mut buf)?;
+    Ok(u16::from_be_bytes(buf))
+}
+
+fn write_varchar<W: Write>(w: &mut W, s: &str) -> io::Result<()> {
+    let len: u16 = s
+        .len()
+        .try_into()
+        .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "VARCHAR too long for u16"))?;
+    write_u16_be(w, len)?;
+    w.write_all(s.as_bytes())
+}
+
+fn read_varchar<R: Read>(r: &mut R) -> io::Result<String> {
+    let len = read_u16_be(r)? as usize;
+    let mut data = vec![0u8; len];
+    r.read_exact(&mut data)?;
+    String::from_utf8(data)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, format!("invalid UTF-8: {e}")))
 }
 
 

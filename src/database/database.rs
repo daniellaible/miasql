@@ -1,5 +1,5 @@
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Debug)]
 pub struct Database {
     db_name: String,
     path: String,
