@@ -58,6 +58,7 @@ mod server {
     pub mod parser{
         pub mod tokenizer;
     }
+    pub mod dbmem;
     pub mod server;
     pub mod queue;
 }
@@ -71,7 +72,7 @@ fn main() {
 
 fn import_system_tables() {
     server::config::systemtable::import_system_tables();
-    server::server::parse_incomming("USE system;");
+    //server::server::parse_incomming("USE system;");
 }
 
 fn import_config() {

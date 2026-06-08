@@ -1,21 +1,28 @@
+use std::sync::{Mutex, OnceLock};
+
 #[derive(Debug)]
-struct DbMem {
+pub struct DbMem {
     pub db_name: String,
-    pub tables: Vec<String>,
+    pub tables: Vec<(String, String)>,
 }
 
-struct All_Databases{
-    pub databases: Mutex<Vec<DbMem>>
+#[derive(Debug)]
+pub struct All_Databases {
+    pub databases: Mutex<Vec<DbMem>>,
 }
 
-pub struct AllTablesSingelton;
+pub struct AllDbSingelton;
 
 static INSTANCE: OnceLock<All_Databases> = OnceLock::new();
 
-impl AllTablesSingelton {
-    pub fn instance() -> &'static Mutex<DbMem> {
-        INSTANCE.get_or_init(|| All_Databases{
+impl AllDbSingelton {
+    pub fn instance() -> &'static All_Databases {
+        INSTANCE.get_or_init(|| All_Databases {
             databases: Mutex::new(Vec::new()),
         })
+    }
+    
+    pub fn add_db(&self, db_mem: DbMem){
+        Self::instance().databases.lock().unwrap().push(db_mem);
     }
 }

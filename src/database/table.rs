@@ -8,6 +8,118 @@ use uuid::Uuid;
 use crate::command::constraint::Constraint;
 use crate::database::datatype;
 
+pub struct Table {
+    max_id: u64,
+    table_name: String,
+    tree: BPlusTree<i64, Vec<DataType>, 3>,
+    uuid: Uuid,
+    column_names: Vec<String>,
+    column_types: Vec<DataType>,
+    constraint: (i32, Vec<Constraint>)
+}
+
+impl Table {
+    pub fn default() -> Self {
+        Table {
+            max_id: 0,
+            table_name: "".to_string(),
+            tree: Default::default(),
+            uuid: Default::default(),
+            column_names: vec![],
+            column_types: vec![],
+            constraint: (0, vec![]),
+        }
+    }
+
+    /// creates a new database with the params:
+    /// - new() Constructor
+    /// - get_table_name() - returns the human-readable name of teh database
+    /// - get_bptree() - returns the tree
+    /// - get_uuid() gets the uuid of the database///
+    pub fn new(
+        max_id: u64,
+        table_name: String,
+        tree: BPlusTree<i64, Vec<DataType>, 3>,
+        uuid: Uuid,
+        names: Vec<String>,
+        types: Vec<DataType>,
+        constraints: (i32, Vec<Constraint>)
+    ) -> Table {
+        assert!(names.len() > 0);
+        if names.len() != types.len() {
+            print!("names length mismatch - unable to create such a mess");
+        }
+        if names[0].eq("ID") || names[0].eq("id") || names[0].eq("Id") {
+            println!("first column needs to be an column named id | ID || Id")
+        }
+        // todo check if there are duplicates in the names
+
+        Table {
+            max_id,
+            table_name,
+            tree,
+            uuid,
+            column_names: names,
+            column_types: types,
+            constraint: constraints,
+        }
+    }
+
+    /// returns the name of the database in a human-readable form
+    pub fn get_table_name(&self) -> String {
+        self.table_name.clone()
+    }
+
+    /// sets the database name of the database
+    pub fn set_table_name(&mut self, table_name: String) {
+        self.table_name = table_name;
+    }
+
+    /// returns the B+Tree
+    pub fn get_bptree(&self) -> &bptree::BPlusTree<i64, Vec<DataType>, 3> {
+        &self.tree
+    }
+
+    /// if the tree has been changed or the tree has been loaded from disc
+    pub fn set_bptree(&mut self, tree: BPlusTree<i64, Vec<DataType>, 3>) {
+        self.tree = tree;
+    }
+
+    ///returns the Uuid of this database
+    pub fn get_uuid(&self) -> Uuid {
+        self.uuid.clone()
+    }
+
+    pub fn set_uuid(&mut self, uuid: Uuid) {
+        self.uuid = uuid;
+    }
+
+    pub fn set_column_names(&mut self, column_names: Vec<String>) {
+        self.column_names = column_names;
+    }
+
+    pub fn get_column_names(&self) -> &Vec<String> {
+        &self.column_names
+    }
+
+    pub fn set_column_types(&mut self, column_types: Vec<DataType>) {
+        self.column_types = column_types;
+    }
+
+    pub fn get_column_types(&self) -> &Vec<DataType> {
+        &self.column_types
+    }
+
+    pub fn get_number_columns(&self) -> u16 {
+        self.column_names.len() as u16
+    }
+    
+    pub fn inc_max_id(&mut self) -> u64 {
+        self.max_id +=  1;
+        self.max_id
+    }
+}
+
 pub fn save_table_to_disc(table: &Table, path: &String, _uuid: &Uuid) {
     let start = Instant::now();
     let mut file = OpenOptions::new()
@@ -333,110 +445,6 @@ fn read_varchar<R: Read>(r: &mut R) -> io::Result<String> {
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, format!("invalid UTF-8: {e}")))
 }
 
-
-pub struct Table {
-    table_name: String,
-    tree: BPlusTree<i64, Vec<DataType>, 3>,
-    uuid: Uuid,
-    column_names: Vec<String>,
-    column_types: Vec<DataType>,
-    constraint: (i32, Vec<Constraint>)
-}
-
-impl Table {
-    pub fn default() -> Self {
-        Table {
-            table_name: "".to_string(),
-            tree: Default::default(),
-            uuid: Default::default(),
-            column_names: vec![],
-            column_types: vec![],
-            constraint: (0, vec![]),
-        }
-    }
-
-    /// creates a new database with the params:
-    /// - new() Constructor
-    /// - get_table_name() - returns the human-readable name of teh database
-    /// - get_bptree() - returns the tree
-    /// - get_uuid() gets the uuid of the database///
-    pub fn new(
-        table_name: String,
-        tree: BPlusTree<i64, Vec<DataType>, 3>,
-        uuid: Uuid,
-        names: Vec<String>,
-        types: Vec<DataType>,
-        constraints: (i32, Vec<Constraint>)
-    ) -> Table {
-        assert!(names.len() > 0);
-        if names.len() != types.len() {
-            print!("names length mismatch - unable to create such a mess");
-        }
-        if names[0].eq("ID") || names[0].eq("id") || names[0].eq("Id") {
-            println!("first column needs to be an column named id | ID || Id")
-        }
-        // todo check if there are duplicates in the names
-
-        Table {
-            table_name,
-            tree,
-            uuid,
-            column_names: names,
-            column_types: types,
-            constraint: constraints,
-        }
-    }
-
-    /// returns the name of the database in a human-readable form
-    pub fn get_table_name(&self) -> String {
-        self.table_name.clone()
-    }
-
-    /// sets the database name of the database
-    pub fn set_table_name(&mut self, table_name: String) {
-        self.table_name = table_name;
-    }
-
-    /// returns the B+Tree
-    pub fn get_bptree(&self) -> &bptree::BPlusTree<i64, Vec<DataType>, 3> {
-        &self.tree
-    }
-
-    /// if the tree has been changed or the tree has been loaded from disc
-    pub fn set_bptree(&mut self, tree: BPlusTree<i64, Vec<DataType>, 3>) {
-        self.tree = tree;
-    }
-
-    ///returns the Uuid of this database
-    pub fn get_uuid(&self) -> Uuid {
-        self.uuid.clone()
-    }
-
-    pub fn set_uuid(&mut self, uuid: Uuid) {
-        self.uuid = uuid;
-    }
-
-    pub fn set_column_names(&mut self, column_names: Vec<String>) {
-        self.column_names = column_names;
-    }
-
-    pub fn get_column_names(&self) -> &Vec<String> {
-        &self.column_names
-    }
-
-    pub fn set_column_types(&mut self, column_types: Vec<DataType>) {
-        self.column_types = column_types;
-    }
-
-    pub fn get_column_types(&self) -> &Vec<DataType> {
-        &self.column_types
-    }
-
-    pub fn get_number_columns(&self) -> u16 {
-        self.column_names.len() as u16
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::{Table, read_table_from_disc, save_table_to_disc};
@@ -467,7 +475,7 @@ mod tests {
         let bp_tree = BPlusTree::default();
         let uuid = Uuid::parse_str("a1a2a3a4-b1b2-c1c2-d1d2-d3d4d5d6d7d8").unwrap();
         let constraints = (0, vec![]);
-        let table: Table = Table::new(String::from("test"), bp_tree, uuid, names, types, constraints);
+        let table: Table = Table::new(0, String::from("test"), bp_tree, uuid, names, types, constraints);
 
         let name: String = table.get_table_name();
         assert_eq!(name, "test");

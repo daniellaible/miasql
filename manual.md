@@ -149,6 +149,10 @@ Connecting to the database is simple - just use PuTTY and connect to your db-ser
 
 ## The basic functionality of Mia
 
++ mos file: list of all tables and where they are stored
++ moi file: table on the drive
++ cmon file: config file for mia
+
 		TCP/IP
 		 7878
 		  || 
