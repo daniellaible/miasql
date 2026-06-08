@@ -33,7 +33,7 @@ pub fn read_system_table() -> Database {
 
             let mut database = Database::default();
             database.set_db_name(dbname.to_string());
-            database.add_table( tablename.to_string(), path.to_string() );
+            //database.add_table( tablename.to_string(), path.to_string() );
 
             return database;
         }
