@@ -14,44 +14,51 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
             return Ok(());
         }
 
-
         server::parser::tokenizer::tokeniz(std::str::from_utf8(&buf[..n]).unwrap());
         let mut input = str::from_utf8(&buf[..n]).unwrap();
         input = input.trim();
 
-        let mut management_command = String::from(input);
-        management_command = management_command.to_uppercase();
+        parse_incomming(&input);
+    }
+}
 
-        if management_command == "QUIT" || management_command == "BYE" {
-            return Ok(());
-        } else if management_command == "SHOW DATABASES" {
-            info!("SHOW DATABASES");
-        } else if management_command.starts_with("USE ") {
-            info!("User uses db");
-        } else if management_command == "SHOW TABLES " {
-            info!("Show tables");
-        } else {
-            let command = server::parser::tokenizer::tokeniz(&*management_command);
-            info!("tokenized command: {:?}", command);
-            if command != SqlCommand::UNDEFINED {
-                let transaction: TransactionProtocol = TransactionProtocol {
-                    is_processing: false,
-                    is_finished: false,
-                    transaction_id: 1000,
-                    command: server::parser::tokenizer::tokeniz(&*management_command),
-                    is_moi_file_updated: false,
-                    is_ledger_updated: false,
-                    is_btree_updated: false,
-                    is_cluster_updated: false,
-                    is_shard_updated: false,
-                    is_error_detected: false,
-                    error_msg: None,
-                };
-                MasterQueueSingelton.add(transaction);
-            }
+pub fn parse_incomming(incomming: &str) {
+    let mut management_command = String::from(incomming);
+    management_command = management_command.to_uppercase();
+
+    if management_command == "QUIT" || management_command == "BYE" {
+        return;
+    } else if management_command == "SHOW DATABASES" {
+        info!("SHOW DATABASES");
+    } else if management_command.starts_with("USE ") {
+        let splits =  management_command.split(" ");
+        let mut db_name = splits.collect::<Vec<&str>>()[1];
+        db_name = db_name.trim();
+        info!("User uses db: {}", db_name);
+    } else if management_command == "SHOW TABLES " {
+        info!("Show tables");
+    } else {
+        let command = server::parser::tokenizer::tokeniz(&*management_command);
+        info!("tokenized command: {:?}", command);
+        if command != SqlCommand::UNDEFINED {
+            let transaction: TransactionProtocol = TransactionProtocol {
+                is_processing: false,
+                is_finished: false,
+                transaction_id: 1000,
+                command: server::parser::tokenizer::tokeniz(&*management_command),
+                is_moi_file_updated: false,
+                is_ledger_updated: false,
+                is_btree_updated: false,
+                is_cluster_updated: false,
+                is_shard_updated: false,
+                is_error_detected: false,
+                error_msg: None,
+            };
+            MasterQueueSingelton.add(transaction);
         }
     }
 }
+
 
 #[cfg(test)]
 mod tests {

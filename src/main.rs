@@ -1,3 +1,4 @@
+use crate::server::server::parse_incomming;
 use std::io::BufRead;
 use std::thread::sleep;
 use std::time::Duration;
@@ -51,6 +52,7 @@ mod server {
     pub mod config{
         pub mod config;
         pub mod configreader;
+        pub mod systemtable;
     }
     pub mod parser{
         pub mod tokenizer;
@@ -62,7 +64,13 @@ mod server {
 fn main() {
     env_logger::init();
     import_config();
+    import_system_tables();
     let _ = run_server();
+}
+
+fn import_system_tables() {
+    server::config::systemtable::import_system_tables();
+    server::server::parse_incomming("USE system;");
 }
 
 fn import_config() {
