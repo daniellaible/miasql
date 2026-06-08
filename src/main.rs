@@ -1,6 +1,7 @@
 use std::io::BufRead;
 use std::thread::sleep;
 use std::time::Duration;
+use log::info;
 use tokio::net::TcpListener;
 use crate::server::config::config::ConfigSingelton;
 use crate::server::config::configreader;
@@ -59,6 +60,7 @@ mod server {
 }
 
 fn main() {
+    env_logger::init();
     import_config();
     let _ = run_server();
 }
@@ -77,6 +79,7 @@ async fn run_server() -> std::io::Result<()> {
     println!("listening on 127.0.0.1:7878");
 
     loop {
+        info!("We are looping in the main function");
         let (stream, addr) = listener.accept().await?;
         println!("client connected: {addr}");
 

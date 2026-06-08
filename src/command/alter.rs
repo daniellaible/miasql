@@ -10,6 +10,7 @@ pub fn parse(alter: AlterTable) -> SqlCommand {
     let table = parse_object_name(&alter.name);
 
     if alter.operations.len() != 1 {
+        println!("Expected 1 operation, found {}", alter.operations.len());
         return SqlCommand::UNDEFINED;
     }
 
