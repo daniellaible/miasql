@@ -6,8 +6,17 @@ use sqlparser::parser::Parser;
 
 pub fn tokeniz(input: &str) -> SqlCommand {
     let dialect = GenericDialect {};
-    let ast = Parser::parse_sql(&dialect, input).unwrap();
+
+    let parse_result = Parser::parse_sql(&dialect, input);
+
+    let ast = match &parse_result {
+        Ok(ast) => parse_result.unwrap(),
+        Err(e) => return SqlCommand::UNDEFINED,
+    };
+
+    if ast.is_empty() { return SqlCommand::UNDEFINED }
     let mut command: SqlCommand = SqlCommand::UNDEFINED;
+
 
     match ast[0].clone() {
         Statement::AlterTable(alter) => {

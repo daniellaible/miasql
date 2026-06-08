@@ -12,6 +12,7 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
         if n == 0 {
             return Ok(());
         }
+        
 
         server::parser::tokenizer::tokeniz(std::str::from_utf8(&buf[..n]).unwrap());
         let mut input = str::from_utf8(&buf[..n]).unwrap();
@@ -33,6 +34,8 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
 
             if command != SqlCommand::UNDEFINED {
                 let transaction: TransactionProtocol = TransactionProtocol {
+                    is_processing: false,
+                    is_finished: false,
                     transaction_id: 1000,
                     command: server::parser::tokenizer::tokeniz(&*management_command),
                     is_moi_file_updated: false,
@@ -74,7 +77,7 @@ mod tests {
 
     #[test]
     fn test_tokenizer_drop_database() {
-        let command: &str = "DROP DATABASE employee";
+        let command: &str = "DROP DATABASE employee;";
         let result = server::parser::tokenizer::tokeniz(command);
     }
 
