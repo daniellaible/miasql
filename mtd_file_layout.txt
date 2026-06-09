@@ -1,0 +1,88 @@
+                                                                          D.Laible
+                                                                     09 Juni 2026
+
+                                MTD Files Protocol
+                                ------------------
+
+Introduction
+-------------
+This file stores the definition of a table on disc.
+This is not a binary file, it is a text file.
+Each column is stored on a seperate line.
+
+
+
+Structure
+----------
+
+Table 1: Definition
++---------+-----------------+------------+-------------+-------------+-----------------------+------------------------+---------------------+---------------+
+| version | numberOfColumns |  dbname    |   tableName | columnNames | columnTypeDefinition  |    columnConstraints   |     displayOrder    |   moi-files   |
++---------+-----------------+---- -------+-------------+-------------+-----------------------+------------------------+---------------------+---------------+
+| float   |     int         |  String    |   String    |   String[]  |      String[]         |      [(int, String)]   |      [(int, int)]   |    String[]   |
++---------+-----------------+------------+-------------+-------------+-----------------------+------------------------+---------------------+---------------+
+
+
+version
+--------
+   Since the file structure should be updatable, there is a version number to ensure backwards compatibility.
+   The version number is stored as a float.
+
+
+numberOfColumns
+---------------
+   The number of columns in the table.
+
+
+dbName
+----------
+   The name of the database the table belongs to.
+
+
+tableName
+----------
+   The name of the table.
+
+
+columnNames
+-----------
+   A list of all columns and their names.
+
+
+columnTypeDefinition
+--------------------
+   This list defines the datatype of each column. You have to make sure that the columnNames and the
+   columnTypeDefinition both are in the same order.
+
+
+columnConstraints
+-----------------
+   This is an array of tuples. Each Tupel represents one constraint. The tuple is defined as follows:
+   (ColumnNo, Constraint)
+   There can be multiple constraints for one column.
+
+
+displayOrder
+------------
+   This is an array of tuples. Since the order of the columns is crutial for the correct behavior of the database engine,
+   a reordering of the columns is not desired. However, users often want to reorder the columns for a more convenient
+   view on the data; therefore, this field is provided to allow the user to define the desired order.
+
+
+moiFiles
+---------
+   Since some
+
+
+Example
++------------------------------------------------------------------------------------------+
+| version: 1.0                                                                             |
+| numberOfColumns: 6                                                                       |
+  dbname: workplace                                                                        |
+| tableName: customers                                                                     |
+| columnsNames: [ id, forename, lastname, street, city ]                                   |
+| columnTypeDefinition: [ BigInt, VarChar, VarChar, VarChar, VarChar ]                     |
+| columnConstraints: [(0, NutNull), (0, PrimaryKey), (1, NotNull), (2, NotNull)]           |
+| displayOrder: [ (0,0),(1,1),(2,2),(3,3),(4,4)]                                           |
+| moiFiles: [/bin/mia/customers1.moi, /bin/mia/customers2.moi, /bin/mia/customers3.moi]    |
++------------------------------------------------------------------------------------------+

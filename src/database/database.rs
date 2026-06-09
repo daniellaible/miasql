@@ -32,10 +32,4 @@ impl Database {
     }*/
 
     //Todo remove table from database and rename table from database
-
-
-
-
-    
-    
 }

@@ -1,0 +1,35 @@
+                                                                          D.Laible
+                                                                     09 Juni 2026
+
+                                MTL Files Protocol (Proposal)
+                                ------------------
+
+Introduction
+------------
+To read a table from disc, there are three files needed.
+A moi-file stores the actual data of the table.
+A mtd-file stores the metadata of the table - the header of the table, constrains, etc.
+A mtl files stores the location of a row in the table on disc.
+
+Mtl stands for Mia Table Locator.
+
+A mtl-file is used to store the location of a row in a table on disc.
+Those files are build simple without any headers - they are supposed to be read easily and quickly.
+We use the mtl file to quickly access a certain row of the table if there
+is e.g. an alter statement issued.
+
+
+
+Structure
+-----------
+
+Table 1:
++-------------+-----------------+
+|  ROW-ID     |      OFFSET     |
++-------------+-----------------+
+|   u64       |       u64       |
++-------------+-----------------+
+
+From the table above you can see that each entry is 16 bytes long.
+Therefore, you can iterate through the file easily, and it gives you a
+quick reference on where to locate the row on the moi file.

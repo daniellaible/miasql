@@ -1,0 +1,11 @@
+                                                                          D.Laible
+                                                                     09 Juni 2026
+
+                                MOI Files Protocol (Proposal)
+                                ------------------
+
+Description
+------------
+
+Moi files contain the raw data of a table. They are stored in a text format.
+Each row is a new line. This way we can easily alter a line and make the row larger.

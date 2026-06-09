@@ -6,7 +6,11 @@ use std::io::BufRead;
 use std::path::Path;
 use crate::database::database::Database;
 
-pub fn read_system_table() -> Database {
+fn read_system_table(){
+    
+}
+
+/*pub fn read_system_table() -> Database {
     if let Ok(lines) = read_lines("C:\\Miasql\\system\\system.mos") {
         for line in lines.map_while(Result::ok) {
             let mut splits = line.trim().split(";");
@@ -42,7 +46,7 @@ pub fn read_system_table() -> Database {
         //TODO here we need to create a new database for system.tables and system.users
     }
     Database::default()
-}
+}*/
 
 pub fn read_users() {
     todo!()
