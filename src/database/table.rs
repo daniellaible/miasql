@@ -120,7 +120,7 @@ impl Table {
     pub fn get_number_columns(&self) -> u16 {
         self.column_names.len() as u16
     }
-    
+
     pub fn inc_max_id(&mut self) -> u64 {
         self.max_id +=  1;
         self.max_id
@@ -392,7 +392,7 @@ pub fn read_table_from_disc(path: String, _uuid: Uuid) -> Table {
 
                 DataType::VarChar { .. } => {
                     let s = read_varchar(&mut reader).unwrap();
-                    let y = s.len();
+                    let y = s.len() as u16;
                     row.push(DataType::VarChar { x: s, y });
                 }
 

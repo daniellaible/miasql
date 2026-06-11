@@ -140,11 +140,11 @@ fn build_where_clause(
         }
         sqlparser::ast::Value::SingleQuotedString(ident) => datatype::DataType::VarChar {
             x: String::from(ident),
-            y: ident.len(),
+            y: ident.len() as u16,
         },
         sqlparser::ast::Value::DoubleQuotedString(ident) => datatype::DataType::VarChar {
             x: String::from(ident),
-            y: ident.len(),
+            y: ident.len() as u16,
         },
         sqlparser::ast::Value::Boolean(b) => datatype::DataType::Bool { x: *b },
         sqlparser::ast::Value::Null => datatype::DataType::Null,

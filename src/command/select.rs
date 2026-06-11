@@ -372,11 +372,11 @@ fn retrieve_where_clause(where_ast: &Expr) -> Option<WhereClause> {
             }
             Value::SingleQuotedString(ident) => datatype::DataType::VarChar {
                 x: String::from(ident),
-                y: ident.len(),
+                y: ident.len() as u16,
             },
             Value::DoubleQuotedString(ident) => datatype::DataType::VarChar {
                 x: String::from(ident),
-                y: ident.len(),
+                y: ident.len() as u16,
             },
             _ => datatype::DataType::Undefined,
         };

@@ -68,7 +68,6 @@ pub fn parse(alter: AlterTable) -> SqlCommand {
             table,
             new_name: parse_rename_table_name(table_name),
         },
-
         _ => SqlCommand::Undefined,
     }
 }
@@ -91,9 +90,9 @@ fn parse_object_name(name: &ObjectName) -> String {
         .join(".")
 }
 
-fn parse_character_length(length: &sqlparser::ast::CharacterLength) -> usize {
+fn parse_character_length(length: &sqlparser::ast::CharacterLength) -> u16 {
     match length {
-        sqlparser::ast::CharacterLength::IntegerLength { length, .. } => *length as usize,
+        sqlparser::ast::CharacterLength::IntegerLength { length, .. } => *length as u16,
         _ => 0,
     }
 }
@@ -152,7 +151,6 @@ fn parse_column_option_vec(options: &[ColumnOption]) -> Vec<Constraint> {
             _ => {}
         }
     }
-
     constraints
 }
 
@@ -840,5 +838,4 @@ mod tests {
             _ => panic!("expected ALTER_MODIFY_COLUMN"),
         }
     }
-
 }
