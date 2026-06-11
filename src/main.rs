@@ -4,6 +4,7 @@ use std::thread::sleep;
 use std::time::Duration;
 use log::info;
 use tokio::net::TcpListener;
+use crate::file::mtdreader::{read_mtd_file, MtdFile};
 use crate::server::config::config::ConfigSingelton;
 use crate::server::config::configreader;
 use crate::server::queue::MasterQueueSingelton;
@@ -37,8 +38,8 @@ mod command {
     pub mod whereclause;
 }
 
-mod moi{
-    pub mod filehandler;
+mod file{
+    pub mod mtdreader;
 }
 
 mod ledger{
@@ -52,7 +53,6 @@ mod server {
     pub mod config{
         pub mod config;
         pub mod configreader;
-        pub mod systemtable;
         pub mod systemtablereader;
     }
     pub mod parser{
@@ -71,7 +71,11 @@ fn main() {
 }
 
 fn import_system_tables() {
-    server::config::systemtable::import_system_tables();
+    let all_dbs: MtdFile = read_mtd_file("C:\\MiaSql\\system\\database.mtd");
+    let all_tables: MtdFile = read_mtd_file("C:\\MiaSql\\system\\tables.mtd");
+
+    println!("{:?}", all_dbs);
+    println!("{:?}", all_tables);
     //server::server::parse_incomming("USE system;");
 }
 
@@ -89,7 +93,6 @@ async fn run_server() -> std::io::Result<()> {
         info!("We are looping in the main function");
         let (stream, addr) = listener.accept().await?;
         println!("client connected: {addr}");
-
 
         tokio::spawn(async move {
             if let Err(e) = crate::server::server::handle_client(stream).await {

@@ -5,6 +5,7 @@ use std::io;
 use std::io::BufRead;
 use std::path::Path;
 
+
 #[derive(Debug)]
 pub struct MtdFile {
     pub version: f32,
@@ -34,37 +35,34 @@ impl MtdFile {
     }
 }
 
-pub fn import_system_tables() {
-    import_system_database();
-    //import_system_table();
-}
-
-fn import_system_database() {
-    if let Ok(lines) = read_lines("C:\\MiaSql\\system\\database.mtd") {
-        let mut system_database: MtdFile = MtdFile::default();
+pub fn read_mtd_file(path: &str) -> MtdFile {
+    if let Ok(lines) = read_lines(path) {
+        let mut mtd: MtdFile = MtdFile::default();
         for line in lines.map_while(Result::ok) {
+
+
             if line.starts_with("version") {
                 let mut splits = line.split("=");
                 _ = splits.next();
-                system_database.version = splits.next().unwrap().parse::<f32>().unwrap();
+                mtd.version = splits.next().unwrap().trim().parse::<f32>().unwrap();
             }
 
             if line.starts_with("numberOfColumns") {
                 let mut splits = line.split("=");
                 _ = splits.next().unwrap();
-                system_database.number_of_columns = splits.next().unwrap().parse::<i32>().unwrap();
+                mtd.number_of_columns = splits.next().unwrap().trim().parse::<i32>().unwrap();
             }
 
             if line.starts_with("dbname") {
                 let mut splits = line.split("=");
                 _ = splits.next();
-                system_database.dbname = splits.next().unwrap().to_string();
+                mtd.dbname = splits.next().unwrap().to_string();
             }
 
             if line.starts_with("tablename") {
                 let mut splits = line.split("=");
                 _ = splits.next();
-                system_database.tablename = splits.next().unwrap().to_string();
+                mtd.tablename = splits.next().unwrap().to_string();
             }
 
             if line.starts_with("columnNames") {
@@ -79,7 +77,7 @@ fn import_system_database() {
                 for name in names_split {
                     columns.push(name.to_string());
                 }
-                system_database.column_names = columns;
+                mtd.column_names = columns;
             }
 
             if line.starts_with("columnTypeDefinition") {
@@ -93,7 +91,7 @@ fn import_system_database() {
                 let mut columns: Vec<DataType> = Vec::new();
                 for defs in types_defs__split {
                     if defs.starts_with("VarChar(") {
-                        let mut splits = line.split("(");
+                        let mut splits = defs.split("(");
                         _ = splits.next();
                         let mut almost = splits.next().unwrap().to_string();
                         almost = almost.replace(")", "");
@@ -123,9 +121,8 @@ fn import_system_database() {
                         }
                     }
                 }
-                system_database.column_type_definitions = columns;
+                mtd.column_type_definitions = columns;
             }
-
 
             if line.starts_with("columnConstraints") {
                 let mut splits = line.split("=");
@@ -141,7 +138,7 @@ fn import_system_database() {
                     let mut tuple_splits = clean_constraint.split(",");
                     let left = tuple_splits.next();
                     let right = tuple_splits.next().unwrap();
-                    let columnNumber = left.unwrap().parse::<u32>().unwrap();
+                    let columnNumber = left.unwrap().trim().parse::<u32>().unwrap();
 
                     let constraint = match right {
                         "NotNull" => Constraint::NotNull,
@@ -154,7 +151,7 @@ fn import_system_database() {
                     };
                     column_constraints.push((columnNumber, constraint));
                 }
-                system_database.column_constraints = column_constraints;
+                mtd.column_constraints = column_constraints;
             }
 
             if line.starts_with("displayOrder") {
@@ -169,15 +166,14 @@ fn import_system_database() {
                 let mut order: Vec<(u32, u32)> = Vec::new();
 
                 for mut order_tuple in single_order_split {
-                    println!("Display order: {:?}", order_tuple);
                     let mut order_tuple = order_tuple.replace("(", "").to_string();
                     order_tuple = order_tuple.replace(")", "").to_string();
                     let mut tupel_value = order_tuple.split(",");
-                    let left = tupel_value.next().unwrap().parse::<u32>().unwrap();
-                    let right = tupel_value.next().unwrap().parse::<u32>().unwrap();
+                    let left = tupel_value.next().unwrap().trim().parse::<u32>().unwrap();
+                    let right = tupel_value.next().unwrap().trim().parse::<u32>().unwrap();
                     order.push((left, right));
                 }
-                system_database.display_order = order;
+                mtd.display_order = order;
             }
 
             if line.starts_with("moiFiles") {
@@ -188,11 +184,15 @@ fn import_system_database() {
                 moi_files = moi_files.replace("]", "");
                 let mut moi_files_split = moi_files.split(";");
                 for moi_file in moi_files_split {
-                    system_database.moi_files.push(moi_file.to_string());
+                    mtd.moi_files.push(moi_file.to_string());
                 }
             }
         }
-        println!("System Database: {:?}", system_database);
+
+        mtd
+    }
+    else {
+        MtdFile::default()
     }
 }
 
@@ -213,3 +213,4 @@ mod tests {
         import_system_tables();
     }
 }
+

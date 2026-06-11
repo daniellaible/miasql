@@ -495,7 +495,7 @@ mod tests {
     fn load_from_disc() {
         //let table: Table = Table::default();
         read_table_from_disc(
-            String::from("C:/temp/moi/0e6bce68-99fa-3841-b790-24afbdf7db1d.moi"),
+            String::from("C:/temp/file/0e6bce68-99fa-3841-b790-24afbdf7db1d.file"),
             Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1d").unwrap(),
         );
     }
@@ -503,12 +503,12 @@ mod tests {
     #[test]
     fn write_to_disc() {
         let table: Table = read_table_from_disc(
-            String::from("C:/temp/moi/0e6bce68-99fa-3841-b790-24afbdf7db1d.moi"),
+            String::from("C:/temp/file/0e6bce68-99fa-3841-b790-24afbdf7db1d.file"),
             Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1d").unwrap(),
         );
         save_table_to_disc(
             &table,
-            &String::from("C:/temp/moi/0e6bce68-99fa-3841-b790-24afbdf7db1f.moi"),
+            &String::from("C:/temp/file/0e6bce68-99fa-3841-b790-24afbdf7db1f.file"),
             &Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1f").unwrap(),
         );
     }
@@ -516,7 +516,7 @@ mod tests {
     #[test]
     fn dev_with_test() {
         read_table_from_disc(
-            String::from("C:/temp/moi/0e6bce68-99fa-3841-b790-24afbdf7db1f.moi"),
+            String::from("C:/temp/file/0e6bce68-99fa-3841-b790-24afbdf7db1f.file"),
             Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1f").unwrap(),
         );
     }

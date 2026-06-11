@@ -125,7 +125,7 @@ fn update_ledger_file(transaction_id: u64) {
 }
 
 fn update_moi_file(transaction_id: u64) {
-    println!("update moi file");
+    println!("update file file");
     let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
     let mut queue = masterqueue.queue.lock().unwrap();
 
