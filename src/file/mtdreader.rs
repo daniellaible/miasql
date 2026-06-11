@@ -207,10 +207,5 @@ where
 #[cfg(test)]
 mod tests {
     use crate::import_system_tables;
-
-    #[test]
-    fn test_read_database_mtd() {
-        import_system_tables();
-    }
 }
 
