@@ -136,19 +136,13 @@ fn build_where_clause(
                     return None;
                 }
             };
-            datatype::DataType::BigInt { x: n }
+            datatype::DataType::BigInt(n)
         }
-        sqlparser::ast::Value::SingleQuotedString(ident) => datatype::DataType::VarChar {
-            x: String::from(ident),
-            y: ident.len() as u16,
-        },
-        sqlparser::ast::Value::DoubleQuotedString(ident) => datatype::DataType::VarChar {
-            x: String::from(ident),
-            y: ident.len() as u16,
-        },
-        sqlparser::ast::Value::Boolean(b) => datatype::DataType::Bool { x: *b },
+        sqlparser::ast::Value::SingleQuotedString(ident) => datatype::DataType::VarChar(ident.len() as u8, String::from(ident)),
+        sqlparser::ast::Value::DoubleQuotedString(ident) => datatype::DataType::VarChar(ident.len() as u8,String::from(ident)),
+        sqlparser::ast::Value::Boolean(boolean) => datatype::DataType::Bool(*boolean),
         sqlparser::ast::Value::Null => datatype::DataType::Null,
-        _ => datatype::DataType::Undefined,
+        _ => datatype::DataType::Undefined
     };
 
     Some(WhereClause {
@@ -201,7 +195,7 @@ mod tests {
 
                 assert_eq!(where_clause.column, "CustomerID");
                 assert_eq!(where_clause.operator, Operator::EQUAL);
-                assert_eq!(where_clause.value, datatype::DataType::BigInt { x: 1 });
+                assert_eq!(where_clause.value, datatype::DataType::BigInt(1));
             }
             _ => panic!("expected UPDATE"),
         }
@@ -228,7 +222,7 @@ mod tests {
 
                 assert_eq!(where_clause.column, "CustomerID");
                 assert_eq!(where_clause.operator, Operator::EQUAL);
-                assert_eq!(where_clause.value, datatype::DataType::BigInt { x: 1 });
+                assert_eq!(where_clause.value, datatype::DataType::BigInt(1));
             }
             _ => panic!("expected UPDATE"),
         }

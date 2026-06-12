@@ -99,30 +99,19 @@ fn parse_character_length(length: &sqlparser::ast::CharacterLength) -> u16 {
 
 fn parse_data_type(data_type: &SqlDataType) -> DataType {
     match data_type {
-        SqlDataType::Varchar(Some(length)) => DataType::VarChar {
-            x: String::new(),
-            y: parse_character_length(length),
-        },
-        SqlDataType::Varchar(None) => DataType::VarChar {
-            x: String::new(),
-            y: 0,
-        },
-        SqlDataType::CharVarying(Some(length)) => DataType::VarChar {
-            x: String::new(),
-            y: parse_character_length(length),
-        },
-        SqlDataType::CharVarying(None) => DataType::VarChar {
-            x: String::new(),
-            y: 0,
-        },
-        SqlDataType::Int(_) | SqlDataType::Integer(_) => DataType::Int { x: 0 },
-        SqlDataType::BigInt(_) => DataType::BigInt { x: 0 },
-        SqlDataType::SmallInt(_) => DataType::SmallInt { x: 0 },
-        SqlDataType::TinyInt(_) => DataType::TinyInt { x: 0 },
-        SqlDataType::Boolean => DataType::Bool { x: false },
-        SqlDataType::Float(_) => DataType::Float { x: 0.0 },
-        SqlDataType::Double(_) => DataType::Float { x: 0.0 },
-        SqlDataType::Real => DataType::Float { x: 0.0 },
+        SqlDataType::Varchar(Some(length)) => DataType::VarChar(parse_character_length(length) as u8, String::new()),
+
+        SqlDataType::CharVarying(Some(length)) => DataType::VarChar(parse_character_length(length) as u8,String::new()),
+        SqlDataType::CharVarying(None) => DataType::VarChar(0, String::new()),
+
+        SqlDataType::Int(_) | SqlDataType::Integer(_) => DataType::Int(0),
+        SqlDataType::BigInt(_) => DataType::BigInt(0),
+        SqlDataType::SmallInt(_) => DataType::SmallInt(0),
+        SqlDataType::TinyInt(_) => DataType::TinyInt(0),
+        SqlDataType::Boolean => DataType::Bool(false),
+        SqlDataType::Float(_) => DataType::Float(0.0),
+        SqlDataType::Double(_) => DataType::Float(0.0),
+        SqlDataType::Real => DataType::Float(0.0),
         _ => DataType::Undefined,
     }
 }
@@ -190,7 +179,7 @@ mod tests {
                 assert_eq!(command, "ALTER ADD COLUMN");
                 assert_eq!(table, "Customers");
                 assert_eq!(columns.len(), 1);
-                assert_eq!(columns[0], (String::from("Email"), DataType::VarChar{x: String::new(),y:255}, vec![Constraint::NotNull]));
+                assert_eq!(columns[0], (String::from("Email"), DataType::VarChar(255, String::new()), vec![Constraint::NotNull]));
             }
             _ => panic!("expected INSERT"),
         }
@@ -259,7 +248,7 @@ mod tests {
                 assert_eq!(command, "ALTER MODIFY COLUMN");
                 assert_eq!(table, "Customers");
                 assert_eq!(column, String::from("Email"));
-                assert_eq!(data_type, DataType::VarChar{x: String::new(),y:100});
+                assert_eq!(data_type, DataType::VarChar(100, String::new()));
                 assert_eq!(constraints[0], Constraint::NotNull);
             }
             _ => panic!("expected INSERT"),
@@ -306,10 +295,7 @@ mod tests {
                     columns[0],
                     (
                         String::from("Email"),
-                        DataType::VarChar {
-                            x: String::new(),
-                            y: 255
-                        },
+                        DataType::VarChar(255, String::new()),
                         vec![Constraint::NotNull]
                     )
                 );
@@ -332,10 +318,7 @@ mod tests {
                     columns[0],
                     (
                         String::from("Email"),
-                        DataType::VarChar {
-                            x: String::new(),
-                            y: 255
-                        },
+                        DataType::VarChar(255, String::new()),
                         vec![]
                     )
                 );
@@ -357,10 +340,7 @@ mod tests {
                 assert_eq!(columns[0].0, "Email");
                 assert_eq!(
                     columns[0].1,
-                    DataType::VarChar {
-                        x: String::new(),
-                        y: 255
-                    }
+                    DataType::VarChar(255, String::new())
                 );
                 assert_eq!(columns[0].2, vec![Constraint::Unique]);
             }
@@ -379,7 +359,7 @@ mod tests {
                 assert_eq!(table, "Customers");
                 assert_eq!(columns.len(), 1);
                 assert_eq!(columns[0].0, "Age");
-                assert_eq!(columns[0].1, DataType::Int { x: 0 });
+                assert_eq!(columns[0].1, DataType::Int(0));
             }
             _ => panic!("expected ALTER_ADD_COLUMN"),
         }
@@ -396,7 +376,7 @@ mod tests {
                 assert_eq!(table, "Customers");
                 assert_eq!(columns.len(), 1);
                 assert_eq!(columns[0].0, "CustomerId");
-                assert_eq!(columns[0].1, DataType::BigInt { x: 0 });
+                assert_eq!(columns[0].1, DataType::BigInt(0));
             }
             _ => panic!("expected ALTER_ADD_COLUMN"),
         }
@@ -413,7 +393,7 @@ mod tests {
                 assert_eq!(table, "Customers");
                 assert_eq!(table, "Customers");
                 assert_eq!(columns[0].0, "Rating");
-                assert_eq!(columns[0].1, DataType::SmallInt { x: 0 });
+                assert_eq!(columns[0].1, DataType::SmallInt(0));
             }
             _ => panic!("expected ALTER_ADD_COLUMN"),
         }
@@ -428,7 +408,7 @@ mod tests {
         match command {
             SqlCommand::AlterAddColumn { columns, .. } => {
                 assert_eq!(columns[0].0, "Score");
-                assert_eq!(columns[0].1, DataType::TinyInt { x: 0 });
+                assert_eq!(columns[0].1, DataType::TinyInt(0));
             }
             _ => panic!("expected ALTER_ADD_COLUMN"),
         }
@@ -443,7 +423,7 @@ mod tests {
         match command {
             SqlCommand::AlterAddColumn { columns, .. } => {
                 assert_eq!(columns[0].0, "Active");
-                assert_eq!(columns[0].1, DataType::Bool { x: false });
+                assert_eq!(columns[0].1, DataType::Bool(false));
             }
             _ => panic!("expected ALTER_ADD_COLUMN"),
         }
@@ -458,7 +438,7 @@ mod tests {
         match command {
             SqlCommand::AlterAddColumn { columns, .. } => {
                 assert_eq!(columns[0].0, "Score");
-                assert_eq!(columns[0].1, DataType::Float { x: 0.0 });
+                assert_eq!(columns[0].1, DataType::Float(0.0));
             }
             _ => panic!("expected ALTER_ADD_COLUMN"),
         }
@@ -473,7 +453,7 @@ mod tests {
         match command {
             SqlCommand::AlterAddColumn { columns, .. } => {
                 assert_eq!(columns[0].0, "Score");
-                assert_eq!(columns[0].1, DataType::Float { x: 0.0 });
+                assert_eq!(columns[0].1, DataType::Float(0.0));
             }
             _ => panic!("expected ALTER_ADD_COLUMN"),
         }
@@ -488,7 +468,7 @@ mod tests {
         match command {
             SqlCommand::AlterAddColumn { columns, .. } => {
                 assert_eq!(columns[0].0, "Score");
-                assert_eq!(columns[0].1, DataType::Float { x: 0.0 });
+                assert_eq!(columns[0].1, DataType::Float(0.0));
             }
             _ => panic!("expected ALTER_ADD_COLUMN"),
         }
@@ -599,11 +579,7 @@ mod tests {
                 assert_eq!(column, String::from("Email"));
                 assert_eq!(
                     data_type,
-                    DataType::VarChar {
-                        x: String::new(),
-                        y: 100
-                    }
-                );
+                    DataType::VarChar(100, String::new()));
                 assert_eq!(constraints[0], Constraint::NotNull);
             }
             _ => panic!("expected ALTER_MODIFY_COLUMN"),
@@ -628,11 +604,7 @@ mod tests {
                 assert_eq!(column, String::from("Email"));
                 assert_eq!(
                     data_type,
-                    DataType::VarChar {
-                        x: String::new(),
-                        y: 100
-                    }
-                );
+                    DataType::VarChar(100, String::new()));
                 assert!(constraints.is_empty());
             }
             _ => panic!("expected ALTER_MODIFY_COLUMN"),
@@ -673,7 +645,7 @@ mod tests {
                 ..
             } => {
                 assert_eq!(column, "Age");
-                assert_eq!(data_type, DataType::Int { x: 0 });
+                assert_eq!(data_type, DataType::Int(0));
             }
             _ => panic!("expected ALTER_MODIFY_COLUMN"),
         }
@@ -692,7 +664,7 @@ mod tests {
                 ..
             } => {
                 assert_eq!(column, "Id");
-                assert_eq!(data_type, DataType::BigInt { x: 0 });
+                assert_eq!(data_type, DataType::BigInt(0));
             }
             _ => panic!("expected ALTER_MODIFY_COLUMN"),
         }
@@ -711,7 +683,7 @@ mod tests {
                 ..
             } => {
                 assert_eq!(column, "Active");
-                assert_eq!(data_type, DataType::Bool { x: false });
+                assert_eq!(data_type, DataType::Bool(false));
             }
             _ => panic!("expected ALTER_MODIFY_COLUMN"),
         }

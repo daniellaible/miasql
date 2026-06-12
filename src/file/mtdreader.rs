@@ -97,22 +97,19 @@ pub fn read_mtd_file(path: &str) -> MtdFile {
                         almost = almost.replace(")", "");
                         almost = almost.replace("]", "");
                         let length = almost.parse::<u16>().unwrap();
-                        columns.push(DataType::VarChar {
-                            x: String::default(),
-                            y: length,
-                        });
+                        columns.push(DataType::VarChar(length as u8, String::default()));
                     }
                     match defs {
-                        "BigInt" => columns.push(DataType::BigInt { x: 0 }),
-                        "Int" => columns.push(DataType::Int { x: 0 }),
-                        "SmallInt" => columns.push(DataType::SmallInt { x: 0 }),
-                        "TinyInt" => columns.push(DataType::TinyInt { x: 0 }),
-                        "Decimal" => columns.push(DataType::Decimal { x: 0.0 }),
-                        "Float" => columns.push(DataType::Float { x: 0.0 }),
-                        "Bool" => columns.push(DataType::Bool { x: false }),
-                        "Date" => columns.push(DataType::Date { x: 0 }),
-                        "Time" => columns.push(DataType::Time { x: 0 }),
-                        "DateTime" => columns.push(DataType::DateTime { x: 0 }),
+                        "BigInt" => columns.push(DataType::BigInt(0)),
+                        "Int" => columns.push(DataType::Int(0)),
+                        "SmallInt" => columns.push(DataType::SmallInt(0)),
+                        "TinyInt" => columns.push(DataType::TinyInt(0)),
+                        "Decimal" => columns.push(DataType::Decimal(0.0)),
+                        "Float" => columns.push(DataType::Float(0.0)),
+                        "Bool" => columns.push(DataType::Bool(false)),
+                        "Date" => columns.push(DataType::Date(0)),
+                        "Time" => columns.push(DataType::Time(0)),
+                        "DateTime" => columns.push(DataType::DateTime(0)),
                         "Null" => columns.push(DataType::Null),
                         _ => {
                             if !defs.starts_with("VarChar") {

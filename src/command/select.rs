@@ -91,7 +91,7 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
         }
     };
 
-    println!("{:?}",select_stmt);
+    println!("{:?}", select_stmt);
 
     let ident = retrieve_identifier(&select_stmt);
 
@@ -232,19 +232,19 @@ fn parse_projection(item: &SelectItem) -> Option<Projection> {
         }
 
         SelectItem::UnnamedExpr(Expr::Function(SqlFunction {
-            name,
-            args:
-                FunctionArguments::List(FunctionArgumentList {
-                    duplicate_treatment: None,
-                    args,
-                    clauses,
-                }),
-            filter: None,
-            null_treatment: None,
-            over: None,
-            within_group,
-            ..
-        })) if clauses.is_empty() && within_group.is_empty() => {
+                                                   name,
+                                                   args:
+                                                   FunctionArguments::List(FunctionArgumentList {
+                                                                               duplicate_treatment: None,
+                                                                               args,
+                                                                               clauses,
+                                                                           }),
+                                                   filter: None,
+                                                   null_treatment: None,
+                                                   over: None,
+                                                   within_group,
+                                                   ..
+                                               })) if clauses.is_empty() && within_group.is_empty() => {
             let ident = match &args[..] {
                 [FunctionArg::Unnamed(FunctionArgExpr::Expr(Expr::Identifier(ident)))] => ident,
                 _ => return None,
@@ -364,20 +364,14 @@ fn retrieve_where_clause(where_ast: &Expr) -> Option<WhereClause> {
             Value::Number(num_str, _) => {
                 let n: i64 = match num_str.parse() {
                     Ok(n) => n,
-                    Err( _e) => {
+                    Err(_e) => {
                         return None;
                     }
                 };
-                datatype::DataType::BigInt { x: n }
+                datatype::DataType::BigInt(n)
             }
-            Value::SingleQuotedString(ident) => datatype::DataType::VarChar {
-                x: String::from(ident),
-                y: ident.len() as u16,
-            },
-            Value::DoubleQuotedString(ident) => datatype::DataType::VarChar {
-                x: String::from(ident),
-                y: ident.len() as u16,
-            },
+            Value::SingleQuotedString(ident) => datatype::DataType::VarChar(ident.len() as u8, String::from(ident)),
+            Value::DoubleQuotedString(ident) => datatype::DataType::VarChar(ident.len() as u8, String::from(ident)),
             _ => datatype::DataType::Undefined,
         };
 
@@ -411,7 +405,7 @@ fn extract_columns(select_stmt: &Select) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::command::select::{JoinType, parse};
+    use crate::command::select::{parse, JoinType};
     use crate::command::sqlcommands::SqlCommand;
     use crate::command::sqloperator::Operator;
     use crate::database::datatype;
@@ -466,263 +460,258 @@ mod tests {
 
                 assert_eq!(where_clause.column, "id");
                 assert_eq!(where_clause.operator, Operator::EQUAL);
-                assert_eq!(
-                    where_clause.value,
-                    datatype::DataType::VarChar {
-                        x: "foo".to_string(),
-                        y: 3,
-                    }
-                );
+                assert_eq!(where_clause.value, datatype::DataType::VarChar(3, "foo".to_string()));
             }
             _ => panic!("expected SELECT"),
         };
-        println!("{:?}", result.clone())
+        println!("{:?}", result.clone());
     }
+    
 
-    #[test]
-    fn select_with_order_by_desc() {
-        let command = parse_select(
-            "SELECT lastname
+#[test]
+fn select_with_order_by_desc() {
+    let command = parse_select(
+        "SELECT lastname
              FROM employee
              WHERE id = 1
              ORDER BY lastname DESC",
-        );
+    );
 
-        match command {
-            SqlCommand::Select {
-                columns,
-                distinct,
-                group_by,
-                order_by,
-                where_clause,
-                ..
-            } => {
-                assert_eq!(columns, vec!["lastname".to_string()]);
-                assert!(!distinct);
-                assert!(group_by.is_empty());
-                assert_eq!(order_by, vec!["lastname DESC".to_string()]);
-                assert_eq!(where_clause.column, "id");
-                assert_eq!(where_clause.operator, Operator::EQUAL);
-                assert_eq!(where_clause.value, datatype::DataType::BigInt { x: 1 });
-            }
-            _ => panic!("expected SELECT"),
+    match command {
+        SqlCommand::Select {
+            columns,
+            distinct,
+            group_by,
+            order_by,
+            where_clause,
+            ..
+        } => {
+            assert_eq!(columns, vec!["lastname".to_string()]);
+            assert!(!distinct);
+            assert!(group_by.is_empty());
+            assert_eq!(order_by, vec!["lastname DESC".to_string()]);
+            assert_eq!(where_clause.column, "id");
+            assert_eq!(where_clause.operator, Operator::EQUAL);
+            assert_eq!(where_clause.value, datatype::DataType::BigInt(1));
         }
+        _ => panic!("expected SELECT"),
     }
+}
 
-    #[test]
-    fn select_with_order_by_asc() {
-        let command = parse_select(
-            "SELECT *
+#[test]
+fn select_with_order_by_asc() {
+    let command = parse_select(
+        "SELECT *
              FROM employee
              WHERE id = 1
              ORDER BY lastname ASC",
-        );
+    );
 
-        match command {
-            SqlCommand::Select {
-                order_by, columns, ..
-            } => {
-                assert_eq!(columns, vec!["*"]);
-                assert_eq!(order_by, vec!["lastname ASC".to_string()]);
-            }
-            _ => panic!("expected SELECT"),
+    match command {
+        SqlCommand::Select {
+            order_by, columns, ..
+        } => {
+            assert_eq!(columns, vec!["*"]);
+            assert_eq!(order_by, vec!["lastname ASC".to_string()]);
         }
+        _ => panic!("expected SELECT"),
     }
+}
 
-    #[test]
-    fn select_with_asterix_by_asc() {
-        let command = parse_select(
-            "SELECT lastname
+#[test]
+fn select_with_asterix_by_asc() {
+    let command = parse_select(
+        "SELECT lastname
              FROM employee
              WHERE id = 1
              ORDER BY lastname ASC",
-        );
+    );
 
-        match command {
-            SqlCommand::Select { order_by, .. } => {
-                assert_eq!(order_by, vec!["lastname ASC".to_string()]);
-            }
-            _ => panic!("expected SELECT"),
+    match command {
+        SqlCommand::Select { order_by, .. } => {
+            assert_eq!(order_by, vec!["lastname ASC".to_string()]);
         }
+        _ => panic!("expected SELECT"),
     }
+}
 
-    #[test]
-    fn select_with_limit_keyword() {
-        let command = parse_select("SELECT Top 3 lastname FROM Customers WHERE Country = 'Germany';");
+#[test]
+fn select_with_limit_keyword() {
+    let command = parse_select("SELECT Top 3 lastname FROM Customers WHERE Country = 'Germany';");
 
-        match command {
-            SqlCommand::Select { columns, limit, .. } => {
-                assert_eq!(columns, vec!["lastname"]);
-                assert_eq!(limit, 3);
-            }
-            _ => panic!("expected SELECT"),
+    match command {
+        SqlCommand::Select { columns, limit, .. } => {
+            assert_eq!(columns, vec!["lastname"]);
+            assert_eq!(limit, 3);
         }
+        _ => panic!("expected SELECT"),
     }
+}
 
-    #[test]
-    fn select_with_multiple_group_by_columns() {
-        let command = parse_select(
-            "SELECT firstname, lastname
+#[test]
+fn select_with_multiple_group_by_columns() {
+    let command = parse_select(
+        "SELECT firstname, lastname
              FROM employee
              WHERE id = 1
              GROUP BY firstname, lastname",
-        );
+    );
 
-        match command {
-            SqlCommand::Select {
-                columns, group_by, ..
-            } => {
-                assert_eq!(
-                    columns,
-                    vec!["firstname".to_string(), "lastname".to_string()]
-                );
-                assert_eq!(
-                    group_by,
-                    vec!["firstname".to_string(), "lastname".to_string()]
-                );
-            }
-            _ => panic!("expected SELECT"),
+    match command {
+        SqlCommand::Select {
+            columns, group_by, ..
+        } => {
+            assert_eq!(
+                columns,
+                vec!["firstname".to_string(), "lastname".to_string()]
+            );
+            assert_eq!(
+                group_by,
+                vec!["firstname".to_string(), "lastname".to_string()]
+            );
         }
+        _ => panic!("expected SELECT"),
     }
+}
 
-    #[test]
-    fn select_in_capitals() {
-        let command = parse_select(
-            "SELECT FIRSTNAME, LASTNAME
+#[test]
+fn select_in_capitals() {
+    let command = parse_select(
+        "SELECT FIRSTNAME, LASTNAME
              FROM EMPLOYEE
              WHERE ID = 1
              GROUP BY FIRSTNAME, LASTNAME",
-        );
+    );
 
-        match command {
-            SqlCommand::Select {
-                columns, group_by, ..
-            } => {
-                assert_eq!(
-                    columns,
-                    vec!["FIRSTNAME".to_string(), "LASTNAME".to_string()]
-                );
-                assert_eq!(
-                    group_by,
-                    vec!["FIRSTNAME".to_string(), "LASTNAME".to_string()]
-                );
-            }
-            _ => panic!("expected SELECT"),
+    match command {
+        SqlCommand::Select {
+            columns, group_by, ..
+        } => {
+            assert_eq!(
+                columns,
+                vec!["FIRSTNAME".to_string(), "LASTNAME".to_string()]
+            );
+            assert_eq!(
+                group_by,
+                vec!["FIRSTNAME".to_string(), "LASTNAME".to_string()]
+            );
         }
+        _ => panic!("expected SELECT"),
     }
+}
 
-    #[test]
-    fn select_with_multiple_order_by_columns() {
-        let command = parse_select(
-            "SELECT firstname, lastname
+#[test]
+fn select_with_multiple_order_by_columns() {
+    let command = parse_select(
+        "SELECT firstname, lastname
              FROM employee
              WHERE id = 1
              ORDER BY lastname DESC, firstname ASC",
-        );
+    );
 
-        match command {
-            SqlCommand::Select { order_by, .. } => {
-                assert_eq!(
-                    order_by,
-                    vec!["lastname DESC".to_string(), "firstname ASC".to_string()]
-                );
-            }
-            _ => panic!("expected SELECT"),
+    match command {
+        SqlCommand::Select { order_by, .. } => {
+            assert_eq!(
+                order_by,
+                vec!["lastname DESC".to_string(), "firstname ASC".to_string()]
+            );
         }
+        _ => panic!("expected SELECT"),
     }
+}
 
-    #[test]
-    fn select_with_numeric_where_clause() {
-        let command = parse_select(
-            "SELECT name
+#[test]
+fn select_with_numeric_where_clause() {
+    let command = parse_select(
+        "SELECT name
              FROM employee
              WHERE id >= 100",
-        );
+    );
 
-        match command {
-            SqlCommand::Select { where_clause, .. } => {
-                assert_eq!(where_clause.column, "id");
-                assert_eq!(where_clause.operator, Operator::GREATEROREQ);
-                assert_eq!(where_clause.value, datatype::DataType::BigInt { x: 100 });
-            }
-            _ => panic!("expected SELECT"),
+    match command {
+        SqlCommand::Select { where_clause, .. } => {
+            assert_eq!(where_clause.column, "id");
+            assert_eq!(where_clause.operator, Operator::GREATEROREQ);
+            assert_eq!(where_clause.value, datatype::DataType::BigInt(100));
         }
+        _ => panic!("expected SELECT"),
     }
+}
 
-    #[test]
-    fn select_without_where_clause() {
-        let command = parse_select(
-            "SELECT name
+#[test]
+fn select_without_where_clause() {
+    let command = parse_select(
+        "SELECT name
              FROM employee",
-        );
+    );
 
-        match command {
-            SqlCommand::Select { where_clause, .. } => {
-                assert_eq!(where_clause.column, "");
-                assert_eq!(where_clause.operator, Operator::UNDEFINED);
-                assert_eq!(where_clause.value, datatype::DataType::Undefined);
-            }
-            _ => panic!("expected SELECT"),
+    match command {
+        SqlCommand::Select { where_clause, .. } => {
+            assert_eq!(where_clause.column, "");
+            assert_eq!(where_clause.operator, Operator::UNDEFINED);
+            assert_eq!(where_clause.value, datatype::DataType::Undefined);
         }
+        _ => panic!("expected SELECT"),
     }
+}
 
-    #[test]
-    fn select_with_invalid_join_returns_undefined() {
-        let command = parse_select(
-            "SELECT Orders.OrderID, Customers.CustomerName
+#[test]
+fn select_with_invalid_join_returns_undefined() {
+    let command = parse_select(
+        "SELECT Orders.OrderID, Customers.CustomerName
          FROM Orders
          INNER JOIN Customers ON Orders.CustomerID > Customers.CustomerID
          WHERE Orders.OrderID = 1",
-        );
+    );
 
-        assert_eq!(command, SqlCommand::Undefined);
-    }
+    assert_eq!(command, SqlCommand::Undefined);
+}
 
-    #[test]
-    fn select_with_invalid_join_returns() {
-        let command = parse_select(
-            "SELECT Orders.OrderID, Customers.CustomerName
+#[test]
+fn select_with_invalid_join_returns() {
+    let command = parse_select(
+        "SELECT Orders.OrderID, Customers.CustomerName
          FROM Orders
          INNER JOIN Customers ON Orders.CustomerID > Customers.CustomerID
          WHERE Orders.OrderID = 1",
-        );
+    );
 
-        assert_eq!(command, SqlCommand::Undefined);
-    }
-    #[test]
+    assert_eq!(command, SqlCommand::Undefined);
+}
+#[test]
 
-    fn select_with_valid_join_returns() {
-        let command = parse_select(
-            "SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate
+fn select_with_valid_join_returns() {
+    let command = parse_select(
+        "SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate
                 FROM Orders
                INNER JOIN Customers ON Orders.CustomerID=Customers.CustomerID;",
-        );
+    );
 
-        match command {
-            SqlCommand::Select {
-                table,
-                columns,
-                distinct,
-                group_by,
-                order_by,
-                where_clause,
-                joins,
-                ..
-            } => {
-                assert!(columns.is_empty());
-                assert!(!distinct);
-                assert!(group_by.is_empty());
-                assert!(order_by.is_empty());
-                assert_eq!(table, "Orders");
-                assert_eq!(where_clause.column, "");
-                assert_eq!(where_clause.operator, Operator::UNDEFINED);
-                assert_eq!(where_clause.value, datatype::DataType::Undefined);
-                assert_eq!(joins[0].join_type, JoinType::Inner);
-                assert_eq!(joins[0].table, "Customers");
-                assert_eq!(joins[0].left_column, "Orders.CustomerID");
-                assert_eq!(joins[0].right_column, "Customers.CustomerID");
-            }
-            _ => panic!("expected SELECT"),
+    match command {
+        SqlCommand::Select {
+            table,
+            columns,
+            distinct,
+            group_by,
+            order_by,
+            where_clause,
+            joins,
+            ..
+        } => {
+            assert!(columns.is_empty());
+            assert!(!distinct);
+            assert!(group_by.is_empty());
+            assert!(order_by.is_empty());
+            assert_eq!(table, "Orders");
+            assert_eq!(where_clause.column, "");
+            assert_eq!(where_clause.operator, Operator::UNDEFINED);
+            assert_eq!(where_clause.value, datatype::DataType::Undefined);
+            assert_eq!(joins[0].join_type, JoinType::Inner);
+            assert_eq!(joins[0].table, "Customers");
+            assert_eq!(joins[0].left_column, "Orders.CustomerID");
+            assert_eq!(joins[0].right_column, "Customers.CustomerID");
         }
+        _ => panic!("expected SELECT"),
     }
+}
 }

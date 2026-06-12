@@ -1,8 +1,8 @@
-use sqlparser::ast::{BinaryOperator, Delete, Expr, FromTable, TableFactor, Value};
 use crate::command::sqlcommands::SqlCommand;
 use crate::command::sqloperator::Operator;
 use crate::command::whereclause::WhereClause;
 use crate::database::datatype::DataType;
+use sqlparser::ast::{BinaryOperator, Delete, Expr, FromTable, TableFactor, Value};
 
 pub fn parse(del_stmt: Delete) -> SqlCommand {
     let table = extract_table_name(&del_stmt.from).unwrap();
@@ -63,12 +63,13 @@ fn extract_expr_as_datatype(expr: &Expr) -> Result<DataType, String> {
         Expr::Value(v) => match &v.value {
             Value::Number(n, _) => {
                 // choose the right numeric type for your Datatype
-                let parsed = n.parse::<i64>()
+                let parsed = n
+                    .parse::<i64>()
                     .map_err(|_| format!("Invalid integer literal: {}", n))?;
-                Ok(DataType::BigInt { x: parsed })
+                Ok(DataType::BigInt(parsed))
             }
-            Value::SingleQuotedString(s) => Ok(DataType::VarChar { x: s.clone(), y: 255 }),
-            Value::Boolean(b) => Ok(DataType::Bool{ x: *b }),
+            Value::SingleQuotedString(s) => Ok(DataType::VarChar(255, s.clone())),
+            Value::Boolean(boolean) => Ok(DataType::Bool(*boolean)),
             Value::Null => Ok(DataType::Null),
             other => Err(format!("Unsupported literal value: {:?}", other)),
         },
@@ -126,12 +127,16 @@ mod tests {
         let command = parse_delete("DELETE FROM employee WHERE id = 1").unwrap();
 
         match command {
-            SqlCommand::Delete { command, table, where_clause } => {
+            SqlCommand::Delete {
+                command,
+                table,
+                where_clause,
+            } => {
                 assert_eq!(command, "DELETE");
                 assert_eq!(table, "employee");
                 assert_eq!(where_clause.column, "id");
                 assert_eq!(where_clause.operator, Operator::EQUAL);
-                assert_eq!(where_clause.value, DataType::BigInt { x: 1 });
+                assert_eq!(where_clause.value, DataType::BigInt(1));
             }
             _ => panic!("expected DELETE"),
         }
@@ -142,11 +147,15 @@ mod tests {
         let command = parse_delete("DELETE FROM employee WHERE id != 10").unwrap();
 
         match command {
-            SqlCommand::Delete { table, where_clause, .. } => {
+            SqlCommand::Delete {
+                table,
+                where_clause,
+                ..
+            } => {
                 assert_eq!(table, "employee");
                 assert_eq!(where_clause.column, "id");
                 assert_eq!(where_clause.operator, Operator::NOTEQUAL);
-                assert_eq!(where_clause.value, DataType::BigInt { x: 10 });
+                assert_eq!(where_clause.value, DataType::BigInt(10));
             }
             _ => panic!("expected DELETE"),
         }
@@ -160,7 +169,7 @@ mod tests {
             SqlCommand::Delete { where_clause, .. } => {
                 assert_eq!(where_clause.column, "id");
                 assert_eq!(where_clause.operator, Operator::GREATER);
-                assert_eq!(where_clause.value, DataType::BigInt { x: 100 });
+                assert_eq!(where_clause.value, DataType::BigInt(100));
             }
             _ => panic!("expected DELETE"),
         }
@@ -174,7 +183,7 @@ mod tests {
             SqlCommand::Delete { where_clause, .. } => {
                 assert_eq!(where_clause.column, "id");
                 assert_eq!(where_clause.operator, Operator::LESSER);
-                assert_eq!(where_clause.value, DataType::BigInt { x: 5 });
+                assert_eq!(where_clause.value, DataType::BigInt(5));
             }
             _ => panic!("expected DELETE"),
         }
@@ -188,7 +197,7 @@ mod tests {
             SqlCommand::Delete { where_clause, .. } => {
                 assert_eq!(where_clause.column, "id");
                 assert_eq!(where_clause.operator, Operator::GREATEROREQ);
-                assert_eq!(where_clause.value, DataType::BigInt { x: 7 });
+                assert_eq!(where_clause.value, DataType::BigInt(7));
             }
             _ => panic!("expected DELETE"),
         }
@@ -202,7 +211,7 @@ mod tests {
             SqlCommand::Delete { where_clause, .. } => {
                 assert_eq!(where_clause.column, "id");
                 assert_eq!(where_clause.operator, Operator::LESSEROREQ);
-                assert_eq!(where_clause.value, DataType::BigInt { x: 3 });
+                assert_eq!(where_clause.value, DataType::BigInt(3));
             }
             _ => panic!("expected DELETE"),
         }
@@ -218,11 +227,7 @@ mod tests {
                 assert_eq!(where_clause.operator, Operator::EQUAL);
                 assert_eq!(
                     where_clause.value,
-                    DataType::VarChar {
-                        x: "Miller".to_string(),
-                        y: 255,
-                    }
-                );
+                    DataType::VarChar(255, "Miller".to_string()));
             }
             _ => panic!("expected DELETE"),
         }
@@ -236,7 +241,7 @@ mod tests {
             SqlCommand::Delete { where_clause, .. } => {
                 assert_eq!(where_clause.column, "active");
                 assert_eq!(where_clause.operator, Operator::EQUAL);
-                assert_eq!(where_clause.value, DataType::Bool { x: true });
+                assert_eq!(where_clause.value, DataType::Bool(true));
             }
             _ => panic!("expected DELETE"),
         }
@@ -250,7 +255,7 @@ mod tests {
             SqlCommand::Delete { where_clause, .. } => {
                 assert_eq!(where_clause.column, "active");
                 assert_eq!(where_clause.operator, Operator::EQUAL);
-                assert_eq!(where_clause.value, DataType::Bool { x: false });
+                assert_eq!(where_clause.value, DataType::Bool(false));
             }
             _ => panic!("expected DELETE"),
         }
@@ -275,10 +280,14 @@ mod tests {
         let command = parse_delete("DELETE FROM mydb.employee WHERE id = 1").unwrap();
 
         match command {
-            SqlCommand::Delete { table, where_clause, .. } => {
+            SqlCommand::Delete {
+                table,
+                where_clause,
+                ..
+            } => {
                 assert_eq!(table, "mydb.employee");
                 assert_eq!(where_clause.column, "id");
-                assert_eq!(where_clause.value, DataType::BigInt { x: 1 });
+                assert_eq!(where_clause.value, DataType::BigInt(1));
             }
             _ => panic!("expected DELETE"),
         }
@@ -292,7 +301,7 @@ mod tests {
             SqlCommand::Delete { where_clause, .. } => {
                 assert_eq!(where_clause.column, "employee.id");
                 assert_eq!(where_clause.operator, Operator::EQUAL);
-                assert_eq!(where_clause.value, DataType::BigInt { x: 1 });
+                assert_eq!(where_clause.value, DataType::BigInt(1));
             }
             _ => panic!("expected DELETE"),
         }
@@ -303,10 +312,14 @@ mod tests {
         let command = parse_delete("DELETE FROM EMPLOYEE WHERE ID = 1").unwrap();
 
         match command {
-            SqlCommand::Delete { table, where_clause, .. } => {
+            SqlCommand::Delete {
+                table,
+                where_clause,
+                ..
+            } => {
                 assert_eq!(table, "EMPLOYEE");
                 assert_eq!(where_clause.column, "ID");
-                assert_eq!(where_clause.value, DataType::BigInt { x: 1 });
+                assert_eq!(where_clause.value, DataType::BigInt(1));
             }
             _ => panic!("expected DELETE"),
         }

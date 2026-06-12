@@ -4,7 +4,7 @@ use crate::database::table::Table;
 #[derive(Debug)]
 pub struct DbMem {
     pub db_name: String,
-    pub tables: Vec<Table>,
+    pub tables: Vec<(String,Table)>,
 }
 
 #[derive(Debug)]

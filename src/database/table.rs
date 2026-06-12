@@ -7,6 +7,7 @@ use std::time::Instant;
 use uuid::Uuid;
 use crate::command::constraint::Constraint;
 use crate::database::datatype;
+use std::convert::Into;
 
 #[derive(Debug)]
 pub struct Row {
@@ -36,6 +37,10 @@ impl Table {
             column_types: vec![],
             constraint: (0, vec![]),
         }
+    }
+
+    pub(crate) fn insert_row(&self, row: Vec<DataType>){
+        //TODO implement
     }
 
     /// creates a new database with the params:
@@ -127,7 +132,7 @@ impl Table {
     }
 }
 
-pub fn save_table_to_disc(table: &Table, path: &String, _uuid: &Uuid) {
+/*pub fn save_table_to_disc(table: &Table, path: &String, _uuid: &Uuid) {
     let start = Instant::now();
     let mut file = OpenOptions::new()
         .create(true)
@@ -211,9 +216,7 @@ pub fn save_table_to_disc(table: &Table, path: &String, _uuid: &Uuid) {
     for (_k, v) in all_entries {
         for cell in v {
             match cell {
-                DataType::BigInt { x } => {
-                    file.write_all(&x.to_be_bytes()).unwrap();
-                }
+                DataType::BigInt(file.write_all(&x.to_be_bytes()).unwrap())
 
                 DataType::Int { x } => {
                     file.write_all(&x.to_be_bytes()).unwrap();
@@ -241,9 +244,9 @@ pub fn save_table_to_disc(table: &Table, path: &String, _uuid: &Uuid) {
 
     let duration = start.elapsed();
     println!("Total time taken for writing: {:?}", duration);
-}
+}*/
 
-pub fn read_table_from_disc(path: String, _uuid: Uuid) -> Table {
+/*pub fn read_table_from_disc(path: String, _uuid: Uuid) -> Table {
     let start = Instant::now();
     let file = File::open(path).unwrap();
     let mut reader = BufReader::new(file);
@@ -353,47 +356,38 @@ pub fn read_table_from_disc(path: String, _uuid: Uuid) -> Table {
                 DataType::BigInt { .. } => {
                     let mut buf = [0u8; 8];
                     read_or_eof!(buf);
-                    row.push(DataType::BigInt {
-                        x: i64::from_be_bytes(buf),
-                    });
+                    row.push(DataType::BigInt (i64::from_be_bytes(buf)));
                 }
 
                 DataType::Int { .. } => {
                     let mut buf = [0u8; 4];
                     read_or_eof!(buf);
-                    row.push(DataType::Int {
-                        x: i32::from_be_bytes(buf),
-                    });
+                    row.push(DataType::Int(i32::from_be_bytes(buf)));
                 }
 
                 DataType::SmallInt { .. } => {
                     let mut buf = [0u8; 2];
                     read_or_eof!(buf);
-                    row.push(DataType::SmallInt {
-                        x: i16::from_be_bytes(buf),
-                    });
+                    row.push(DataType::SmallInt(i16::from_be_bytes(buf)));
                 }
 
                 DataType::TinyInt { .. } => {
                     let mut buf = [0u8; 1];
                     read_or_eof!(buf);
-                    row.push(DataType::TinyInt {
-                        x: i8::from_be_bytes(buf),
-                    });
+                    row.push(DataType::TinyInt(i8::from_be_bytes(buf)));
                 }
 
                 DataType::Decimal { .. } => {
                     let mut buf = [0u8; 4];
                     read_or_eof!(buf);
-                    row.push(DataType::Decimal {
-                        x: f32::from_be_bytes(buf),
-                    });
+                    row.push(DataType::Decimal(f32::from_be_bytes(buf)));
+
                 }
 
                 DataType::VarChar { .. } => {
                     let s = read_varchar(&mut reader).unwrap();
-                    let y = s.len() as u16;
-                    row.push(DataType::VarChar { x: s, y });
+                    let y = s.len() as u8;
+                    row.push(DataType::VarChar(y, s) );
                 }
 
                 DataType::Undefined => {
@@ -409,6 +403,7 @@ pub fn read_table_from_disc(path: String, _uuid: Uuid) -> Table {
         }
 
         // Successfully read a full row
+        let foo:i64 = row[0].into();
         let id: i64 = row[0].as_i64().expect("row[0] needs to be a BigInt");
         tree.insert(id, row.clone());
         rows.push(row);
@@ -423,7 +418,7 @@ pub fn read_table_from_disc(path: String, _uuid: Uuid) -> Table {
     let duration = start.elapsed();
     println!("Total time taken for reading: {:?}", duration);
     table
-}
+}*/
 
 fn write_u16_be<W: Write>(w: &mut W, v: u16) -> io::Result<()> {
     w.write_all(&v.to_be_bytes())
@@ -454,70 +449,69 @@ fn read_varchar<R: Read>(r: &mut R) -> io::Result<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Table, read_table_from_disc, save_table_to_disc};
     use crate::database::bptree::BPlusTree;
     use crate::database::datatype::DataType;
     use uuid::Uuid;
 
-    #[test]
-    fn create_new_table() {
-        let names: Vec<String> = vec![
-            String::from("id"),
-            String::from("first_name"),
-            String::from("last_name"),
-            String::from("age"),
-        ];
-        let types: Vec<DataType> = vec![
-            DataType::BigInt { x: 0 },
-            DataType::VarChar {
-                x: String::from(" "),
-                y: 0,
-            },
-            DataType::VarChar {
-                x: String::from(" "),
-                y: 0,
-            },
-            DataType::Int { x: 50 },
-        ];
-        let bp_tree = BPlusTree::default();
-        let uuid = Uuid::parse_str("a1a2a3a4-b1b2-c1c2-d1d2-d3d4d5d6d7d8").unwrap();
-        let constraints = (0, vec![]);
-        let table: Table = Table::new(0, String::from("test"), bp_tree, uuid, names, types, constraints);
+    /*     #[test]
+   fn create_new_table() {
+          let names: Vec<String> = vec![
+              String::from("id"),
+              String::from("first_name"),
+              String::from("last_name"),
+              String::from("age"),
+          ];
+          let types: Vec<DataType> = vec![
+              DataType::BigInt { x: 0 },
+              DataType::VarChar {
+                  x: String::from(" "),
+                  y: 0,
+              },
+              DataType::VarChar {
+                  x: String::from(" "),
+                  y: 0,
+              },
+              DataType::Int { x: 50 },
+          ];
+          let bp_tree = BPlusTree::default();
+          let uuid = Uuid::parse_str("a1a2a3a4-b1b2-c1c2-d1d2-d3d4d5d6d7d8").unwrap();
+          let constraints = (0, vec![]);
+          let table: Table = Table::new(0, String::from("test"), bp_tree, uuid, names, types, constraints);
 
-        let name: String = table.get_table_name();
-        assert_eq!(name, "test");
+          let name: String = table.get_table_name();
+          assert_eq!(name, "test");
 
-        let uuid: Uuid = table.get_uuid();
-        assert_eq!(String::from(uuid), "a1a2a3a4-b1b2-c1c2-d1d2-d3d4d5d6d7d8");
-    }
+          let uuid: Uuid = table.get_uuid();
+          assert_eq!(String::from(uuid), "a1a2a3a4-b1b2-c1c2-d1d2-d3d4d5d6d7d8");
+      }
 
-    #[test]
-    fn load_from_disc() {
-        //let table: Table = Table::default();
-        read_table_from_disc(
-            String::from("C:/temp/file/0e6bce68-99fa-3841-b790-24afbdf7db1d.file"),
-            Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1d").unwrap(),
-        );
-    }
+      #[test]
+      fn load_from_disc() {
+          //let table: Table = Table::default();
+          read_table_from_disc(
+              String::from("C:/temp/file/0e6bce68-99fa-3841-b790-24afbdf7db1d.file"),
+              Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1d").unwrap(),
+          );
+      }
 
-    #[test]
-    fn write_to_disc() {
-        let table: Table = read_table_from_disc(
-            String::from("C:/temp/file/0e6bce68-99fa-3841-b790-24afbdf7db1d.file"),
-            Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1d").unwrap(),
-        );
-        save_table_to_disc(
-            &table,
-            &String::from("C:/temp/file/0e6bce68-99fa-3841-b790-24afbdf7db1f.file"),
-            &Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1f").unwrap(),
-        );
-    }
+      #[test]
+      fn write_to_disc() {
+          let table: Table = read_table_from_disc(
+              String::from("C:/temp/file/0e6bce68-99fa-3841-b790-24afbdf7db1d.file"),
+              Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1d").unwrap(),
+          );
+          save_table_to_disc(
+              &table,
+              &String::from("C:/temp/file/0e6bce68-99fa-3841-b790-24afbdf7db1f.file"),
+              &Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1f").unwrap(),
+          );
+      }
 
-    #[test]
-    fn dev_with_test() {
-        read_table_from_disc(
-            String::from("C:/temp/file/0e6bce68-99fa-3841-b790-24afbdf7db1f.file"),
-            Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1f").unwrap(),
-        );
-    }
+      #[test]
+      fn dev_with_test() {
+          read_table_from_disc(
+              String::from("C:/temp/file/0e6bce68-99fa-3841-b790-24afbdf7db1f.file"),
+              Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1f").unwrap(),
+          );
+      }*/
 }

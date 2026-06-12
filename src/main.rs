@@ -4,6 +4,7 @@ use std::thread::sleep;
 use std::time::Duration;
 use log::info;
 use tokio::net::TcpListener;
+use crate::database::table::Table;
 use crate::file::mtdreader::{read_mtd_file, MtdFile};
 use crate::server::config::config::ConfigSingelton;
 use crate::server::config::configreader;
@@ -40,6 +41,7 @@ mod command {
 
 mod file{
     pub mod mtdreader;
+    pub mod moireader;
 }
 
 mod ledger{
@@ -53,7 +55,6 @@ mod server {
     pub mod config{
         pub mod config;
         pub mod configreader;
-        pub mod systemtablereader;
     }
     pub mod parser{
         pub mod tokenizer;
@@ -73,10 +74,10 @@ fn main() {
 fn import_system_tables() {
     let all_dbs: MtdFile = read_mtd_file("C:\\MiaSql\\system\\database.mtd");
     let all_tables: MtdFile = read_mtd_file("C:\\MiaSql\\system\\tables.mtd");
+    let db_table:Table = file::moireader::load_moi_file(&all_dbs);
 
     println!("{:?}", all_dbs);
     println!("{:?}", all_tables);
-    //server::server::parse_incomming("USE system;");
 }
 
 fn import_config() {
