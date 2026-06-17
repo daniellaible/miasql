@@ -7,5 +7,5 @@
 Description
 ------------
 
-Moi files contain the raw data of a table. They are stored in a text format.
-Each row is a new line. This way we can easily alter a line and make the row larger.
+Moi files contain the raw data of a table. They are stored in a binary format.
+Each row is seperated by a new line charcater. This way we can easily alter a line and make the row larger.

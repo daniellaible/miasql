@@ -86,11 +86,13 @@ pub fn read_mtd_file(path: &str) -> MtdFile {
                 let mut type_defs = splits.next().unwrap().to_string();
                 type_defs = type_defs.replace("[", "");
                 type_defs = type_defs.replace("]", "");
+                type_defs = type_defs.replace("(", "");
+                type_defs = type_defs.replace(")", "");
                 let mut types_defs__split = type_defs.split(";");
 
                 let mut columns: Vec<DataType> = Vec::new();
                 for defs in types_defs__split {
-                    if defs.starts_with("VarChar(") {
+/*                    if defs.starts_with("VarChar") {
                         let mut splits = defs.split("(");
                         _ = splits.next();
                         let mut almost = splits.next().unwrap().to_string();
@@ -98,8 +100,9 @@ pub fn read_mtd_file(path: &str) -> MtdFile {
                         almost = almost.replace("]", "");
                         let length = almost.parse::<u16>().unwrap();
                         columns.push(DataType::VarChar(length as u8, String::default()));
-                    }
+                    }*/
                     match defs {
+                        "VarChar" => columns.push(DataType::VarChar(0,String::new())),
                         "BigInt" => columns.push(DataType::BigInt(0)),
                         "Int" => columns.push(DataType::Int(0)),
                         "SmallInt" => columns.push(DataType::SmallInt(0)),
@@ -110,6 +113,7 @@ pub fn read_mtd_file(path: &str) -> MtdFile {
                         "Date" => columns.push(DataType::Date(0)),
                         "Time" => columns.push(DataType::Time(0)),
                         "DateTime" => columns.push(DataType::DateTime(0)),
+                        "Bool" => columns.push(DataType::Bool(false)),
                         "Null" => columns.push(DataType::Null),
                         _ => {
                             if !defs.starts_with("VarChar") {

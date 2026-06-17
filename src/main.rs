@@ -74,7 +74,7 @@ fn main() {
 fn import_system_tables() {
     let all_dbs: MtdFile = read_mtd_file("C:\\MiaSql\\system\\database.mtd");
     let all_tables: MtdFile = read_mtd_file("C:\\MiaSql\\system\\tables.mtd");
-    let db_table:Table = file::moireader::load_moi_file(&all_dbs);
+    let db_table:Table = file::moireader::load_moi_file(&all_dbs).unwrap();
 
     println!("{:?}", all_dbs);
     println!("{:?}", all_tables);

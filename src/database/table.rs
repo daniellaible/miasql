@@ -8,6 +8,8 @@ use uuid::Uuid;
 use crate::command::constraint::Constraint;
 use crate::database::datatype;
 use std::convert::Into;
+use std::error::Error;
+use std::fmt;
 
 #[derive(Debug)]
 pub struct Row {
@@ -23,8 +25,18 @@ pub struct Table {
     uuid: Uuid,
     column_names: Vec<String>,
     column_types: Vec<DataType>,
-    constraint: (i32, Vec<Constraint>)
+    constraint: (i32, Vec<Constraint>),
+
 }
+
+impl fmt::Display for Table {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let table_name = &self.table_name;
+        write!(f, "Something went wrong with table: {table_name}")
+    }
+}
+
+impl Error for Table {}
 
 impl Table {
     pub fn default() -> Self {
@@ -39,8 +51,8 @@ impl Table {
         }
     }
 
-    pub(crate) fn insert_row(&self, row: Vec<DataType>){
-        //TODO implement
+    pub fn insert_row(&self, row: Vec<DataType>){
+        println!("inserting into table row: {:?}", row);
     }
 
     /// creates a new database with the params:
