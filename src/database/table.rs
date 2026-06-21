@@ -1,32 +1,29 @@
+use crate::command::constraint::Constraint;
 use crate::database::bptree;
 use crate::database::bptree::BPlusTree;
 use crate::database::datatype::DataType;
-use std::fs::{File, OpenOptions};
-use std::io::{self, BufReader, Read, Write};
-use std::time::Instant;
-use uuid::Uuid;
-use crate::command::constraint::Constraint;
-use crate::database::datatype;
 use std::convert::Into;
 use std::error::Error;
 use std::fmt;
+use std::io::{self, Read, Write};
+use uuid::Uuid;
 
 #[derive(Debug)]
 pub struct Row {
-    pub id: i64,
     pub data: Vec<DataType>,
 }
 
 #[derive(Debug)]
 pub struct Table {
-    max_id: u64,
-    table_name: String,
-    tree: BPlusTree<i64, Vec<DataType>, 3>,
-    uuid: Uuid,
-    column_names: Vec<String>,
-    column_types: Vec<DataType>,
-    constraint: (i32, Vec<Constraint>),
-
+    pub max_id: i64,
+    pub db_name: String,
+    pub table_name: String,
+    pub tree: BPlusTree<i64, Vec<DataType>, 3>,
+    pub uuid: Uuid,
+    pub display_order: Vec<(u32,u32)>,
+    pub column_names: Vec<String>,
+    pub column_types: Vec<DataType>,
+    pub constraint: Vec<(u32, Constraint)>,
 }
 
 impl fmt::Display for Table {
@@ -42,16 +39,18 @@ impl Table {
     pub fn default() -> Self {
         Table {
             max_id: 0,
+            db_name: "".to_string(),
             table_name: "".to_string(),
             tree: Default::default(),
             uuid: Default::default(),
             column_names: vec![],
             column_types: vec![],
-            constraint: (0, vec![]),
+            display_order: vec![],
+            constraint: vec![]
         }
     }
 
-    pub fn insert_row(&self, row: Vec<DataType>){
+    pub fn insert_row(&self, row: Vec<DataType>) {
         println!("inserting into table row: {:?}", row);
     }
 
@@ -61,85 +60,34 @@ impl Table {
     /// - get_bptree() - returns the tree
     /// - get_uuid() gets the uuid of the database///
     pub fn new(
-        max_id: u64,
+        max_id: i64,
+        db_name: String,
         table_name: String,
         tree: BPlusTree<i64, Vec<DataType>, 3>,
         uuid: Uuid,
-        names: Vec<String>,
-        types: Vec<DataType>,
-        constraints: (i32, Vec<Constraint>)
+        column_names: Vec<String>,
+        display_order: Vec<(u32, u32)>,
+        constraints: (u32, Vec<Constraint>),
     ) -> Table {
-        assert!(names.len() > 0);
-        if names.len() != types.len() {
-            print!("names length mismatch - unable to create such a mess");
-        }
-        if names[0].eq("ID") || names[0].eq("id") || names[0].eq("Id") {
-            println!("first column needs to be an column named id | ID || Id")
-        }
+
         // todo check if there are duplicates in the names
 
         Table {
             max_id,
+            db_name: "".to_string(),
             table_name,
             tree,
             uuid,
-            column_names: names,
-            column_types: types,
-            constraint: constraints,
+            display_order: vec![],
+            column_names,
+            column_types: vec![],
+            constraint: vec![],
         }
     }
 
-    /// returns the name of the database in a human-readable form
-    pub fn get_table_name(&self) -> String {
-        self.table_name.clone()
-    }
 
-    /// sets the database name of the database
-    pub fn set_table_name(&mut self, table_name: String) {
-        self.table_name = table_name;
-    }
-
-    /// returns the B+Tree
-    pub fn get_bptree(&self) -> &bptree::BPlusTree<i64, Vec<DataType>, 3> {
-        &self.tree
-    }
-
-    /// if the tree has been changed or the tree has been loaded from disc
-    pub fn set_bptree(&mut self, tree: BPlusTree<i64, Vec<DataType>, 3>) {
-        self.tree = tree;
-    }
-
-    ///returns the Uuid of this database
-    pub fn get_uuid(&self) -> Uuid {
-        self.uuid.clone()
-    }
-
-    pub fn set_uuid(&mut self, uuid: Uuid) {
-        self.uuid = uuid;
-    }
-
-    pub fn set_column_names(&mut self, column_names: Vec<String>) {
-        self.column_names = column_names;
-    }
-
-    pub fn get_column_names(&self) -> &Vec<String> {
-        &self.column_names
-    }
-
-    pub fn set_column_types(&mut self, column_types: Vec<DataType>) {
-        self.column_types = column_types;
-    }
-
-    pub fn get_column_types(&self) -> &Vec<DataType> {
-        &self.column_types
-    }
-
-    pub fn get_number_columns(&self) -> u16 {
-        self.column_names.len() as u16
-    }
-
-    pub fn inc_max_id(&mut self) -> u64 {
-        self.max_id +=  1;
+    pub fn inc_max_id(&mut self) -> i64 {
+        self.max_id += 1;
         self.max_id
     }
 }
@@ -461,69 +409,65 @@ fn read_varchar<R: Read>(r: &mut R) -> io::Result<String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::database::bptree::BPlusTree;
-    use crate::database::datatype::DataType;
-    use uuid::Uuid;
-
     /*     #[test]
-   fn create_new_table() {
-          let names: Vec<String> = vec![
-              String::from("id"),
-              String::from("first_name"),
-              String::from("last_name"),
-              String::from("age"),
-          ];
-          let types: Vec<DataType> = vec![
-              DataType::BigInt { x: 0 },
-              DataType::VarChar {
-                  x: String::from(" "),
-                  y: 0,
-              },
-              DataType::VarChar {
-                  x: String::from(" "),
-                  y: 0,
-              },
-              DataType::Int { x: 50 },
-          ];
-          let bp_tree = BPlusTree::default();
-          let uuid = Uuid::parse_str("a1a2a3a4-b1b2-c1c2-d1d2-d3d4d5d6d7d8").unwrap();
-          let constraints = (0, vec![]);
-          let table: Table = Table::new(0, String::from("test"), bp_tree, uuid, names, types, constraints);
+    fn create_new_table() {
+           let names: Vec<String> = vec![
+               String::from("id"),
+               String::from("first_name"),
+               String::from("last_name"),
+               String::from("age"),
+           ];
+           let types: Vec<DataType> = vec![
+               DataType::BigInt { x: 0 },
+               DataType::VarChar {
+                   x: String::from(" "),
+                   y: 0,
+               },
+               DataType::VarChar {
+                   x: String::from(" "),
+                   y: 0,
+               },
+               DataType::Int { x: 50 },
+           ];
+           let bp_tree = BPlusTree::default();
+           let uuid = Uuid::parse_str("a1a2a3a4-b1b2-c1c2-d1d2-d3d4d5d6d7d8").unwrap();
+           let constraints = (0, vec![]);
+           let table: Table = Table::new(0, String::from("test"), bp_tree, uuid, names, types, constraints);
 
-          let name: String = table.get_table_name();
-          assert_eq!(name, "test");
+           let name: String = table.get_table_name();
+           assert_eq!(name, "test");
 
-          let uuid: Uuid = table.get_uuid();
-          assert_eq!(String::from(uuid), "a1a2a3a4-b1b2-c1c2-d1d2-d3d4d5d6d7d8");
-      }
+           let uuid: Uuid = table.get_uuid();
+           assert_eq!(String::from(uuid), "a1a2a3a4-b1b2-c1c2-d1d2-d3d4d5d6d7d8");
+       }
 
-      #[test]
-      fn load_from_disc() {
-          //let table: Table = Table::default();
-          read_table_from_disc(
-              String::from("C:/temp/file/0e6bce68-99fa-3841-b790-24afbdf7db1d.file"),
-              Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1d").unwrap(),
-          );
-      }
+       #[test]
+       fn load_from_disc() {
+           //let table: Table = Table::default();
+           read_table_from_disc(
+               String::from("C:/temp/file/0e6bce68-99fa-3841-b790-24afbdf7db1d.file"),
+               Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1d").unwrap(),
+           );
+       }
 
-      #[test]
-      fn write_to_disc() {
-          let table: Table = read_table_from_disc(
-              String::from("C:/temp/file/0e6bce68-99fa-3841-b790-24afbdf7db1d.file"),
-              Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1d").unwrap(),
-          );
-          save_table_to_disc(
-              &table,
-              &String::from("C:/temp/file/0e6bce68-99fa-3841-b790-24afbdf7db1f.file"),
-              &Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1f").unwrap(),
-          );
-      }
+       #[test]
+       fn write_to_disc() {
+           let table: Table = read_table_from_disc(
+               String::from("C:/temp/file/0e6bce68-99fa-3841-b790-24afbdf7db1d.file"),
+               Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1d").unwrap(),
+           );
+           save_table_to_disc(
+               &table,
+               &String::from("C:/temp/file/0e6bce68-99fa-3841-b790-24afbdf7db1f.file"),
+               &Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1f").unwrap(),
+           );
+       }
 
-      #[test]
-      fn dev_with_test() {
-          read_table_from_disc(
-              String::from("C:/temp/file/0e6bce68-99fa-3841-b790-24afbdf7db1f.file"),
-              Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1f").unwrap(),
-          );
-      }*/
+       #[test]
+       fn dev_with_test() {
+           read_table_from_disc(
+               String::from("C:/temp/file/0e6bce68-99fa-3841-b790-24afbdf7db1f.file"),
+               Uuid::parse_str("0e6bce68-99fa-3841-b790-24afbdf7db1f").unwrap(),
+           );
+       }*/
 }

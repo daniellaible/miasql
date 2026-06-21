@@ -13,7 +13,7 @@ use crate::server::queue::MasterQueueSingelton;
 /// # Datamanipulations
 /// In this module you find all the files that do datamanipulation in the RAM.
 mod database {
-    mod bptree;
+    pub(crate) mod bptree;
     pub mod database;
     pub mod datatype;
     pub mod table;
@@ -75,9 +75,9 @@ fn import_system_tables() {
     let all_dbs: MtdFile = read_mtd_file("C:\\MiaSql\\system\\database.mtd");
     let all_tables: MtdFile = read_mtd_file("C:\\MiaSql\\system\\tables.mtd");
     let db_table:Table = file::moireader::load_moi_file(&all_dbs).unwrap();
+    let tables_table:Table = file::moireader::load_moi_file(&all_dbs).unwrap();
 
-    println!("{:?}", all_dbs);
-    println!("{:?}", all_tables);
+    println!("{:?}", db_table);
 }
 
 fn import_config() {

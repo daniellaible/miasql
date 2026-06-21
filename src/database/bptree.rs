@@ -17,11 +17,9 @@
 //! - range:  O(log n + k)
 //!
 
-use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::fmt::Debug;
-use std::rc::Rc;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex};
 
 type Link<K, V, const MAX_KEYS: usize> = Arc<Mutex<Node<K, V, MAX_KEYS>>>;
 

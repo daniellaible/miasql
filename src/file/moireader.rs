@@ -3,9 +3,18 @@ use crate::database::table::Table;
 use crate::file::mtdreader::MtdFile;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Error, ErrorKind, Read};
+use crate::database::bptree::BPlusTree;
 
 pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
     let mut table = Table::default();
+    let mut tree: BPlusTree<i64, Vec<DataType>, 3> = BPlusTree::default();
+    table.db_name = mtd.dbname.clone();
+    table.table_name = mtd.tablename.clone();
+    table.column_names = mtd.column_names.clone();
+    table.column_types = mtd.column_type_definitions.clone();
+    table.display_order = mtd.display_order.clone();
+    table.constraint = mtd.column_constraints.clone();
+
     let column_defs = &mtd.column_type_definitions;
     let moi_file = &mtd.moi_files[0];
 
@@ -21,21 +30,18 @@ pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
     let mut input = BufReader::new(File::open(moi_file).expect("Failed to open file"));
 
     input.read_exact(&mut i64_buffer);
-    let max_id = i64::from_le_bytes(i64_buffer);
-    println!("max id: {:?}", max_id);
+    table.max_id = i64::from_le_bytes(i64_buffer);
 
     input.read_exact(&mut u8_buffer);
-    let new_line = u8::from_le_bytes(u8_buffer);
+    u8::from_le_bytes(u8_buffer);
 
     input.read_exact(&mut i64_buffer);
     let number_of_lines = i64::from_le_bytes(i64_buffer);
-    println!("lines: {:?}", number_of_lines);
 
     input.read_exact(&mut u8_buffer);
-    let new_line = u8::from_le_bytes(u8_buffer);
+    u8::from_le_bytes(u8_buffer);
 
     for row_counter in 0..number_of_lines {
-        println!("iterate rows: {:?}", row_counter);
         let mut row: Vec<DataType> = Vec::new();
         for column_counter in 0..column_defs.len() {
             let column_datatype = &column_defs[column_counter];
@@ -186,11 +192,18 @@ pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
             }
         }
         input.read_exact(&mut u8_buffer);
-        let new_line = u8::from_le_bytes(u8_buffer);
+        u8::from_le_bytes(u8_buffer);
         println!("row: {:?}", row);
-    }
 
-    Ok(Table::default())
+        let row_id = match row[0] {
+            DataType::BigInt(t) => {t}
+            _ => { -1 }
+        };
+
+        tree.insert(row_id, row);
+    }
+    table.tree = tree;
+    Ok(table)
 }
 
 #[cfg(test)]
@@ -199,6 +212,51 @@ mod tests {
     use crate::file::mtdreader::read_mtd_file;
     use std::fs::File;
     use std::io::{BufWriter, Write};
+
+    #[test]
+    fn create_system_database_moi() {
+        let file_result = File::create("C:\\MiaSql\\system\\database.moi");
+
+        match file_result {
+            Ok(file_item) => {
+                let mut writer = BufWriter::new(file_item);
+                let max: u64 = 1;
+                writer.write(&max.to_le_bytes()).expect("unable to write to disc");
+                writer.write(b"\n").expect("unable to write to disc");
+
+                let lines: u64 = 1;
+                writer.write(&max.to_le_bytes()).expect("unable to write to disc");
+                writer.write(b"\n").expect("unable to write to disc");
+
+                let mut counter = 0;
+                while counter < 1 {
+                    let id: i64 = (counter + 1) as i64;
+                    let text: String = String::from("system");
+
+                    writer
+                        .write_all(&id.to_le_bytes())
+                        .expect("unable to write to disc");
+
+                    let text_as_string: String = String::from(&text);
+                    let number_of_chars = text_as_string.chars().count() as u8;
+                    writer
+                        .write_all(&number_of_chars.to_le_bytes())
+                        .expect("unable to write to disc");
+
+                    writer
+                        .write_all((&text).as_ref())
+                        .expect("unable to write to disc");
+
+                    writer.write_all(b"\n");
+                    counter += 1;
+                }
+                writer.flush();
+            }
+            Err(error) => {
+                println!("Something went terribly wrong reading system tables: {}", error);
+            }
+        }
+    }
 
     #[test]
     fn test_the_one_we_want() {
@@ -275,7 +333,7 @@ mod tests {
                 writer.flush();
             }
             Err(error) => {
-                println!("Error: {}", error);
+                println!("Something went terribly wrong reading system tables: {}", error);
             }
         }
         let foo = read_mtd_file("C:\\MiaSql\\system\\test_datatypes.mtd");
