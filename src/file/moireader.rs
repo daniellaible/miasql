@@ -1,9 +1,9 @@
+use crate::database::bptree::BPlusTree;
 use crate::database::datatype::DataType;
 use crate::database::table::Table;
 use crate::file::mtdreader::MtdFile;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Error, ErrorKind, Read};
-use crate::database::bptree::BPlusTree;
 
 pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
     let mut table = Table::default();
@@ -196,7 +196,7 @@ pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
         println!("row: {:?}", row);
 
         let row_id = match row[0] {
-            DataType::BigInt(t) => {t}
+            DataType::BigInt(t) => { t }
             _ => { -1 }
         };
 
@@ -214,6 +214,73 @@ mod tests {
     use std::io::{BufWriter, Write};
 
     #[test]
+    fn create_system_tables_moi() {
+        let file_result = File::create("C:\\MiaSql\\system\\tables.moi");
+
+        match file_result {
+            Ok(file_item) => {
+                let mut writer = BufWriter::new(file_item);
+                let max_id: u64 = 2;
+                writer.write(&max_id.to_le_bytes()).expect("unable to write to disc");
+                writer.write(b"\n").expect("unable to write to disc");
+
+                let lines: u64 = 2;
+                writer.write(&lines.to_le_bytes()).expect("unable to write to disc");
+                writer.write(b"\n").expect("unable to write to disc");
+
+                let mut counter = 0;
+                while counter < lines {
+                    let id: i64 = (counter + 1) as i64;
+                    let dbname: String = String::from("system");
+                    let mut tablename: String = String::new();
+                    let mut path: String = String::new();
+                    if id == 1 {
+                        tablename = String::from("databases");
+                        path = String::from("C:\\MiaSql\\system\\database.mtd");
+                    } else if id == 2 {
+                        tablename = String::from("tables");
+                        path = String::from("C:\\MiaSql\\system\\tables.mtd");
+                    } else {
+                        println!("There's something strange in your neighbourhood ... who do you gonna call");
+                    }
+
+                    writer.write(&id.to_le_bytes()).expect("unable to write to disc");
+
+                    let db_as_string: String = String::from(&dbname);
+                    let number_of_chars_in_db = db_as_string.chars().count() as u8;
+                    writer
+                        .write_all(&number_of_chars_in_db.to_le_bytes())
+                        .expect("unable to write to disc");
+                    writer.write_all((&dbname).as_ref()).expect("unable to write to disc");
+
+                    let table_as_string: String = String::from(&tablename);
+                    let number_of_chars_in_table = table_as_string.chars().count() as u8;
+                    writer
+                        .write_all(&number_of_chars_in_table.to_le_bytes())
+                        .expect("unable to write to disc");
+                    writer.write_all((&tablename).as_ref()).expect("unable to write to disc");
+
+                    let path_as_string: String = String::from(&path);
+                    let number_of_chars_in_path = path_as_string.chars().count() as u8;
+                    writer
+                        .write_all(&number_of_chars_in_path.to_le_bytes())
+                        .expect("unable to write to disc");
+                    writer.write_all((&path).as_ref()).expect("unable to write to disc");
+                    
+                    writer.write(b"\n").expect("unable to write to disc");
+                    
+                    writer.flush();
+                    counter += 1;
+                }
+            }
+
+            Err(error) => {
+                println!("Something went terribly wrong reading system tables table: {}", error);
+            }
+        }
+    }
+
+    #[test]
     fn create_system_database_moi() {
         let file_result = File::create("C:\\MiaSql\\system\\database.moi");
 
@@ -225,7 +292,7 @@ mod tests {
                 writer.write(b"\n").expect("unable to write to disc");
 
                 let lines: u64 = 1;
-                writer.write(&max.to_le_bytes()).expect("unable to write to disc");
+                writer.write(&lines.to_le_bytes()).expect("unable to write to disc");
                 writer.write(b"\n").expect("unable to write to disc");
 
                 let mut counter = 0;
@@ -253,7 +320,7 @@ mod tests {
                 writer.flush();
             }
             Err(error) => {
-                println!("Something went terribly wrong reading system tables: {}", error);
+                println!("Something went terribly wrong reading system database tables: {}", error);
             }
         }
     }
@@ -389,3 +456,5 @@ mod tests {
         varchar
     }
 }
+
+

@@ -50,9 +50,6 @@ impl Table {
         }
     }
 
-    pub fn insert_row(&self, row: Vec<DataType>) {
-        println!("inserting into table row: {:?}", row);
-    }
 
     /// creates a new database with the params:
     /// - new() Constructor
