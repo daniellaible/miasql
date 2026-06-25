@@ -1,29 +1,51 @@
-use std::sync::{Mutex, OnceLock};
+use std::sync::{LazyLock, Mutex, OnceLock};
+use crate::database::database::Database;
 use crate::database::table::Table;
 
+/// DbMem is the struct that holds the tables in memory.
+/// It consists of a vector with all the tables that are in use.
+/// The vector that stores those tables uses tupels which sre structures
+/// Vec[(Database_Name, Table_Name, Table)]
 #[derive(Debug)]
 pub struct DbMem {
-    pub db_name: String,
-    pub tables: Vec<(String,Table)>,
+    pub tables: Vec<(String,String, Box<Table>)>,
 }
 
-#[derive(Debug)]
-pub struct AllDatabases {
-    pub databases: Mutex<Vec<DbMem>>,
-}
+static DBS: LazyLock<Mutex<DbMem>> = LazyLock::new(|| Mutex::new(DbMem { tables: vec![] }));
 
-pub struct AllDbSingelton;
+impl DbMem{
 
-static INSTANCE: OnceLock<AllDatabases> = OnceLock::new();
+    pub fn new(){
+        let mut dbs = DBS.lock().unwrap();
+        dbs.tables = Vec::new();
 
-impl AllDbSingelton {
-    pub fn instance() -> &'static AllDatabases {
-        INSTANCE.get_or_init(|| AllDatabases {
-            databases: Mutex::new(Vec::new()),
-        })
     }
-    
-    pub fn add_db(&self, db_mem: DbMem){
-        Self::instance().databases.lock().unwrap().push(db_mem);
+
+    pub fn add_table(table: Table){
+        let mut dbs = DBS.lock().unwrap();
+        dbs.tables.push((table.db_name.clone(), table.table_name.clone(), Box::new(table)));
     }
+
+    //TODO implement
+    pub fn remove_table(db_name:String, table_name:String){
+        let mut dbs = DBS.lock().unwrap();
+
+        for table in dbs.tables.iter_mut(){
+            println!("needs to be implemented");
+        }
+    }
+
+    pub fn print_tables() {
+        let mut dbs = DBS.lock().unwrap();
+
+        for table in dbs.tables.iter_mut(){
+            println!("{:?}", table);
+        }
+    }
+
+    pub fn calc_mem(){
+        println!("needs to be implemented!");
+    }
+
 }
+

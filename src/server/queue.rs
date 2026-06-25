@@ -2,9 +2,10 @@ use crate::command::sqlcommands::SqlCommand;
 use crate::server::config::config::ConfigSingelton;
 use crate::server::processor::processor;
 use std::collections::VecDeque;
+use std::string::ToString;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::{Arc, Mutex, OnceLock};
-use log::info;
+use std::sync::{Arc, LazyLock, Mutex, OnceLock};
+use crate::database::database::Database;
 
 #[derive(Debug, Clone)]
 pub struct TransactionProtocol {
@@ -21,19 +22,19 @@ pub struct TransactionProtocol {
     pub error_msg: Option<String>,
 }
 
+
 #[derive(Debug)]
 pub struct MasterQueue {
     pub is_working: AtomicBool,
     pub queue: Mutex<VecDeque<TransactionProtocol>>,
 }
 
-
-
 pub struct MasterQueueSingelton;
+
 
 static INSTANCE: OnceLock<MasterQueue> = OnceLock::new();
 
-impl MasterQueueSingelton {
+ impl MasterQueueSingelton {
 
     pub fn instance() -> &'static MasterQueue {
         let config = ConfigSingelton::instance().lock().unwrap();
@@ -55,12 +56,11 @@ impl MasterQueueSingelton {
             .unwrap()
             .push_back(transaction);
        if !MasterQueueSingelton::instance().is_working.load(Ordering::SeqCst) {
-            do_all_transactions();
+           do_all_transactions();
        }
-
     }
 }
-fn do_all_transactions() {
+pub fn do_all_transactions() {
     MasterQueueSingelton::instance().is_working.store(true, Ordering::SeqCst);
     let mut queue = MasterQueueSingelton::instance().queue.lock().unwrap();
     while queue.len() > 0 {
@@ -68,3 +68,5 @@ fn do_all_transactions() {
     }
     MasterQueueSingelton::instance().is_working.store(false, Ordering::SeqCst);
 }
+
+

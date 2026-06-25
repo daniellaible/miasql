@@ -44,14 +44,11 @@ We don't have a website yet - we are working on it, but lets get the database ru
 | 0.4.0   | all the functions work on the select statement                                           |
 | 0.5.0   | implementing inner, outer, left, right and full joins                                    |    
 | 0.6.0   | user management and secure shell                                                         |
-| 0.7.0   | ledger implementation including restoring the backup and zipping                                     
+| 0.7.0   | ledger implementation including restoring the backup and zipping (Alpha Release)                                 
 | 0.8.0   | backup importer from other databases                                                     |
 | 0.9.0   | adding clusters, shards and loadbalancer                                                 |
-| 1.0.0   | amaze - amaze - amaze - Question                                                         
+| 1.0.0   | amaze - amaze - amaze - Question                                                      
 
-\* no nested commands / no joins / no groups / no orders / no having
-/ no subqueries (IN / ANY / ALL) / no count() / no sum() / no avg() / no min() / no max() / no String functions / no
-date and time commands / no conditional expressions / no set operations / no transactional control commands
 
 Interfaces for Python / C(++) / Java / Rust / C# / TypeScript / PHP / VB        
 UI for Mia

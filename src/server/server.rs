@@ -1,7 +1,7 @@
 use log::info;
 use crate::server;
 use crate::server::queue::{MasterQueueSingelton, TransactionProtocol};
-use tokio::io::{AsyncReadExt};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use crate::command::sqlcommands::SqlCommand;
 
@@ -18,17 +18,20 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
         let mut input = str::from_utf8(&buf[..n]).unwrap();
         input = input.trim();
 
-        parse_incomming(&input);
+        parse_incomming(&input, &stream);
+        let answer: String = String::from("This is the life");
+        stream.write_all((&answer).as_ref()).await.expect("Doof");
     }
 }
 
-pub fn parse_incomming(incomming: &str) {
+pub fn parse_incomming(incomming: &str, stream: &TcpStream) {
     let mut management_command = String::from(incomming);
     management_command = management_command.to_uppercase();
 
     if management_command == "QUIT" || management_command == "BYE" {
         return;
     } else if management_command == "SHOW DATABASES" {
+
         info!("SHOW DATABASES");
     } else if management_command.starts_with("USE ") {
         let splits =  management_command.split(" ");

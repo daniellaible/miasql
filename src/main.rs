@@ -4,16 +4,18 @@ use std::thread::sleep;
 use std::time::Duration;
 use log::info;
 use tokio::net::TcpListener;
+use crate::database::database::Database;
 use crate::database::table::Table;
 use crate::file::mtdreader::{read_mtd_file, MtdFile};
 use crate::server::config::config::ConfigSingelton;
 use crate::server::config::configreader;
+use crate::server::dbmem::DbMem;
 use crate::server::queue::MasterQueueSingelton;
 
 /// # Datamanipulations
 /// In this module you find all the files that do datamanipulation in the RAM.
 mod database {
-    pub(crate) mod bptree;
+    pub mod bptree;
     pub mod database;
     pub mod datatype;
     pub mod table;
@@ -77,8 +79,11 @@ fn import_system_tables() {
     let db_table:Table = file::moireader::load_moi_file(&all_dbs).unwrap();
     let tables_table:Table = file::moireader::load_moi_file(&all_tables).unwrap();
 
-    println!("{:?}", db_table);
-    println!("{:?}", tables_table);
+
+    DbMem::new();
+    DbMem::add_table(db_table);
+    DbMem::add_table(tables_table);
+    DbMem::print_tables();
 }
 
 fn import_config() {

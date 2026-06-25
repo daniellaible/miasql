@@ -1,5 +1,4 @@
 use crate::command::constraint::Constraint;
-use crate::database::bptree;
 use crate::database::bptree::BPlusTree;
 use crate::database::datatype::DataType;
 use std::convert::Into;
@@ -13,14 +12,15 @@ pub struct Row {
     pub data: Vec<DataType>,
 }
 
-#[derive(Debug)]
+
+#[derive(Debug, Clone)]
 pub struct Table {
     pub max_id: i64,
     pub db_name: String,
     pub table_name: String,
     pub tree: BPlusTree<i64, Vec<DataType>, 3>,
     pub uuid: Uuid,
-    pub display_order: Vec<(u32,u32)>,
+    pub display_order: Vec<(u32, u32)>,
     pub column_names: Vec<String>,
     pub column_types: Vec<DataType>,
     pub constraint: Vec<(u32, Constraint)>,
@@ -46,10 +46,9 @@ impl Table {
             column_names: vec![],
             column_types: vec![],
             display_order: vec![],
-            constraint: vec![]
+            constraint: vec![],
         }
     }
-
 
     /// creates a new database with the params:
     /// - new() Constructor
@@ -66,7 +65,6 @@ impl Table {
         display_order: Vec<(u32, u32)>,
         constraints: (u32, Vec<Constraint>),
     ) -> Table {
-
         // todo check if there are duplicates in the names
 
         Table {
@@ -81,7 +79,6 @@ impl Table {
             constraint: vec![],
         }
     }
-
 
     pub fn inc_max_id(&mut self) -> i64 {
         self.max_id += 1;

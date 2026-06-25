@@ -193,7 +193,6 @@ pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
         }
         input.read_exact(&mut u8_buffer);
         u8::from_le_bytes(u8_buffer);
-        println!("row: {:?}", row);
 
         let row_id = match row[0] {
             DataType::BigInt(t) => { t }
@@ -261,9 +260,9 @@ mod tests {
                     writer.write_all((&tablename).as_ref()).expect("unable to write to disc");
 
                     let path_as_string: String = String::from(&path);
-                    let number_of_chars_in_path = path_as_string.chars().count() as u8;
+                    let number_of_chars_in_table = path_as_string.chars().count() as u8;
                     writer
-                        .write_all(&number_of_chars_in_path.to_le_bytes())
+                        .write_all(&number_of_chars_in_table.to_le_bytes())
                         .expect("unable to write to disc");
                     writer.write_all((&path).as_ref()).expect("unable to write to disc");
                     
