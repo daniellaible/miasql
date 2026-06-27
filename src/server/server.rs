@@ -1,26 +1,46 @@
-use log::info;
+use crate::command::sqlcommands::SqlCommand;
 use crate::server;
 use crate::server::queue::{MasterQueueSingelton, TransactionProtocol};
+use log::info;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
-use crate::command::sqlcommands::SqlCommand;
 
 pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
     let mut buf = [0u8; 4096];
 
+    let mut is_logged_in = false;
     loop {
-        let n = stream.read(&mut buf).await?;
-        if n == 0 {
-            return Ok(());
+        if !is_logged_in {
+            let login_prompt = String::from("login:");
+            stream
+                .write_all((&login_prompt).as_ref())
+                .await
+                .expect("Doof");
+
+            let n = stream.read(&mut buf).await?;
+            if n == 0 {
+                return Ok(());
+            }
+
+            let mut username = std::str::from_utf8(&buf[..n]).unwrap().to_string();
+            username = username.replace("\r\n", "");
+            println!("username: {:?}", username);
+            is_logged_in = true;
+
+        } else {
+            let n = stream.read(&mut buf).await?;
+            if n == 0 {
+                return Ok(());
+            }
+  
+            server::parser::tokenizer::tokeniz(std::str::from_utf8(&buf[..n]).unwrap());
+            let mut input = str::from_utf8(&buf[..n]).unwrap();
+            input = input.trim();
+
+            parse_incomming(&input, &stream);
+            let answer: String = String::from("This is the life");
+            stream.write_all((&answer).as_ref()).await.expect("Doof");
         }
-
-        server::parser::tokenizer::tokeniz(std::str::from_utf8(&buf[..n]).unwrap());
-        let mut input = str::from_utf8(&buf[..n]).unwrap();
-        input = input.trim();
-
-        parse_incomming(&input, &stream);
-        let answer: String = String::from("This is the life");
-        stream.write_all((&answer).as_ref()).await.expect("Doof");
     }
 }
 
@@ -31,10 +51,9 @@ pub fn parse_incomming(incomming: &str, stream: &TcpStream) {
     if management_command == "QUIT" || management_command == "BYE" {
         return;
     } else if management_command == "SHOW DATABASES" {
-
         info!("SHOW DATABASES");
     } else if management_command.starts_with("USE ") {
-        let splits =  management_command.split(" ");
+        let splits = management_command.split(" ");
         let mut db_name = splits.collect::<Vec<&str>>()[1];
         db_name = db_name.trim();
         info!("User uses db: {}", db_name);
@@ -61,7 +80,6 @@ pub fn parse_incomming(incomming: &str, stream: &TcpStream) {
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {

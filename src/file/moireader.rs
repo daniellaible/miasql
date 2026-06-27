@@ -24,6 +24,7 @@ pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
     let mut i32_buffer = [0u8; std::mem::size_of::<i32>()];
     let mut f32_buffer = [0u8; std::mem::size_of::<f32>()];
     let mut i16_buffer = [0u8; std::mem::size_of::<i16>()];
+    let mut u16_buffer = [0u8; std::mem::size_of::<u16>()];
     let mut i8_buffer = [0u8; std::mem::size_of::<i8>()];
     let mut u8_buffer = [0u8; std::mem::size_of::<u8>()];
 
@@ -213,8 +214,8 @@ mod tests {
     use std::io::{BufWriter, Write};
 
     #[test]
-    fn create_system_tables_moi() {
-        let file_result = File::create("C:\\MiaSql\\system\\tables.moi");
+    fn create_user_table_moi() {
+        let file_result = File::create("C:\\MiaSql\\system\\user.moi");
 
         match file_result {
             Ok(file_item) => {
@@ -227,233 +228,322 @@ mod tests {
                 writer.write(&lines.to_le_bytes()).expect("unable to write to disc");
                 writer.write(b"\n").expect("unable to write to disc");
 
-                let mut counter = 0;
-                while counter < lines {
-                    let id: i64 = (counter + 1) as i64;
-                    let dbname: String = String::from("system");
-                    let mut tablename: String = String::new();
-                    let mut path: String = String::new();
-                    if id == 1 {
-                        tablename = String::from("databases");
-                        path = String::from("C:\\MiaSql\\system\\database.mtd");
-                    } else if id == 2 {
-                        tablename = String::from("tables");
-                        path = String::from("C:\\MiaSql\\system\\tables.mtd");
-                    } else {
-                        println!("There's something strange in your neighbourhood ... who do you gonna call");
-                    }
 
-                    writer.write(&id.to_le_bytes()).expect("unable to write to disc");
+                let id_1: i64 = 1 as i64;
+                let id_2: i64 = 2 as i64;
+                let username_1: String = String::from("admin");
+                let username_2: String = String::from("daniel");
+                let forename_1: String = String::from("");
+                let forename_2: String = String::from("Daniel");
+                let familyname_1: String = String::from("");
+                let familyname_2: String = String::from("Laible");
+                let type_1: String = String::from("admin");
+                let type_2: String = String::from("user");
 
-                    let db_as_string: String = String::from(&dbname);
-                    let number_of_chars_in_db = db_as_string.chars().count() as u8;
-                    writer
-                        .write_all(&number_of_chars_in_db.to_le_bytes())
-                        .expect("unable to write to disc");
-                    writer.write_all((&dbname).as_ref()).expect("unable to write to disc");
+                writer.write(&id_1.to_le_bytes()).expect("unable to write to disc");
 
-                    let table_as_string: String = String::from(&tablename);
-                    let number_of_chars_in_table = table_as_string.chars().count() as u8;
-                    writer
-                        .write_all(&number_of_chars_in_table.to_le_bytes())
-                        .expect("unable to write to disc");
-                    writer.write_all((&tablename).as_ref()).expect("unable to write to disc");
+                let number_of_chars_username = username_1.chars().count() as u8;
+                writer
+                    .write_all(&number_of_chars_username.to_le_bytes())
+                    .expect("unable to write to disc");
+                writer.write_all((&username_1).as_ref()).expect("unable to write to disc");
 
-                    let path_as_string: String = String::from(&path);
-                    let number_of_chars_in_table = path_as_string.chars().count() as u8;
-                    writer
-                        .write_all(&number_of_chars_in_table.to_le_bytes())
-                        .expect("unable to write to disc");
-                    writer.write_all((&path).as_ref()).expect("unable to write to disc");
-                    
+                let number_of_chars_forename_1 = forename_1.chars().count() as u8;
+                writer
+                    .write_all(&number_of_chars_forename_1.to_le_bytes())
+                    .expect("unable to write to disc");
+                writer.write_all((&forename_1).as_ref()).expect("unable to write to disc");
+
+                let number_of_chars_familyname_1 = familyname_1.chars().count() as u8;
+                writer
+                    .write_all(&number_of_chars_familyname_1.to_le_bytes())
+                    .expect("unable to write to disc");
+                writer.write_all((&familyname_1).as_ref()).expect("unable to write to disc");
+
+                let number_of_chars_type_1 = type_1.chars().count() as u8;
+                writer
+                    .write_all(&number_of_chars_type_1.to_le_bytes())
+                    .expect("unable to write to disc");
+                writer.write_all((&type_1).as_ref()).expect("unable to write to disc");
+
+                writer.write(b"\n").expect("unable to write to disc");
+
+                writer.write(&id_2.to_le_bytes()).expect("unable to write to disc");
+
+                let number_of_chars_username_2 = username_2.chars().count() as u8;
+                writer
+                    .write_all(&number_of_chars_username_2.to_le_bytes())
+                    .expect("unable to write to disc");
+                writer.write_all((&username_2).as_ref()).expect("unable to write to disc");
+
+                let number_of_chars_forename_2 = forename_2.chars().count() as u8;
+                writer
+                    .write_all(&number_of_chars_forename_2.to_le_bytes())
+                    .expect("unable to write to disc");
+                writer.write_all((&forename_2).as_ref()).expect("unable to write to disc");
+
+                let number_of_chars_familyname_2 = familyname_2.chars().count() as u8;
+                writer
+                    .write_all(&number_of_chars_familyname_2.to_le_bytes())
+                    .expect("unable to write to disc");
+                writer.write_all((&familyname_2).as_ref()).expect("unable to write to disc");
+
+                let number_of_chars_type_2 = type_2.chars().count() as u8;
+                writer
+                    .write_all(&number_of_chars_type_2.to_le_bytes())
+                    .expect("unable to write to disc");
+                writer.write_all((&type_2).as_ref()).expect("unable to write to disc");
+
+                writer.flush();
+            }
+            Err(error) => {
+                println!("Something went terribly wrong reading user table: {}", error);
+            }
+        }
+    }
+
+        #[test]
+        fn create_system_tables_moi() {
+            let file_result = File::create("C:\\MiaSql\\system\\tables.moi");
+
+            match file_result {
+                Ok(file_item) => {
+                    let mut writer = BufWriter::new(file_item);
+                    let max_id: u64 = 2;
+                    writer.write(&max_id.to_le_bytes()).expect("unable to write to disc");
                     writer.write(b"\n").expect("unable to write to disc");
-                    
-                    writer.flush();
-                    counter += 1;
-                }
-            }
 
-            Err(error) => {
-                println!("Something went terribly wrong reading system tables table: {}", error);
-            }
-        }
-    }
+                    let lines: u64 = 2;
+                    writer.write(&lines.to_le_bytes()).expect("unable to write to disc");
+                    writer.write(b"\n").expect("unable to write to disc");
 
-    #[test]
-    fn create_system_database_moi() {
-        let file_result = File::create("C:\\MiaSql\\system\\database.moi");
+                    let mut counter = 0;
+                    while counter < lines {
+                        let id: i64 = (counter + 1) as i64;
+                        let dbname: String = String::from("system");
+                        let mut tablename: String = String::new();
+                        let mut path: String = String::new();
+                        if id == 1 {
+                            tablename = String::from("databases");
+                            path = String::from("C:\\MiaSql\\system\\database.mtd");
+                        } else if id == 2 {
+                            tablename = String::from("tables");
+                            path = String::from("C:\\MiaSql\\system\\tables.mtd");
+                        } else {
+                            println!("There's something strange in your neighbourhood ... who do you gonna call");
+                        }
 
-        match file_result {
-            Ok(file_item) => {
-                let mut writer = BufWriter::new(file_item);
-                let max: u64 = 1;
-                writer.write(&max.to_le_bytes()).expect("unable to write to disc");
-                writer.write(b"\n").expect("unable to write to disc");
+                        writer.write(&id.to_le_bytes()).expect("unable to write to disc");
 
-                let lines: u64 = 1;
-                writer.write(&lines.to_le_bytes()).expect("unable to write to disc");
-                writer.write(b"\n").expect("unable to write to disc");
+                        let db_as_string: String = String::from(&dbname);
+                        let number_of_chars_in_db = db_as_string.chars().count() as u8;
+                        writer
+                            .write_all(&number_of_chars_in_db.to_le_bytes())
+                            .expect("unable to write to disc");
+                        writer.write_all((&dbname).as_ref()).expect("unable to write to disc");
 
-                let mut counter = 0;
-                while counter < 1 {
-                    let id: i64 = (counter + 1) as i64;
-                    let text: String = String::from("system");
+                        let table_as_string: String = String::from(&tablename);
+                        let number_of_chars_in_table = table_as_string.chars().count() as u8;
+                        writer
+                            .write_all(&number_of_chars_in_table.to_le_bytes())
+                            .expect("unable to write to disc");
+                        writer.write_all((&tablename).as_ref()).expect("unable to write to disc");
 
-                    writer
-                        .write_all(&id.to_le_bytes())
-                        .expect("unable to write to disc");
+                        let path_as_string: String = String::from(&path);
+                        let number_of_chars_in_table = path_as_string.chars().count() as u8;
+                        writer
+                            .write_all(&number_of_chars_in_table.to_le_bytes())
+                            .expect("unable to write to disc");
+                        writer.write_all((&path).as_ref()).expect("unable to write to disc");
 
-                    let text_as_string: String = String::from(&text);
-                    let number_of_chars = text_as_string.chars().count() as u8;
-                    writer
-                        .write_all(&number_of_chars.to_le_bytes())
-                        .expect("unable to write to disc");
+                        writer.write(b"\n").expect("unable to write to disc");
 
-                    writer
-                        .write_all((&text).as_ref())
-                        .expect("unable to write to disc");
-
-                    writer.write_all(b"\n");
-                    counter += 1;
-                }
-                writer.flush();
-            }
-            Err(error) => {
-                println!("Something went terribly wrong reading system database tables: {}", error);
-            }
-        }
-    }
-
-    #[test]
-    fn test_the_one_we_want() {
-        let file_result = File::create("C:\\MiaSql\\system\\test_datatypes.moi");
-
-        match file_result {
-            Ok(file_item) => {
-                let mut writer = BufWriter::new(file_item);
-                let max: u64 = 3;
-
-                writer.write(&max.to_le_bytes());
-                writer.write(b"\n").expect("unable to write to disc");
-
-                let lines: u64 = 3;
-
-                writer.write(&lines.to_le_bytes());
-                writer.write(b"\n").expect("unable to write to disc");
-
-                let mut counter = 0;
-                while counter < 3 {
-                    let id: i64 = (counter + 1) as i64;
-                    let big_number: i64 = 555555;
-                    let number: i32 = 512;
-                    let small: i16 = 277;
-                    let tiny: i8 = 42;
-                    let decimal: f32 = 42.42;
-                    let float: f64 = 3.14;
-                    let text: String = String::from("This is a text");
-                    let boolean: bool = true;
-
-                    writer
-                        .write_all(&id.to_le_bytes())
-                        .expect("unable to write to disc");
-                    writer
-                        .write_all(&big_number.to_le_bytes())
-                        .expect("unable to write to disc");
-                    writer
-                        .write_all(&number.to_le_bytes())
-                        .expect("unable to write to disc");
-                    writer
-                        .write_all(&small.to_le_bytes())
-                        .expect("unable to write to disc");
-                    writer
-                        .write_all(&tiny.to_le_bytes())
-                        .expect("unable to write to disc");
-                    writer
-                        .write_all(&decimal.to_le_bytes())
-                        .expect("unable to write to disc");
-                    writer
-                        .write_all(&float.to_le_bytes())
-                        .expect("unable to write to disc");
-
-                    let text_as_string: String = String::from(&text);
-                    let number_of_chars = text_as_string.chars().count() as u8;
-                    writer
-                        .write_all(&number_of_chars.to_le_bytes())
-                        .expect("unable to write to disc");
-
-                    writer
-                        .write_all((&text).as_ref())
-                        .expect("unable to write to disc");
-
-                    if boolean == true {
-                        let t: u8 = 1;
-                        writer.write_all(&t.to_le_bytes());
-                    } else {
-                        let t: u8 = 0;
-                        writer.write_all(&t.to_le_bytes());
+                        writer.flush();
+                        counter += 1;
                     }
-                    writer.write_all(b"\n");
-
-                    counter += 1;
                 }
-                writer.flush();
-            }
-            Err(error) => {
-                println!("Something went terribly wrong reading system tables: {}", error);
-            }
-        }
-        let foo = read_mtd_file("C:\\MiaSql\\system\\test_datatypes.mtd");
-        let table = load_moi_file(&foo);
-    }
 
-    #[test]
-    fn test_read_mtd_file() {
-        let foo = read_mtd_file("C:\\MiaSql\\system\\database.mtd");
-        load_moi_file(&foo);
-        println!("{:?}", foo);
-    }
-
-    #[test]
-    fn test_fill_varchar() {
-        let result = fill_varchar("test".to_string(), 5);
-        assert_eq!(result, "test ");
-
-        let result = fill_varchar("test".to_string(), 4);
-        assert_eq!(result, "test");
-
-        let result = fill_varchar("test".to_string(), 3);
-        assert_eq!(result, "tes");
-    }
-
-    fn fill_varchar(varchar: String, len: u16) -> String {
-        if len == 0 || varchar.len() == 0 {
-            return String::new();
-        }
-
-        let varchar_length: u16 = varchar.len() as u16;
-        if varchar_length < len {
-            let mut number_of_spaces = len - varchar_length;
-
-            let mut result: String = varchar.clone();
-            for i in 0..number_of_spaces {
-                result = result + " ";
-            }
-            return result;
-        } else if varchar_length > len {
-            let mut result = String::new();
-            let length_as_usize = len as usize;
-
-            for i in 0..=length_as_usize {
-                if i == 0 {
-                    result = result + &varchar[..i];
-                } else {
-                    result = result + &varchar[i - 1..i];
+                Err(error) => {
+                    println!("Something went terribly wrong reading system tables table: {}", error);
                 }
             }
-            return result;
         }
-        varchar
+
+        #[test]
+        fn create_system_database_moi() {
+            let file_result = File::create("C:\\MiaSql\\system\\database.moi");
+
+            match file_result {
+                Ok(file_item) => {
+                    let mut writer = BufWriter::new(file_item);
+                    let max: u64 = 1;
+                    writer.write(&max.to_le_bytes()).expect("unable to write to disc");
+                    writer.write(b"\n").expect("unable to write to disc");
+
+                    let lines: u64 = 1;
+                    writer.write(&lines.to_le_bytes()).expect("unable to write to disc");
+                    writer.write(b"\n").expect("unable to write to disc");
+
+                    let mut counter = 0;
+                    while counter < 1 {
+                        let id: i64 = (counter + 1) as i64;
+                        let text: String = String::from("system");
+
+                        writer
+                            .write_all(&id.to_le_bytes())
+                            .expect("unable to write to disc");
+
+                        let text_as_string: String = String::from(&text);
+                        let number_of_chars = text_as_string.chars().count() as u8;
+                        writer
+                            .write_all(&number_of_chars.to_le_bytes())
+                            .expect("unable to write to disc");
+
+                        writer
+                            .write_all((&text).as_ref())
+                            .expect("unable to write to disc");
+
+                        writer.write_all(b"\n");
+                        counter += 1;
+                    }
+                    writer.flush();
+                }
+                Err(error) => {
+                    println!("Something went terribly wrong reading system database tables: {}", error);
+                }
+            }
+        }
+
+        #[test]
+        fn test_the_one_we_want() {
+            let file_result = File::create("C:\\MiaSql\\system\\test_datatypes.moi");
+
+            match file_result {
+                Ok(file_item) => {
+                    let mut writer = BufWriter::new(file_item);
+                    let max: u64 = 3;
+
+                    writer.write(&max.to_le_bytes());
+                    writer.write(b"\n").expect("unable to write to disc");
+
+                    let lines: u64 = 3;
+
+                    writer.write(&lines.to_le_bytes());
+                    writer.write(b"\n").expect("unable to write to disc");
+
+                    let mut counter = 0;
+                    while counter < 3 {
+                        let id: i64 = (counter + 1) as i64;
+                        let big_number: i64 = 555555;
+                        let number: i32 = 512;
+                        let small: i16 = 277;
+                        let tiny: i8 = 42;
+                        let decimal: f32 = 42.42;
+                        let float: f64 = 3.14;
+                        let text: String = String::from("This is a text");
+                        let boolean: bool = true;
+
+                        writer
+                            .write_all(&id.to_le_bytes())
+                            .expect("unable to write to disc");
+                        writer
+                            .write_all(&big_number.to_le_bytes())
+                            .expect("unable to write to disc");
+                        writer
+                            .write_all(&number.to_le_bytes())
+                            .expect("unable to write to disc");
+                        writer
+                            .write_all(&small.to_le_bytes())
+                            .expect("unable to write to disc");
+                        writer
+                            .write_all(&tiny.to_le_bytes())
+                            .expect("unable to write to disc");
+                        writer
+                            .write_all(&decimal.to_le_bytes())
+                            .expect("unable to write to disc");
+                        writer
+                            .write_all(&float.to_le_bytes())
+                            .expect("unable to write to disc");
+
+                        let text_as_string: String = String::from(&text);
+                        let number_of_chars = text_as_string.chars().count() as u8;
+                        writer
+                            .write_all(&number_of_chars.to_le_bytes())
+                            .expect("unable to write to disc");
+
+                        writer
+                            .write_all((&text).as_ref())
+                            .expect("unable to write to disc");
+
+                        if boolean == true {
+                            let t: u8 = 1;
+                            writer.write_all(&t.to_le_bytes());
+                        } else {
+                            let t: u8 = 0;
+                            writer.write_all(&t.to_le_bytes());
+                        }
+                        writer.write_all(b"\n");
+
+                        counter += 1;
+                    }
+                    writer.flush();
+                }
+                Err(error) => {
+                    println!("Something went terribly wrong reading system tables: {}", error);
+                }
+            }
+            let foo = read_mtd_file("C:\\MiaSql\\system\\test_datatypes.mtd");
+            let table = load_moi_file(&foo);
+        }
+
+        #[test]
+        fn test_read_mtd_file() {
+            let foo = read_mtd_file("C:\\MiaSql\\system\\database.mtd");
+            load_moi_file(&foo);
+            println!("{:?}", foo);
+        }
+
+        #[test]
+        fn test_fill_varchar() {
+            let result = fill_varchar("test".to_string(), 5);
+            assert_eq!(result, "test ");
+
+            let result = fill_varchar("test".to_string(), 4);
+            assert_eq!(result, "test");
+
+            let result = fill_varchar("test".to_string(), 3);
+            assert_eq!(result, "tes");
+        }
+
+        fn fill_varchar(varchar: String, len: u16) -> String {
+            if len == 0 || varchar.len() == 0 {
+                return String::new();
+            }
+
+            let varchar_length: u16 = varchar.len() as u16;
+            if varchar_length < len {
+                let mut number_of_spaces = len - varchar_length;
+
+                let mut result: String = varchar.clone();
+                for i in 0..number_of_spaces {
+                    result = result + " ";
+                }
+                return result;
+            } else if varchar_length > len {
+                let mut result = String::new();
+                let length_as_usize = len as usize;
+
+                for i in 0..=length_as_usize {
+                    if i == 0 {
+                        result = result + &varchar[..i];
+                    } else {
+                        result = result + &varchar[i - 1..i];
+                    }
+                }
+                return result;
+            }
+            varchar
+        }
     }
-}
 
 

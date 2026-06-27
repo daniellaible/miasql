@@ -66,6 +66,10 @@ mod server {
     pub mod queue;
 }
 
+mod test{
+    pub mod test;
+}
+
 fn main() {
     env_logger::init();
     import_config();
@@ -74,15 +78,18 @@ fn main() {
 }
 
 fn import_system_tables() {
-    let all_dbs: MtdFile = read_mtd_file("C:\\MiaSql\\system\\database.mtd");
-    let all_tables: MtdFile = read_mtd_file("C:\\MiaSql\\system\\tables.mtd");
-    let db_table:Table = file::moireader::load_moi_file(&all_dbs).unwrap();
-    let tables_table:Table = file::moireader::load_moi_file(&all_tables).unwrap();
+    let database_mtd: MtdFile = read_mtd_file("C:\\MiaSql\\system\\database.mtd");
+    let tables_mtd: MtdFile = read_mtd_file("C:\\MiaSql\\system\\tables.mtd");
+    let user_mtd: MtdFile = read_mtd_file("C:\\MiaSql\\system\\user.mtd");
 
+    let db_table:Table = file::moireader::load_moi_file(&database_mtd).unwrap();
+    let tables_table:Table = file::moireader::load_moi_file(&tables_mtd).unwrap();
+    let user_table: Table = file::moireader::load_moi_file(&user_mtd).unwrap();
 
     DbMem::new();
     DbMem::add_table(db_table);
     DbMem::add_table(tables_table);
+    DbMem::add_table(user_table);
     DbMem::print_tables();
 }
 
@@ -106,6 +113,17 @@ async fn run_server() -> std::io::Result<()> {
                 eprintln!("client error: {e}");
             }
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn calculate_stack_overflow_time(){
+        let max_id = i64::MAX;
+        let millis_in_year = 1000 * 60 * 60 * 24 * 365;
+        println!("Wieviele Jahre braucht es für einen StackOverflow bei 1000/s : {}", max_id / millis_in_year);
     }
 }
 

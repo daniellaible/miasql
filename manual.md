@@ -56,7 +56,7 @@ These are the datatypes we are currently supporting.
 * TinyInt { 8 bit },
 * Decimal { 32 bit },
 * Float { 64 bit },
-* VarChar { String, SizeOf(Pointer) },
+* VarChar {u16, String },
 * Bool { bool },
 * Date { 64 bit } ... nope - not supported yet,
 * Time { 64 bit } ... nope - not supported yet,

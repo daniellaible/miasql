@@ -34,7 +34,7 @@ We don't have a website yet - we are working on it, but lets get the database ru
 
 ## Roadmap
 
-### Current Version is: 0.0.x
+### Current Version is: 0.1.x
 
 | Version | Goal                                                                                     |
 |---------|------------------------------------------------------------------------------------------|
