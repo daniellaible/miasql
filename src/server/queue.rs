@@ -64,7 +64,8 @@ pub fn do_all_transactions() {
     MasterQueueSingelton::instance().is_working.store(true, Ordering::SeqCst);
     let mut queue = MasterQueueSingelton::instance().queue.lock().unwrap();
     while queue.len() > 0 {
-        processor::process_transaction(&queue.pop_front().unwrap().command);
+        let command = processor::process_transaction(&queue.pop_front().unwrap().command);
+        println!("hughu")
     }
     MasterQueueSingelton::instance().is_working.store(false, Ordering::SeqCst);
 }

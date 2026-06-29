@@ -1,7 +1,7 @@
 use crate::command::sqlcommands::SqlCommand;
 use crate::server;
 use crate::server::queue::{MasterQueueSingelton, TransactionProtocol};
-use log::info;
+use log::{error, info};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
@@ -9,16 +9,16 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
     let mut buf = [0u8; 4096];
 
     let mut is_logged_in = false;
+    let mut is_use_command = false;
     let mut username = String::from("");
     let mut db_used = String::from("");
-    let mut is_use_command = false;
     loop {
         if !is_logged_in {
             let login_prompt = String::from("login:");
             stream
                 .write_all((&login_prompt).as_ref())
                 .await
-                .expect("Doof");
+                .expect("Unable to write login prompts");
 
             let n = stream.read(&mut buf).await?;
             if n == 0 {
@@ -27,8 +27,8 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
 
             username = std::str::from_utf8(&buf[..n]).unwrap().to_string();
             username = username.replace("\r\n", "");
-            println!("username: {:?}", username);
             is_logged_in = true;
+
         } else {
             let n = stream.read(&mut buf).await?;
             if n == 0 {
@@ -36,8 +36,18 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
             }
             let mut answer: String = String::new();
             server::parser::tokenizer::tokeniz(std::str::from_utf8(&buf[..n]).unwrap());
-            let mut input = str::from_utf8(&buf[..n]).unwrap();
-            input = input.trim();
+
+            let mut input = match str::from_utf8(&buf[..n]) {
+                Ok(x) => {
+                    x.to_string()
+                },
+                Err(_) => {
+                    error!("Unable to parse the buffer into a str");
+                    String::new()
+                }
+            };
+
+            input = input.trim().to_string();
 
             let sql_command: SqlCommand = parse_incomming(&input);
             let command_string = match sql_command.clone() {
@@ -95,6 +105,10 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                     MasterQueueSingelton.add(transaction);
                 }else{
                     answer = format!("I don't understand: {command_string}");
+                }
+            }else{
+                if !is_use_command {
+                    answer = format!("Please tell me which database to use!");
                 }
             }
 

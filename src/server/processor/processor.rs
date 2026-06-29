@@ -11,7 +11,6 @@ pub static COUNTER: AtomicU64 = AtomicU64::new(0);
 pub fn process_transaction(command: &SqlCommand) {
     match command {
         SqlCommand::Undefined => {
-            println!("This command was not recognized by the parser");
             return
         },
         _ => {}
