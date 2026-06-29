@@ -87,5 +87,14 @@ pub enum SqlCommand {
         table: String,
         new_name: String,
     },
-    Undefined
+    
+    Use {
+        command: String,
+        database: String,
+    },
+    
+    Quit {command: String,},
+    ShowDatabases { command: String,},
+    ShowTables { command: String, database: String},
+    Undefined ,
 } 

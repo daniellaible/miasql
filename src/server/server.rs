@@ -9,6 +9,9 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
     let mut buf = [0u8; 4096];
 
     let mut is_logged_in = false;
+    let mut username = String::from("");
+    let mut db_used = String::from("");
+    let mut is_use_command = false;
     loop {
         if !is_logged_in {
             let login_prompt = String::from("login:");
@@ -22,62 +25,113 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                 return Ok(());
             }
 
-            let mut username = std::str::from_utf8(&buf[..n]).unwrap().to_string();
+            username = std::str::from_utf8(&buf[..n]).unwrap().to_string();
             username = username.replace("\r\n", "");
             println!("username: {:?}", username);
             is_logged_in = true;
-
         } else {
             let n = stream.read(&mut buf).await?;
             if n == 0 {
                 return Ok(());
             }
-  
+            let mut answer: String = String::new();
             server::parser::tokenizer::tokeniz(std::str::from_utf8(&buf[..n]).unwrap());
             let mut input = str::from_utf8(&buf[..n]).unwrap();
             input = input.trim();
 
-            parse_incomming(&input, &stream);
-            let answer: String = String::from("This is the life");
+            let sql_command: SqlCommand = parse_incomming(&input);
+            let command_string = match sql_command.clone() {
+                SqlCommand::Select { command, .. } => command,
+                SqlCommand::CreateTable { command, .. } => command,
+                SqlCommand::CreateDatabase { command, .. } => command,
+                SqlCommand::DropTable { command, .. } => command,
+                SqlCommand::DropDatabase { command, .. } => command,
+                SqlCommand::Delete { command, .. } => command,
+                SqlCommand::Truncate { command, .. } => command,
+                SqlCommand::Update { command, .. } => command,
+                SqlCommand::Insert { command, .. } => command,
+                SqlCommand::AlterAddColumn { command, .. } => command,
+                SqlCommand::AlterDropColumn { command, .. } => command,
+                SqlCommand::AlterRenameColumn { command, .. } => command,
+                SqlCommand::AlterModifyColumn { command, .. } => command,
+                SqlCommand::AlterTableRename { command, .. } => command,
+                SqlCommand::Use { command, .. } => command,
+                SqlCommand::Quit { command, .. } => command,
+                SqlCommand::ShowDatabases { command, .. } => command,
+                SqlCommand::ShowTables { command, .. } => command,
+                SqlCommand::Undefined {} => String::new(),
+            };
+
+            is_use_command = false;
+            match sql_command.clone(){
+                SqlCommand::Use{database, ..} => {
+                    answer = format!("using:  {database} \r\n");
+                    is_use_command = true;
+                    db_used = database;
+                },
+                _ => {}
+            };
+
+            match sql_command{
+                SqlCommand::Undefined => {answer = format!("I didn't understand your last command \r\n")},
+                _ => {}
+            };
+
+            if !db_used.is_empty() && !is_use_command {
+                if sql_command != SqlCommand::Undefined {
+                    let transaction: TransactionProtocol = TransactionProtocol {
+                        is_processing: false,
+                        is_finished: false,
+                        transaction_id: 1000,
+                        command: server::parser::tokenizer::tokeniz(&command_string),
+                        is_moi_file_updated: false,
+                        is_ledger_updated: false,
+                        is_btree_updated: false,
+                        is_cluster_updated: false,
+                        is_shard_updated: false,
+                        is_error_detected: false,
+                        error_msg: None,
+                    };
+                    MasterQueueSingelton.add(transaction);
+                }else{
+                    answer = format!("I don't understand: {command_string}");
+                }
+            }
+
             stream.write_all((&answer).as_ref()).await.expect("Doof");
         }
     }
 }
 
-pub fn parse_incomming(incomming: &str, stream: &TcpStream) {
+pub fn parse_incomming(incomming: &str) -> (SqlCommand) {
     let mut management_command = String::from(incomming);
     management_command = management_command.to_uppercase();
 
     if management_command == "QUIT" || management_command == "BYE" {
-        return;
+        SqlCommand::Quit {
+            command: String::from("QUIT"),
+        }
     } else if management_command == "SHOW DATABASES" {
-        info!("SHOW DATABASES");
+        SqlCommand::ShowDatabases {
+            command: String::from("SHOW DATABASE"),
+        }
     } else if management_command.starts_with("USE ") {
         let splits = management_command.split(" ");
         let mut db_name = splits.collect::<Vec<&str>>()[1];
         db_name = db_name.trim();
-        info!("User uses db: {}", db_name);
-    } else if management_command == "SHOW TABLES " {
-        info!("Show tables");
-    } else {
-        let command = server::parser::tokenizer::tokeniz(&*management_command);
-        info!("tokenized command: {:?}", command);
-        if command != SqlCommand::Undefined {
-            let transaction: TransactionProtocol = TransactionProtocol {
-                is_processing: false,
-                is_finished: false,
-                transaction_id: 1000,
-                command: server::parser::tokenizer::tokeniz(&*management_command),
-                is_moi_file_updated: false,
-                is_ledger_updated: false,
-                is_btree_updated: false,
-                is_cluster_updated: false,
-                is_shard_updated: false,
-                is_error_detected: false,
-                error_msg: None,
-            };
-            MasterQueueSingelton.add(transaction);
+        SqlCommand::Use {
+            command: String::from("USE"),
+            database: db_name.to_string(),
         }
+    } else if management_command == "SHOW TABLES " {
+        SqlCommand::ShowTables {
+            command: String::from("SHOW TABLES"),
+            database: "".to_string(),
+        }
+    } else {
+        let command = server::parser::tokenizer::tokeniz(&management_command);
+        info!("tokenized command: {:?}", command);
+        command
     }
 }
 

@@ -9,6 +9,14 @@ use crate::ledger;
 pub static COUNTER: AtomicU64 = AtomicU64::new(0);
 
 pub fn process_transaction(command: &SqlCommand) {
+    match command {
+        SqlCommand::Undefined => {
+            println!("This command was not recognized by the parser");
+            return
+        },
+        _ => {}
+    };
+
     println!(" ----  ");
     println!("In the processor: {:?}", &command);
     println!(" ----  ");
@@ -30,45 +38,10 @@ pub fn process_transaction(command: &SqlCommand) {
     };
 
     {
-        
         let btree_join_handle = thread::spawn(move || {
             update_table(transaction_protocol.transaction_id);
         });
-        
-/*        let moi_join_handle = thread::spawn(move || {
-            update_moi_file(transaction_protocol.transaction_id);
-        });*/
-
-        // Not needed right now - however mostly implemented. But we need a way to store the ledger counter,
-        // The easiest and fastst way would probably be withing a systems table. But we don't have implemented them yet
-        // therefore we ignore the ledger file now and finish implementing it when we have system tables.
-        /*        let ledger_join_handle = thread::spawn(move || {
-            update_ledger_file(transaction_id);
-        });*/
-
-/*      
-        let cluster_join_handle = thread::spawn(move || {
-            update_cluster_file(transaction_id);
-        });
-
-        let shard_join_handle = thread::spawn(move || {
-            update_shard_file(transaction_id);
-        });
-
-        moi_join_handle.join().unwrap();*/
-
-        // Turned off . don't foregt to turn it back on when ready
-        //ledger_join_handle.join().unwrap();
-/*
-        btree_join_handle.join().unwrap();
-        cluster_join_handle.join().unwrap();
-        shard_join_handle.join().unwrap();*/
-
-
     }
-
-/*    let finished_transaction = remove_transaction(transaction_id);
-    println!("finished transaction: {:?}", finished_transaction);*/
 }
 
 fn update_shard_file(transaction_id: u64) {
