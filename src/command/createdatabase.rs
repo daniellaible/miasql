@@ -1,5 +1,6 @@
 use sqlparser::ast::Statement;
 use crate::command::sqlcommands::SqlCommand;
+use crate::server::queue::TransactionProtocol;
 
 pub fn parse(ast: Vec<Statement>) -> SqlCommand{
     let stmt = match ast.into_iter().next() {
@@ -17,6 +18,12 @@ pub fn parse(ast: Vec<Statement>) -> SqlCommand{
         }
         _ => SqlCommand::Undefined,
     }
+}
+
+pub fn execute(transaction_protocol: TransactionProtocol) -> TransactionProtocol {
+    
+
+    transaction_protocol
 }
 
 

@@ -80,6 +80,8 @@ pub fn extract_foreign_keys(create_table: CreateTable) -> Vec<ParsedForeignKey> 
     foreign_keys
 }
 
+
+
 #[cfg(test)]
 mod tests {
     use sqlparser::ast::Statement;

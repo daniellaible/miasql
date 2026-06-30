@@ -121,6 +121,8 @@ fn parse_column_constraints(options: &[sqlparser::ast::ColumnOptionDef]) -> Vec<
 
     for option in options {
         match &option.option {
+            ColumnOption::PrimaryKey(_) => constraints.push(Constraint::PrimaryKey),
+            ColumnOption::ForeignKey(_) => constraints.push(Constraint::ForeignKey),
             ColumnOption::NotNull => constraints.push(Constraint::NotNull),
             ColumnOption::Unique(_) => constraints.push(Constraint::Unique),
             _ => {}
@@ -135,6 +137,8 @@ fn parse_column_option_vec(options: &[ColumnOption]) -> Vec<Constraint> {
 
     for option in options {
         match option {
+            ColumnOption::PrimaryKey(_) => constraints.push(Constraint::PrimaryKey),
+            ColumnOption::ForeignKey(_) => constraints.push(Constraint::ForeignKey),
             ColumnOption::NotNull => constraints.push(Constraint::NotNull),
             ColumnOption::Unique(_) => constraints.push(Constraint::Unique),
             _ => {}
