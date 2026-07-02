@@ -94,7 +94,7 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                         is_processing: false,
                         is_finished: false,
                         transaction_id: 1000,
-                        command: server::parser::tokenizer::tokeniz(&command_string),
+                        command: sql_command.clone(),
                         is_moi_file_updated: false,
                         is_ledger_updated: false,
                         is_btree_updated: false,
@@ -105,20 +105,24 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                         error: false,
                     };
                     transaction_result = MasterQueueSingelton.add(transaction);
+                    match transaction_result{
+                        None => error!("something went clearly wrong with your transaction"),
+                        Some(tp) => info!("{}", tp)
+                    }
+
                 }else{
                     answer = format!("I don't understand: {command_string}");
                 }
             }else{
+
+
                 if !is_use_command {
                     answer = format!("Please tell me which database to use!");
                 }
             }
-            
-            match transaction_result{
-                None => error!("something went clearly wrong with your transaction"),
-                Some(tp) => info!("{}", tp)  
-            }
-           
+
+
+
             //write transaction_result to user
             stream.write_all((&answer).as_ref()).await.expect("Something wrong with the in-/output stream");
         }

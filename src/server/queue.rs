@@ -54,19 +54,19 @@ impl MasterQueueSingelton {
     // and do_all_transactions is not public
     // High frequency parallel testing
     pub fn add(&self, transaction: TransactionProtocol) -> Option<TransactionProtocol> {
-        MasterQueueSingelton::instance()
+/*        MasterQueueSingelton::instance()
             .queue
             .lock()
             .unwrap()
-            .push_back(transaction);
+            .push_back(transaction);*/
 
         let mut wait_duration = time::Duration::from_millis(1);
 
         let mut is_transaction_completed = false;
         let mut transaction_result   = None;
-        while is_transaction_completed {
+        while !is_transaction_completed {
             if !MasterQueueSingelton::instance().is_working.load(Ordering::SeqCst) {
-                transaction_result = do_transactions();
+                transaction_result = do_transactions(transaction.clone());
                 is_transaction_completed = true;
             } else {
                 thread::sleep(wait_duration);
@@ -79,11 +79,10 @@ impl MasterQueueSingelton {
 
     }
 }
-pub fn do_transactions() -> Option<TransactionProtocol> {
+pub fn do_transactions(tp: TransactionProtocol) -> Option<TransactionProtocol> {
     MasterQueueSingelton::instance().is_working.store(true, Ordering::SeqCst);
-    let mut queue = MasterQueueSingelton::instance().queue.lock().unwrap();
-    let transaction_prot = queue.pop_front().unwrap();
-    let transaction_result = processor::process_transaction(transaction_prot);
+    //let mut queue = MasterQueueSingelton::instance().queue.lock().unwrap();
+    let transaction_result = processor::process_transaction(tp);
     MasterQueueSingelton::instance().is_working.store(false, Ordering::SeqCst);
     transaction_result
 }

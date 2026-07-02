@@ -28,6 +28,7 @@ pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<Trans
     let table_in_ram = load_table_to_ram(transaction.clone());
 
     if table_in_ram == false {
+        info!("Table loaded into RAM");
         return None
     }
 
@@ -39,9 +40,11 @@ pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<Trans
             match table_update_result {
                 Some(_) => {
                     transaction.is_btree_updated = true;
+                    info!("Btrees updated");
                 },
                 None => {
                     transaction.error = true;
+                    info!("Btrees NOT updated");
                 }
             }
         });
@@ -53,9 +56,11 @@ pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<Trans
             match system_table_update_result {
                 Some(_) => {
                     transaction.is_system_table_updated = true;
+                    info!("System Table updated");
                 },
                 None => {
                     transaction.error = true;
+                    info!("System Table NOT updated");
                 }
             }
         });
@@ -67,9 +72,11 @@ pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<Trans
             match moi_file_result {
                 Some(_) => {
                     transaction.is_moi_file_updated = true;
+                    info!("Moi file  updated");
                 },
                 None => {
                     transaction.error = true;
+                    info!("Moi file NOT updated");
                 }
             }
         });
