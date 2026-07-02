@@ -63,7 +63,7 @@ impl MasterQueueSingelton {
         let mut wait_duration = time::Duration::from_millis(1);
 
         let mut is_transaction_completed = false;
-        let mut transaction_result   = None;
+        let mut transaction_result  = None;
         while !is_transaction_completed {
             if !MasterQueueSingelton::instance().is_working.load(Ordering::SeqCst) {
                 transaction_result = do_transactions(transaction.clone());

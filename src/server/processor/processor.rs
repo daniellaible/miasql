@@ -8,17 +8,9 @@ use crate::ledger;
 pub static COUNTER: AtomicU64 = AtomicU64::new(0);
 
 pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<TransactionProtocol>{
-
-
-    println!("  ");
-    println!(" ----  ");
-    println!("In the processor: {:?}", transaction.command);
-    println!(" ----  ");
-    println!("  ");
+    info!("In the processor: {:?}", transaction.command);
 
     let transaction_id = get_transaction_counter();
-    info!("transaction_id: {}", transaction_id);
-
     transaction.is_processing = true;
     transaction.transaction_id = transaction_id;
 
@@ -114,7 +106,8 @@ pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<Trans
 }
 
 fn load_table_to_ram(tp: TransactionProtocol) -> bool {
-   true
+   
+    true
 }
 
 fn update_system_table(tp: TransactionProtocol) -> Option<TransactionProtocol> {

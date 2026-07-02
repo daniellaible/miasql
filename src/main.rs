@@ -80,7 +80,7 @@ fn import_system_tables() {
     let tables_table:Table = file::moireader::load_moi_file(&tables_mtd).unwrap();
     let user_table: Table = file::moireader::load_moi_file(&user_mtd).unwrap();
 
-    DbMem::new();
+    DbMem::init();
     DbMem::add_table(db_table);
     DbMem::add_table(tables_table);
     DbMem::add_table(user_table);
