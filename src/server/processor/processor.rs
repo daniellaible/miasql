@@ -3,7 +3,7 @@ use crate::server::queue::{TransactionProtocol};
 use std::thread;
 use log::{error, info};
 use crate::ledger;
-
+use crate::server::dbmem::DbMem;
 
 pub static COUNTER: AtomicU64 = AtomicU64::new(0);
 
@@ -14,12 +14,7 @@ pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<Trans
     transaction.is_processing = true;
     transaction.transaction_id = transaction_id;
 
-    let table_in_ram = load_table_to_ram(transaction.clone());
-
-    if table_in_ram == false {
-        info!("Table loaded into RAM");
-        return None
-    }
+    load_table_to_ram(transaction.clone());
 
     {
         //update the b-tree
@@ -105,9 +100,15 @@ pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<Trans
     Some(transaction)
 }
 
-fn load_table_to_ram(tp: TransactionProtocol) -> bool {
-   
-    true
+fn load_table_to_ram(tp: TransactionProtocol) {
+    for i in 0 .. tp.table_names.len() {
+        let is_table_loaded = DbMem::is_table_loaded(tp.db_name.clone(), tp.table_names[i].clone());
+
+        if is_table_loaded == false {
+            println!("You need to load the table that isn't loaded");
+            //todo: DbMem::load_table()
+        }
+    }
 }
 
 fn update_system_table(tp: TransactionProtocol) -> Option<TransactionProtocol> {

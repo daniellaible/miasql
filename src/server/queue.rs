@@ -9,6 +9,8 @@ use std::{thread, time};
 
 #[derive(Debug, Clone)]
 pub struct TransactionProtocol {
+    pub db_name: String,
+    pub table_names: Vec<String>,
     pub is_processing: bool,
     pub is_finished: bool,
     pub transaction_id: u64,

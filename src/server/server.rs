@@ -48,8 +48,9 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
             };
 
             input = input.trim().to_string();
-
+            input = input.replace(";", "");
             let sql_command: SqlCommand = parse_incomming(&input);
+
             let command_string = match sql_command.clone() {
                 SqlCommand::Select { command, .. } => command,
                 SqlCommand::CreateTable { command, .. } => command,
@@ -72,6 +73,65 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                 SqlCommand::Undefined {} => String::new(),
             };
 
+            let table_names:Vec<String> = match sql_command.clone(){
+                SqlCommand::Select {table, .. } => {
+                    let mut tv = Vec::new();
+                    tv.push(table);
+                    tv
+                }
+                SqlCommand::DropTable {table, .. } => {
+                    let mut tv = Vec::new();
+                    tv.push(table);
+                    tv
+                }
+                SqlCommand::Delete {table, .. } => {
+                    let mut tv = Vec::new();
+                    tv.push(table);
+                    tv
+                }
+                SqlCommand::Truncate {tables, .. } => {
+                    tables
+                }
+                SqlCommand::Update {table, .. } => {
+                    let mut tv = Vec::new();
+                    tv.push(table);
+                    tv
+                }
+                SqlCommand::Insert {table, .. } => {
+                    let mut tv = Vec::new();
+                    tv.push(table);
+                    tv
+                }
+                SqlCommand::AlterAddColumn {table, .. } => {
+                    let mut tv = Vec::new();
+                    tv.push(table);
+                    tv
+                }
+                SqlCommand::AlterDropColumn {table, .. } => {
+                    let mut tv = Vec::new();
+                    tv.push(table);
+                    tv
+                }
+                SqlCommand::AlterRenameColumn {table, .. } => {
+                    let mut tv = Vec::new();
+                    tv.push(table);
+                    tv
+                }
+                SqlCommand::AlterModifyColumn {table, .. } => {
+                    let mut tv = Vec::new();
+                    tv.push(table);
+                    tv
+                }
+                SqlCommand::AlterTableRename {table, .. } => {
+                    let mut tv = Vec::new();
+                    tv.push(table);
+                    tv
+                }
+                _ => {Vec::new()}
+            };
+
+
+
             is_use_command = false;
             match sql_command.clone(){
                 SqlCommand::Use{database, ..} => {
@@ -91,6 +151,8 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
             if !db_used.is_empty() && !is_use_command {
                 if sql_command != SqlCommand::Undefined {
                     let transaction: TransactionProtocol = TransactionProtocol {
+                        db_name: db_used.clone(),
+                        table_names: table_names,
                         is_processing: false,
                         is_finished: false,
                         transaction_id: 1000,
