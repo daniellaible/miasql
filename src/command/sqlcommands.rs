@@ -66,7 +66,7 @@ pub enum SqlCommand {
     AlterDropColumn {
         command: String,
         table: String,
-        columns: Vec<(String)>,
+        columns: Vec<String>,
     },
     AlterRenameColumn {
         command: String,

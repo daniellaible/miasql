@@ -3,7 +3,8 @@ use crate::database::datatype::DataType;
 use crate::database::table::Table;
 use crate::file::mtdreader::MtdFile;
 use std::fs::File;
-use std::io::{BufRead, BufReader, Error, ErrorKind, Read};
+use std::io::{
+    BufReader, Error, ErrorKind, Read};
 
 pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
     let mut table = Table::default();
@@ -24,7 +25,6 @@ pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
     let mut i32_buffer = [0u8; std::mem::size_of::<i32>()];
     let mut f32_buffer = [0u8; std::mem::size_of::<f32>()];
     let mut i16_buffer = [0u8; std::mem::size_of::<i16>()];
-    let mut u16_buffer = [0u8; std::mem::size_of::<u16>()];
     let mut i8_buffer = [0u8; std::mem::size_of::<i8>()];
     let mut u8_buffer = [0u8; std::mem::size_of::<u8>()];
 
@@ -42,7 +42,7 @@ pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
     input.read_exact(&mut u8_buffer);
     u8::from_le_bytes(u8_buffer);
 
-    for row_counter in 0..number_of_lines {
+    for _ in 0..number_of_lines {
         let mut row: Vec<DataType> = Vec::new();
         for column_counter in 0..column_defs.len() {
             let column_datatype = &column_defs[column_counter];
@@ -125,7 +125,7 @@ pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
                     let length = u8::from_le_bytes(u8_buffer);
 
                     let mut varchar = String::new();
-                    for j in 0..length {
+                    for _ in 0..length {
                         let res = input.read_exact(&mut u8_buffer);
                         match res {
                             Err(error) if error.kind() == ErrorKind::UnexpectedEof => {
@@ -212,6 +212,7 @@ mod tests {
     use crate::file::mtdreader::read_mtd_file;
     use std::fs::File;
     use std::io::{BufWriter, Write};
+    use log::error;
 
     #[test]
     fn create_user_table_moi() {
@@ -486,20 +487,32 @@ mod tests {
 
                         counter += 1;
                     }
-                    writer.flush();
+                    let flush = writer.flush();
+                    match flush {
+                        Ok(_) => {},
+                        Err(err) => println!("Something went wrong {:?}", err)
+                    }
                 }
                 Err(error) => {
                     println!("Something went terribly wrong reading system tables: {}", error);
                 }
             }
-            let foo = read_mtd_file("C:\\MiaSql\\system\\test_datatypes.mtd");
-            let table = load_moi_file(&foo);
+            let read_file = read_mtd_file("C:\\MiaSql\\system\\test_datatypes.mtd");
+            let loaded_file = load_moi_file(&read_file);
+            match loaded_file{
+                Ok(_) => {}
+                Err(err) => panic!("Test failed {:?}", err)
+            }
         }
 
         #[test]
         fn test_read_mtd_file() {
             let foo = read_mtd_file("C:\\MiaSql\\system\\database.mtd");
-            load_moi_file(&foo);
+            let bar = load_moi_file(&foo);
+            match bar {
+                Ok(_) => {},
+                Err(e) => println!("test failed: {:?}", e)
+            }
             println!("{:?}", foo);
         }
 
@@ -522,10 +535,10 @@ mod tests {
 
             let varchar_length: u16 = varchar.len() as u16;
             if varchar_length < len {
-                let mut number_of_spaces = len - varchar_length;
+                let number_of_spaces = len - varchar_length;
 
                 let mut result: String = varchar.clone();
-                for i in 0..number_of_spaces {
+                for _ in 0..number_of_spaces {
                     result = result + " ";
                 }
                 return result;

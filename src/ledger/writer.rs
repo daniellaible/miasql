@@ -35,7 +35,7 @@ fn append_to_file(line: &String){
 
 fn to_printable_line(command: &SqlCommand) -> String {
     let line: String;
-    let mut counter: u64 = 123456;
+    let counter: u64 = 123456;
     match command {
 
         SqlCommand::CreateTable {table, columns, foreign_keys,  .. } => {

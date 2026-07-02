@@ -10,12 +10,12 @@ pub fn tokeniz(input: &str) -> SqlCommand {
     let parse_result = Parser::parse_sql(&dialect, input);
 
     let ast = match &parse_result {
-        Ok(ast) => parse_result.unwrap(),
-        Err(e) => return SqlCommand::Undefined,
+        Ok(_) => parse_result.unwrap(),
+        Err(_) => return SqlCommand::Undefined,
     };
 
     if ast.is_empty() { return SqlCommand::Undefined }
-    let mut command: SqlCommand = SqlCommand::Undefined;
+    let command: SqlCommand;
 
 
     match ast[0].clone() {

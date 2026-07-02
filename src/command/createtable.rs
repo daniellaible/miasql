@@ -1,4 +1,4 @@
-use sqlparser::ast::{ColumnOption, CreateTable, Ident, ObjectNamePart, Statement, TableConstraint};
+use sqlparser::ast::{ColumnOption, CreateTable, Ident, ObjectNamePart, TableConstraint};
 use crate::command::constraint::Constraint;
 use crate::command::sqlcommands::SqlCommand;
 
@@ -96,7 +96,7 @@ mod tests {
         let command: &str = "CREATE TABLE Persons ( PersonID BigInt PRIMARY KEY, LastName VarChar(255) NOT NULL UNIQUE, FirstName VarChar(255), Address VarChar(255), City VarChar(255));";
         let ast = Parser::parse_sql(&dialect, command).unwrap();
 
-        let result = match ast.into_iter().next().unwrap() {
+         match ast.into_iter().next().unwrap() {
             Statement::CreateTable(create) => parse(create),
             _ => panic!("expected query"),
         };
@@ -109,7 +109,7 @@ mod tests {
         let command: &str = "CREATE TABLE Orders (  OrderID int PRIMARY KEY,  OrderNumber int NOT NULL, PersonID int, CONSTRAINT fk_Person FOREIGN KEY (PersonID) REFERENCES Persons(PersonID));";
         let ast = Parser::parse_sql(&dialect, command).unwrap();
         println!("{:?}", ast[0]);
-        let result = match ast.into_iter().next().unwrap() {
+        match ast.into_iter().next().unwrap() {
             Statement::CreateTable(create) => parse(create),
             _ => panic!("expected query"),
         };

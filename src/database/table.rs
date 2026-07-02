@@ -1,7 +1,6 @@
 use crate::command::constraint::Constraint;
 use crate::database::bptree::BPlusTree;
 use crate::database::datatype::DataType;
-use std::convert::Into;
 use std::error::Error;
 use std::fmt;
 use std::io::{self, Read, Write};

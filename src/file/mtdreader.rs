@@ -71,7 +71,7 @@ pub fn read_mtd_file(path: &str) -> MtdFile {
                 let mut names = splits.next().unwrap().to_string();
                 names = names.replace("[", "");
                 names = names.replace("]", "");
-                let mut names_split = names.split(";");
+                let names_split = names.split(";");
                 let mut columns: Vec<String> = Vec::new();
 
                 for name in names_split {
@@ -88,7 +88,7 @@ pub fn read_mtd_file(path: &str) -> MtdFile {
                 type_defs = type_defs.replace("]", "");
                 type_defs = type_defs.replace("(", "");
                 type_defs = type_defs.replace(")", "");
-                let mut types_defs__split = type_defs.split(";");
+                let types_defs__split = type_defs.split(";");
 
                 let mut columns: Vec<DataType> = Vec::new();
                 for defs in types_defs__split {
@@ -113,7 +113,6 @@ pub fn read_mtd_file(path: &str) -> MtdFile {
                         "Date" => columns.push(DataType::Date(0)),
                         "Time" => columns.push(DataType::Time(0)),
                         "DateTime" => columns.push(DataType::DateTime(0)),
-                        "Bool" => columns.push(DataType::Bool(false)),
                         "Null" => columns.push(DataType::Null),
                         _ => {
                             if !defs.starts_with("VarChar") {
@@ -207,6 +206,5 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::import_system_tables;
 }
 

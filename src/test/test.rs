@@ -13,13 +13,26 @@ mod tests {
         let mut writer = stream.try_clone()?;
         let mut reader = BufReader::new(stream);
 
+        let mut response = String::new();
+        reader.read_line(&mut response)?;
+        println!("{}", response);
+
         // Send a message
-        writer.write_all(b"SELECT id, dbname, table FROM tables;")?;
+        writer.write_all(b"testuser")?;
         writer.flush()?;
 
         // Read the response
         let mut response = String::new();
         reader.read_line(&mut response)?;
+        println!("{}", response);
+
+        writer.write_all(b"use systems;")?;
+        writer.flush()?;
+
+        let mut response = String::new();
+        reader.read_line(&mut response)?;
+        println!("{}", response);
+
         println!("Server response: {}", response.trim());
 
         Ok(())

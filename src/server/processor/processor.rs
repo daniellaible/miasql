@@ -1,10 +1,7 @@
-use std::fmt::Error;
 use std::sync::atomic::AtomicU64;
-use crate::command::sqlcommands::SqlCommand;
 use crate::server::queue::{TransactionProtocol};
 use std::thread;
 use log::{error, info};
-use crate::database::table::Table;
 use crate::ledger;
 
 
@@ -153,7 +150,7 @@ fn update_cluster_file(transaction_id: u64) {
 fn update_table(tp: TransactionProtocol) -> Option<TransactionProtocol>{
     println!("update b-tree");
     let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
-    let mut queue = masterqueue.queue.lock().unwrap();
+    let queue = masterqueue.queue.lock().unwrap();
 
 /*    if let Some(transaction_protocol) = queue
         .iter_mut()

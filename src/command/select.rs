@@ -95,7 +95,7 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
 
     let ident = retrieve_identifier(&select_stmt);
 
-    let tablename_opt: Option<&str> = match select_stmt.from.as_slice() {
+    match select_stmt.from.as_slice() {
         [TableWithJoins { relation, joins }] if joins.is_empty() => match relation {
             TableFactor::Table {
                 name: ObjectName(parts),
