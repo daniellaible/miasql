@@ -87,6 +87,7 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                 _ => {}
             };
 
+            let mut transaction_result: Option<TransactionProtocol> = None;
             if !db_used.is_empty() && !is_use_command {
                 if sql_command != SqlCommand::Undefined {
                     let transaction: TransactionProtocol = TransactionProtocol {
@@ -100,9 +101,10 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                         is_cluster_updated: false,
                         is_shard_updated: false,
                         is_error_detected: false,
+                        is_system_table_updated: false,
                         error_msg: None,
                     };
-                    MasterQueueSingelton.add(transaction);
+                    transaction_result = MasterQueueSingelton.add(transaction);
                 }else{
                     answer = format!("I don't understand: {command_string}");
                 }
@@ -111,7 +113,8 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                     answer = format!("Please tell me which database to use!");
                 }
             }
-
+            info!("{}", transaction_result);
+            //write transaction_result to user
             stream.write_all((&answer).as_ref()).await.expect("Doof");
         }
     }

@@ -20,7 +20,7 @@ pub fn parse(ast: Vec<Statement>) -> SqlCommand{
     }
 }
 
-pub fn execute(transaction_protocol: TransactionProtocol) -> TransactionProtocol {
+pub fn execute(mut transaction_protocol: TransactionProtocol) -> TransactionProtocol {
     
 
     transaction_protocol

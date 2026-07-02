@@ -8,19 +8,19 @@ use crate::ledger;
 
 pub static COUNTER: AtomicU64 = AtomicU64::new(0);
 
-pub fn process_transaction(command: &SqlCommand) {
-    match command {
-        SqlCommand::Undefined => {
-            return
-        },
-        _ => {}
-    };
+pub fn process_transaction(transaction: TransactionProtocol) -> Option<TransactionProtocol>{
+    
 
+    println!("  ");
     println!(" ----  ");
-    println!("In the processor: {:?}", &command);
+    println!("In the processor: {:?}", transaction.command);
     println!(" ----  ");
+    println!("  ");
 
     let transaction_id = get_transaction_counter();
+    info!("transaction_id: {}", transaction_id);
+    
+/*    let transaction_id = get_transaction_counter();
     info!("transaction_id: {}", transaction_id);
     let mut transaction_protocol: TransactionProtocol = TransactionProtocol {
         is_processing: true,
@@ -33,14 +33,19 @@ pub fn process_transaction(command: &SqlCommand) {
         is_cluster_updated: false,
         is_shard_updated: false,
         is_error_detected: false,
+        is_system_table_updated: false,
         error_msg: None,
-    };
+    };*/
 
-    {
+/*    {
         let btree_join_handle = thread::spawn(move || {
             update_table(transaction_protocol.transaction_id);
         });
-    }
+        
+        match command {
+            
+        }
+    }*/
 }
 
 fn update_shard_file(transaction_id: u64) {

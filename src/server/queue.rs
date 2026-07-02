@@ -2,10 +2,10 @@ use crate::command::sqlcommands::SqlCommand;
 use crate::server::config::config::ConfigSingelton;
 use crate::server::processor::processor;
 use std::collections::VecDeque;
-use std::string::ToString;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::{Arc, LazyLock, Mutex, OnceLock};
-use crate::database::database::Database;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Mutex, OnceLock};
+use std::{thread, time};
+
 
 #[derive(Debug, Clone)]
 pub struct TransactionProtocol {
@@ -19,9 +19,9 @@ pub struct TransactionProtocol {
     pub is_cluster_updated: bool,
     pub is_shard_updated: bool,
     pub is_error_detected: bool,
+    pub is_system_table_updated: bool,
     pub error_msg: Option<String>,
 }
-
 
 #[derive(Debug)]
 pub struct MasterQueue {
@@ -31,11 +31,9 @@ pub struct MasterQueue {
 
 pub struct MasterQueueSingelton;
 
-
 static INSTANCE: OnceLock<MasterQueue> = OnceLock::new();
 
- impl MasterQueueSingelton {
-
+impl MasterQueueSingelton {
     pub fn instance() -> &'static MasterQueue {
         let config = ConfigSingelton::instance().lock().unwrap();
         let ringbuffer: VecDeque<TransactionProtocol> =
@@ -49,25 +47,37 @@ static INSTANCE: OnceLock<MasterQueue> = OnceLock::new();
     // TODO: here we could end up in a race condition or is it actually impossible since there is just one queue
     // and do_all_transactions is not public
     // High frequency parallel testing
-    pub fn add(&self, transaction: TransactionProtocol) {
+    pub fn add(&self, transaction: TransactionProtocol) -> Option<TransactionProtocol> {
         MasterQueueSingelton::instance()
             .queue
             .lock()
             .unwrap()
             .push_back(transaction);
-       if !MasterQueueSingelton::instance().is_working.load(Ordering::SeqCst) {
-           do_all_transactions();
-       }
+
+        let mut wait_duration = time::Duration::from_millis(1);
+
+        let mut is_transaction_completed = false;
+        let mut transaction_result   = None;
+        while is_transaction_completed {
+            if !MasterQueueSingelton::instance().is_working.load(Ordering::SeqCst) {
+                transaction_result = do_transactions();
+                is_transaction_completed = true;
+            } else {
+                thread::sleep(wait_duration);
+                if wait_duration.as_millis() < 125 {
+                    wait_duration = wait_duration * 2;
+                }
+            }
+        }
+        transaction_result
+
     }
 }
-pub fn do_all_transactions() {
+pub fn do_transactions() -> Option<TransactionProtocol> {
     MasterQueueSingelton::instance().is_working.store(true, Ordering::SeqCst);
     let mut queue = MasterQueueSingelton::instance().queue.lock().unwrap();
-    while queue.len() > 0 {
-        let command = processor::process_transaction(&queue.pop_front().unwrap().command);
-        println!("hughu")
-    }
+    let transaction_prot = queue.pop_front().unwrap();
+    let transaction_result = processor::process_transaction(transaction_prot);
     MasterQueueSingelton::instance().is_working.store(false, Ordering::SeqCst);
+    transaction_result
 }
-
-
