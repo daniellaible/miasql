@@ -107,7 +107,7 @@ mod tests {
         let command: &str = "CREATE TABLE Persons ( PersonID BigInt PRIMARY KEY, LastName VarChar(255) NOT NULL, FirstName VarChar(255), Address VarChar(255), City VarChar(255));";
         let sqlcommand = server::parser::tokenizer::tokeniz(command);
         let line = to_printable_line(&sqlcommand);
-        assert_eq!(line, "123456; CREATE_TABLE; TABLE=Persons; COLUMNS=[(PersonID, BIGINT, [PRIMARY_KEY]), (LastName, VARCHAR(255), [NOT_NULL]), (FirstName, VARCHAR(255), []), (Address, VARCHAR(255), []), (City, VARCHAR(255), [])]; FOREIGN_KEYS=[]");
+        assert_eq!(line, "123456; CREATE_TABLE; TABLE=Persons; COLUMNS=[(PersonID, BIGINT, [PrimaryKey]), (LastName, VARCHAR(255), [NotNull]), (FirstName, VARCHAR(255), []), (Address, VARCHAR(255), []), (City, VARCHAR(255), [])]; FOREIGN_KEYS=[]");
     }
 
     #[test]
@@ -131,7 +131,7 @@ mod tests {
         let command: &str = "DELETE FROM employee WHERE id=1";
         let sqlcommand = server::parser::tokenizer::tokeniz(command);
         let line = to_printable_line(&sqlcommand);
-        assert_eq!(line, "123456; DELETE; TABLE=employee; WHERE=WhereClause { column: id, operator: EQUAL, value: BigInt { x: 1 } }");
+        assert_eq!(line, "123456; DELETE; TABLE=employee; WHERE=WhereClause { column: id, operator: EQUAL, value: BigInt(1) }");
     }
 
     #[test]
@@ -147,7 +147,7 @@ mod tests {
         let command: &str = "UPDATE Customers SET ContactName = 'Alfred Schmidt', City= 'Frankfurt'WHERE CustomerID = 1;";
         let result = server::parser::tokenizer::tokeniz(command);
         let line = to_printable_line(&result);
-        assert_eq!(line, "123456; UPDATE; TABLE=Customers; SETS=[UpdateSet { column: ContactName, value: Alfred Schmidt }, UpdateSet { column: City, value: Frankfurt }]; WHERE=WhereClause { column: CustomerID, operator: EQUAL, value: BigInt { x: 1 } }");
+        assert_eq!(line, "123456; UPDATE; TABLE=Customers; SETS=[UpdateSet { column: ContactName, value: Alfred Schmidt }, UpdateSet { column: City, value: Frankfurt }]; WHERE=WhereClause { column: CustomerID, operator: EQUAL, value: BigInt(1) }");
     }
 
     #[test]
@@ -163,7 +163,7 @@ mod tests {
         let command: &str = "ALTER TABLE Customers ADD Email varchar(255) NOT NULL;";
         let result = server::parser::tokenizer::tokeniz(command);
         let line = to_printable_line(&result);
-        assert_eq!(line, "123456; ALTER_ADD_COLUMN; TABLE=Customers; COLUMNS=[(Email, VarChar { x: , y: 255 }, [NOT_NULL])]");
+        assert_eq!(line, "123456; ALTER_ADD_COLUMN; TABLE=Customers; COLUMNS=[(Email, VarChar(255, ), [NotNull])]");
     }
 
     #[test]
@@ -187,7 +187,7 @@ mod tests {
         let command: &str = "ALTER TABLE Customers MODIFY Email varchar(100) NOT NULL;";
         let result = server::parser::tokenizer::tokeniz(command);
         let line = to_printable_line(&result);
-        assert_eq!(line, "123456; ALTER_RENAME_COLUMN; TABLE=Customers; COLUMN=Email; DATATYPE=VarChar { x: , y: 100 }; CONSTRAINTS=[NOT_NULL]");
+        assert_eq!(line, "123456; ALTER_RENAME_COLUMN; TABLE=Customers; COLUMN=Email; DATATYPE=VarChar(100, ); CONSTRAINTS=[NotNull]");
     }
 
     #[test]
