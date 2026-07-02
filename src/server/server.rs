@@ -102,7 +102,7 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                         is_shard_updated: false,
                         is_error_detected: false,
                         is_system_table_updated: false,
-                        error_msg: None,
+                        error: false,
                     };
                     transaction_result = MasterQueueSingelton.add(transaction);
                 }else{
@@ -113,9 +113,14 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                     answer = format!("Please tell me which database to use!");
                 }
             }
-            info!("{}", transaction_result);
+            
+            match transaction_result{
+                None => error!("something went clearly wrong with your transaction"),
+                Some(tp) => info!("{}", tp)  
+            }
+           
             //write transaction_result to user
-            stream.write_all((&answer).as_ref()).await.expect("Doof");
+            stream.write_all((&answer).as_ref()).await.expect("Something wrong with the in-/output stream");
         }
     }
 }

@@ -20,7 +20,13 @@ pub struct TransactionProtocol {
     pub is_shard_updated: bool,
     pub is_error_detected: bool,
     pub is_system_table_updated: bool,
-    pub error_msg: Option<String>,
+    pub error: bool,
+}
+
+impl std::fmt::Display for TransactionProtocol<> {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(fmt, "id: {} command:{:?}  error:{:?}", self.transaction_id, self.command, self.error)
+    }
 }
 
 #[derive(Debug)]

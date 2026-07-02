@@ -1,15 +1,17 @@
+use std::fmt::Error;
 use std::sync::atomic::AtomicU64;
 use crate::command::sqlcommands::SqlCommand;
 use crate::server::queue::{TransactionProtocol};
 use std::thread;
-use log::info;
+use log::{error, info};
+use crate::database::table::Table;
 use crate::ledger;
 
 
 pub static COUNTER: AtomicU64 = AtomicU64::new(0);
 
-pub fn process_transaction(transaction: TransactionProtocol) -> Option<TransactionProtocol>{
-    
+pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<TransactionProtocol>{
+
 
     println!("  ");
     println!(" ----  ");
@@ -19,7 +21,64 @@ pub fn process_transaction(transaction: TransactionProtocol) -> Option<Transacti
 
     let transaction_id = get_transaction_counter();
     info!("transaction_id: {}", transaction_id);
-    
+
+    transaction.is_processing = true;
+    transaction.transaction_id = transaction_id;
+
+    let table_in_ram = load_table_to_ram(transaction.clone());
+
+    if table_in_ram == false {
+        return None
+    }
+
+    {
+        //update the b-tree
+        let trans_clone_btree = transaction.clone();
+        let btree_thread_handle = thread::spawn(move || {
+            let table_update_result = update_table(trans_clone_btree);
+            match table_update_result {
+                Some(_) => {
+                    transaction.is_btree_updated = true;
+                },
+                None => {
+                    transaction.error = true;
+                }
+            }
+        });
+
+        //update system table if necessary
+        let trans_clone_sys_tab = transaction.clone();
+        let system_table_thread_handle = thread::spawn(move || {
+            let system_table_update_result = update_system_table(trans_clone_sys_tab);
+            match system_table_update_result {
+                Some(_) => {
+                    transaction.is_system_table_updated = true;
+                },
+                None => {
+                    transaction.error = true;
+                }
+            }
+        });
+
+        //update moi file
+        let trans_clone_moi_file = transaction.clone();
+        let moi_file_thread_handle = thread:: spawn( move || {
+            let moi_file_result = update_moi_file(trans_clone_moi_file);
+            match moi_file_result {
+                Some(_) => {
+                    transaction.is_moi_file_updated = true;
+                },
+                None => {
+                    transaction.error = true;
+                }
+            }
+        });
+
+        btree_thread_handle.join().unwrap();
+        system_table_thread_handle.join().unwrap();
+        moi_file_thread_handle.join().unwrap();
+    }
+
 /*    let transaction_id = get_transaction_counter();
     info!("transaction_id: {}", transaction_id);
     let mut transaction_protocol: TransactionProtocol = TransactionProtocol {
@@ -41,11 +100,21 @@ pub fn process_transaction(transaction: TransactionProtocol) -> Option<Transacti
         let btree_join_handle = thread::spawn(move || {
             update_table(transaction_protocol.transaction_id);
         });
-        
+
         match command {
-            
+
         }
     }*/
+
+    Some(transaction)
+}
+
+fn load_table_to_ram(tp: TransactionProtocol) -> bool {
+   true
+}
+
+fn update_system_table(tp: TransactionProtocol) -> Option<TransactionProtocol> {
+    Some(tp)
 }
 
 fn update_shard_file(transaction_id: u64) {
@@ -74,17 +143,18 @@ fn update_cluster_file(transaction_id: u64) {
     }
 }
 
-fn update_table(transaction_id: u64) {
+fn update_table(tp: TransactionProtocol) -> Option<TransactionProtocol>{
     println!("update b-tree");
     let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
     let mut queue = masterqueue.queue.lock().unwrap();
 
-    if let Some(transaction_protocol) = queue
+/*    if let Some(transaction_protocol) = queue
         .iter_mut()
         .find(|tp| tp.transaction_id == transaction_id)
     {
         transaction_protocol.is_btree_updated = false;
-    }
+    }*/
+    Some(tp)
 }
 
 fn update_ledger_file(transaction_id: u64) {
@@ -101,8 +171,8 @@ fn update_ledger_file(transaction_id: u64) {
     }
 }
 
-fn update_moi_file(transaction_id: u64) {
-    println!("update file file");
+fn update_moi_file(tp: TransactionProtocol) -> Option<TransactionProtocol> {
+/*    println!("update file file");
     let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
     let mut queue = masterqueue.queue.lock().unwrap();
 
@@ -111,7 +181,8 @@ fn update_moi_file(transaction_id: u64) {
         .find(|tp| tp.transaction_id == transaction_id)
     {
         transaction_protocol.is_moi_file_updated = false;
-    }
+    }*/
+    Some(tp)
 }
 
 fn get_transaction_counter() -> u64 {
