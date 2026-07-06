@@ -18,6 +18,13 @@ pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<Trans
     transaction.is_processing = true;
     transaction.transaction_id = transaction_id;
 
+    match &transaction.command {
+        SqlCommand::CreateDatabase { database, .. } => {
+            let last_id = moihandler::get_max_id("C:\\MiaSql\\system\\database.moi");
+            transaction.row_id = last_id +1;
+        }
+        _ => {}
+    }
     load_table_to_ram(transaction.clone());
 
     {
@@ -137,7 +144,7 @@ fn update_moi_file(tp: TransactionProtocol) -> Option<TransactionProtocol> {
             let mut row: Row = Row{
                 data: Vec::new(),
             };
-            row.data.push(DataType::BigInt(0));
+            row.data.push(DataType::BigInt(tp.row_id));
             row.data.push(DataType::VarChar(database.len() as u8, String::from(database)));
             moihandler::add_row("C:\\MiaSql\\system\\database.moi", row).expect("Unable to update database moi file");
         }

@@ -1,8 +1,6 @@
 # To Do's
 + implement use database command -> need user for that -> needs basic login
-+ implement create database command
-+ implement create table command
-+ How is null saved onto disc?
++ implement create table command()
 
 + MiaLedger path is not coming from the config file.
 + MiaLedger ledger number is a constant right now get it from a sytsem table

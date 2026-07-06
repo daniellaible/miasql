@@ -129,9 +129,7 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                 }
                 _ => {Vec::new()}
             };
-
-
-
+            
             is_use_command = false;
             match sql_command.clone(){
                 SqlCommand::Use{database, ..} => {
@@ -152,10 +150,11 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                 if sql_command != SqlCommand::Undefined {
                     let transaction: TransactionProtocol = TransactionProtocol {
                         db_name: db_used.clone(),
+                        row_id: -1,
                         table_names: table_names,
                         is_processing: false,
                         is_finished: false,
-                        transaction_id: 1000,
+                        transaction_id: 0,
                         command: sql_command.clone(),
                         is_moi_file_updated: false,
                         is_ledger_updated: false,
@@ -175,9 +174,8 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                 }else{
                     answer = format!("I don't understand: {command_string}");
                 }
+                
             }else{
-
-
                 if !is_use_command {
                     answer = format!("Please tell me which database to use!");
                 }

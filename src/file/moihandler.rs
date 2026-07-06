@@ -6,6 +6,7 @@ use crate::file::mtdreader::MtdFile;
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, Error, ErrorKind, Read, Seek, SeekFrom, Write};
 use log::error;
+use crate::server::queue::TransactionProtocol;
 
 pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
     let mut table = Table::default();
@@ -207,6 +208,13 @@ pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
     Ok(table)
 }
 
+pub fn get_max_id(path:& str) -> i64{
+    let mut i64_buffer = [0u8; std::mem::size_of::<i64>()];
+    let mut input = BufReader::new(File::open(path).expect("Failed to open file"));
+    input.read_exact(&mut i64_buffer);
+    i64::from_le_bytes(i64_buffer)
+}
+
 ///This function increments the max id, after a new row has been added
 pub fn add_row(path: &str, mut row: Row) -> anyhow::Result<()>{
     let mut i64_buffer = [0u8; std::mem::size_of::<i64>()];
@@ -225,19 +233,23 @@ pub fn add_row(path: &str, mut row: Row) -> anyhow::Result<()>{
     input.read_exact(&mut i64_buffer);
     let number_of_lines = i64::from_le_bytes(i64_buffer);
 
-
-
     let mut file = OpenOptions::new()
         .read(true)
         .write(true)
         .open(path)
         .unwrap();
 
-    let new_max_id = max_id +1;
+
     let pos_id = file.seek(SeekFrom::Start(0));
     match pos_id {
         Ok(_) => {
-            file.write_all(&new_max_id.to_le_bytes());
+            let id:DataType = row.data[0].clone();
+            match id {
+                DataType::BigInt(number) => {
+                    file.write_all(&number.to_le_bytes());
+                }
+                _ => {}
+            }
         },
         Err(_) => todo!(),
     }
@@ -250,8 +262,6 @@ pub fn add_row(path: &str, mut row: Row) -> anyhow::Result<()>{
         },
         Err(_) => error!("Unable to update no of lines")
     }
-
-    row.data[0] = DataType::BigInt(new_max_id);
 
     for i in 0 .. row.data.len(){
         let cell = &row.data[i];
