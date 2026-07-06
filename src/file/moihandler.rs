@@ -1,12 +1,12 @@
-use std::fs;
 use crate::database::bptree::BPlusTree;
 use crate::database::datatype::DataType;
 use crate::database::table::{Row, Table};
 use crate::file::mtdreader::MtdFile;
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, Error, ErrorKind, Read, Seek, SeekFrom, Write};
+use anyhow::anyhow;
 use log::error;
-use crate::server::queue::TransactionProtocol;
+
 
 pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
     let mut table = Table::default();
@@ -32,8 +32,14 @@ pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
 
     let mut input = BufReader::new(File::open(moi_file).expect("Failed to open file"));
 
-    input.read_exact(&mut i64_buffer);
-    table.max_id = i64::from_le_bytes(i64_buffer);
+    let res = input.read_exact(&mut i64_buffer);
+    match res {
+        Ok(_) => {
+            table.max_id = i64::from_le_bytes(i64_buffer);
+        },
+        Err(_) => {error!("Unable to write the id to a moi file")}
+    }
+
 
     input.read_exact(&mut u8_buffer);
     u8::from_le_bytes(u8_buffer);
@@ -216,14 +222,14 @@ pub fn get_max_id(path:& str) -> i64{
 }
 
 ///This function increments the max id, after a new row has been added
-pub fn add_row(path: &str, mut row: Row) -> anyhow::Result<()>{
+pub fn add_row(path: &str, row: Row) -> anyhow::Result<()>{
     let mut i64_buffer = [0u8; std::mem::size_of::<i64>()];
     let mut u8_buffer = [0u8; std::mem::size_of::<u8>()];
 
     //read max id
     let mut input = BufReader::new(File::open(path).expect("Failed to open file"));
     input.read_exact(&mut i64_buffer);
-    let max_id = i64::from_le_bytes(i64_buffer);
+    let _max_id = i64::from_le_bytes(i64_buffer);
 
     //read new line
     input.read_exact(&mut u8_buffer);
@@ -246,7 +252,11 @@ pub fn add_row(path: &str, mut row: Row) -> anyhow::Result<()>{
             let id:DataType = row.data[0].clone();
             match id {
                 DataType::BigInt(number) => {
-                    file.write_all(&number.to_le_bytes());
+                    let res = file.write_all(&number.to_le_bytes());
+                    match res{
+                        Ok(_) => {},
+                        Err(_) => {error!("Unable to write the id to a moi file")}
+                    }
                 }
                 _ => {}
             }
@@ -258,9 +268,13 @@ pub fn add_row(path: &str, mut row: Row) -> anyhow::Result<()>{
     let pos_lines = file.seek(SeekFrom::Start(9));
     match pos_lines {
         Ok(_) => {
-            file.write_all(&new_no_lines.to_le_bytes());
+            let res = file.write_all(&new_no_lines.to_le_bytes());
+            match res{
+                Ok(_) => {},
+                Err(_) => {error!("Unable to write a number of lines to a moi file")}
+            }
         },
-        Err(_) => error!("Unable to update no of lines")
+        Err(_) => error!("Unable to update number of lines")
     }
 
     for i in 0 .. row.data.len(){
@@ -268,67 +282,180 @@ pub fn add_row(path: &str, mut row: Row) -> anyhow::Result<()>{
 
         match cell {
             DataType::BigInt( number) => {
-                file.seek(SeekFrom::End(0));
-                file.write_all(&number.to_le_bytes());
+                let pos = file.seek(SeekFrom::End(0));
+                match pos {
+                    Ok(_) => {
+                        let res = file.write_all(&number.to_le_bytes());
+                        match res{
+                            Ok(_) => {},
+                            Err(_) => {error!("Unable to write a BigInt to a moi file")}
+                        }
+                    },
+                    Err(_) => {error!("Unable to get the correct position in a moi file")}
+                }
+
             }
             DataType::Int (number) => {
-                file.seek(SeekFrom::End(0));
-                file.write_all(&number.to_le_bytes());
+                let pos = file.seek(SeekFrom::End(0));
+                match pos {
+                    Ok(_)=> {
+                        let res = file.write_all(&number.to_le_bytes());
+                        match res{
+                            Ok(_) => {},
+                            Err(_) => {error!("Unable to write a Int to a moi file")}
+                        }
+                    },
+                    Err(_) => {error!("Unable to get the correct position in a moi file")}
+                }
+
             },
             DataType::SmallInt (number) => {
-                file.seek(SeekFrom::End(0));
-                file.write_all(&number.to_le_bytes());
+                let pos = file.seek(SeekFrom::End(0));
+                match pos {
+                    Ok(_) => {
+                        let res = file.write_all(&number.to_le_bytes());
+                        match res{
+                            Ok(_) => {},
+                            Err(_) => {error!("Unable to write a SmallInt to a moi file")}
+                        }
+                    },
+                    Err(_) => {error!("Unable to get the correct position in a moi file")}
+                }
             },
             DataType::TinyInt (number) => {
-                file.seek(SeekFrom::End(0));
-                file.write_all(&number.to_le_bytes());
+                let pos = file.seek(SeekFrom::End(0));
+                match pos {
+                    Ok(_) => {
+                        let res = file.write_all(&number.to_le_bytes());
+                        match res{
+                            Ok(_) => {},
+                            Err(_) => {error!("Unable to write a TinyInt to a moi file")}
+                        }
+                    },
+                    Err(_) => {error!("Unable to get the correct position in a moi file")}
+                }
             },
             DataType::Decimal (number) => {
-                file.seek(SeekFrom::End(0));
-                file.write_all(&number.to_le_bytes());
+                let pos = file.seek(SeekFrom::End(0));
+                match pos {
+                    Ok(_) => {
+                        let res = file.write_all(&number.to_le_bytes());
+                        match res{
+                            Ok(_) => {},
+                            Err(_) => {error!("Unable to write a Decimal to a moi file")}
+                        }
+                    },
+                    Err(_) => {error!("Unable to get the correct position in a moi file")}
+                }
             },
             DataType::Float (number) => {
-                file.seek(SeekFrom::End(0));
-                file.write_all(&number.to_le_bytes());
+                let pos = file.seek(SeekFrom::End(0));
+                match pos{
+                    Ok(_) => {
+                        let res = file.write_all(&number.to_le_bytes());
+                        match res{
+                            Ok(_) => {},
+                            Err(_) => {error!("Unable to write a Float to a moi file")}
+                        }
+                    },
+                    Err(_) => {error!("Unable to get the correct position in a moi file")}
+                }
             },
-            DataType::VarChar (len, text) => {
+            DataType::VarChar (_len, text) => {
                 let number_of_chars = text.chars().count() as u8;
-                file.seek(SeekFrom::End(0));
-                file.write_all(&number_of_chars.to_le_bytes()).expect("unable to write to disc");
-                file.seek(SeekFrom::End(0));
-                file.write_all((&text).as_ref()).expect("unable to write to disc");
+                let pos = file.seek(SeekFrom::End(0));
+                match pos{
+                    Ok(_) => {
+                        file.write_all(&number_of_chars.to_le_bytes()).expect("unable to write to disc");
+                        let pos = file.seek(SeekFrom::End(0));
+                        match pos{
+                            Ok(_) => {
+                                file.write_all((&text).as_ref()).expect("unable to write to disc");
+                            },
+                            Err(_) => {error!("Unable to get the correct position in a moi file")}
+                        }
+                    },
+                    Err(_) => {error!("Unable to get the correct position in a moi file")}
+                }
             },
             DataType::Bool (bool) => {
                 let mut bool_value:u8 = 0;
                 if *bool {
                     bool_value = 1;
                 }
-                file.seek(SeekFrom::End(0));
-                file.write_all(&bool_value.to_le_bytes());
+                let pos = file.seek(SeekFrom::End(0));
+                match pos{
+                    Ok(_) => {
+                        let res = file.write_all(&bool_value.to_le_bytes());
+                        match res{
+                            Ok(_) => {},
+                            Err(_) => {error!("Unable to write a Bool to a moi file")}
+                        }
+                    },
+                    Err(_) => {error!("Unable to get the correct position in a moi file")}
+                }
+
             },
             DataType::Date (date) => {
-                file.seek(SeekFrom::End(0));
-                file.write_all(&date.to_le_bytes());
+                let pos = file.seek(SeekFrom::End(0));
+                match pos {
+                    Ok(_) => {
+                        let res = file.write_all(&date.to_le_bytes());
+                        match res{
+                            Ok(_) => {},
+                            Err(_) => {error!("Unable to write a date to a moi file")}
+                        }
+                    },
+                    Err(_) => {error!("Unable to get the correct position in a moi file")}
+                }
             },
             DataType::Time (date) => {
-                file.seek(SeekFrom::End(0));
-                file.write_all(&date.to_le_bytes());
+                let pos = file.seek(SeekFrom::End(0));
+                match pos {
+                    Ok(_) => {
+                        let res = file.write_all(&date.to_le_bytes());
+                        match res{
+                            Ok(_) => {},
+                            Err(_) => {error!("Unable to write a Time to a moi file")}
+                        }
+                    },
+                    Err(_) => {error!("Unable to get the correct position in a moi file")}
+                }
             },
             DataType::DateTime (date) => {
-                file.seek(SeekFrom::End(0));
-                file.write_all(&date.to_le_bytes());
+                let pos = file.seek(SeekFrom::End(0));
+                match pos {
+                    Ok(_) => {
+                        let res = file.write_all(&date.to_le_bytes());
+                        match res{
+                            Ok(_) => {},
+                            Err(_) => {error!("Unable to write a DateTime to a moi file")}
+                        }
+                    },
+                    Err(_) => {error!("Unable to get the correct position in a moi file")}
+                }
+
             },
             DataType::Null => {
                 let nul = "u{2400}";
-                file.seek(SeekFrom::End(0));
-                file.write_all((&nul).as_ref()).expect("unable to write NULL value");
+                let pos = file.seek(SeekFrom::End(0));
+                match pos {
+                    Ok(_) => {
+                         file.write_all((&nul).as_ref()).expect("unable to write NULL value");
+                    }
+                    Err(_) => {error!("Unable to get the correct position in a moi file")}
+                }
+
             }
             _ => {}
         }
     }
     file.write(b"\n").expect("unable to write to disc");
-    file.flush();
-    Ok(())
+    let flush_res = file.flush();
+    match flush_res{
+        Ok(_) => anyhow::Ok(()),
+        Err(_) =>  Err(anyhow!("Unable to write moi file"))
+    }
 }
 
 #[cfg(test)]
@@ -493,7 +620,6 @@ mod tests {
                         counter += 1;
                     }
                 }
-
                 Err(error) => {
                     println!("Something went terribly wrong reading system tables table: {}", error);
                 }
