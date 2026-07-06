@@ -5,7 +5,9 @@ use crate::{command, ledger};
 use log::{error, info};
 use std::sync::atomic::AtomicU64;
 use std::thread;
+use crate::database::datatype::DataType;
 use crate::database::table::Row;
+use crate::file::moihandler;
 
 pub static COUNTER: AtomicU64 = AtomicU64::new(0);
 
@@ -131,11 +133,16 @@ fn update_system_table(mut tp: TransactionProtocol) -> Option<TransactionProtoco
 
 fn update_moi_file(tp: TransactionProtocol) -> Option<TransactionProtocol> {
     match &tp.command {
-        SqlCommand::CreateDatabase {..} => {
-            
+        SqlCommand::CreateDatabase {database, ..} => {
+            let mut row: Row = Row{
+                data: Vec::new(),
+            };
+            row.data.push(DataType::BigInt(0));
+            row.data.push(DataType::VarChar(database.len() as u8, String::from(database)));
+            moihandler::add_row("C:\\MiaSql\\system\\database.moi", row).expect("Unable to update database moi file");
         }
         _ => {
-            
+
         }
     }
     /*    println!("update file file");

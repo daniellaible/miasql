@@ -1,10 +1,11 @@
+use std::fs;
 use crate::database::bptree::BPlusTree;
 use crate::database::datatype::DataType;
-use crate::database::table::Table;
+use crate::database::table::{Row, Table};
 use crate::file::mtdreader::MtdFile;
-use std::fs::File;
-use std::io::{
-    BufReader, Error, ErrorKind, Read};
+use std::fs::{File, OpenOptions};
+use std::io::{BufReader, Error, ErrorKind, Read, Seek, SeekFrom, Write};
+use log::error;
 
 pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
     let mut table = Table::default();
@@ -206,13 +207,132 @@ pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
     Ok(table)
 }
 
+///This function increments the max id, after a new row has been added
+pub fn add_row(path: &str, mut row: Row) -> anyhow::Result<()>{
+    let mut i64_buffer = [0u8; std::mem::size_of::<i64>()];
+    let mut u8_buffer = [0u8; std::mem::size_of::<u8>()];
+
+    //read max id
+    let mut input = BufReader::new(File::open(path).expect("Failed to open file"));
+    input.read_exact(&mut i64_buffer);
+    let max_id = i64::from_le_bytes(i64_buffer);
+
+    //read new line
+    input.read_exact(&mut u8_buffer);
+    u8::from_le_bytes(u8_buffer);
+
+    //read number of rows stored in file
+    input.read_exact(&mut i64_buffer);
+    let number_of_lines = i64::from_le_bytes(i64_buffer);
+
+
+
+    let mut file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(path)
+        .unwrap();
+
+    let new_max_id = max_id +1;
+    let pos_id = file.seek(SeekFrom::Start(0));
+    match pos_id {
+        Ok(_) => {
+            file.write_all(&new_max_id.to_le_bytes());
+        },
+        Err(_) => todo!(),
+    }
+
+    let new_no_lines = number_of_lines +1;
+    let pos_lines = file.seek(SeekFrom::Start(9));
+    match pos_lines {
+        Ok(_) => {
+            file.write_all(&new_no_lines.to_le_bytes());
+        },
+        Err(_) => error!("Unable to update no of lines")
+    }
+
+    row.data[0] = DataType::BigInt(new_max_id);
+
+    for i in 0 .. row.data.len(){
+        let cell = &row.data[i];
+
+        match cell {
+            DataType::BigInt( number) => {
+                file.seek(SeekFrom::End(0));
+                file.write_all(&number.to_le_bytes());
+            }
+            DataType::Int (number) => {
+                file.seek(SeekFrom::End(0));
+                file.write_all(&number.to_le_bytes());
+            },
+            DataType::SmallInt (number) => {
+                file.seek(SeekFrom::End(0));
+                file.write_all(&number.to_le_bytes());
+            },
+            DataType::TinyInt (number) => {
+                file.seek(SeekFrom::End(0));
+                file.write_all(&number.to_le_bytes());
+            },
+            DataType::Decimal (number) => {
+                file.seek(SeekFrom::End(0));
+                file.write_all(&number.to_le_bytes());
+            },
+            DataType::Float (number) => {
+                file.seek(SeekFrom::End(0));
+                file.write_all(&number.to_le_bytes());
+            },
+            DataType::VarChar (len, text) => {
+                let number_of_chars = text.chars().count() as u8;
+                file.seek(SeekFrom::End(0));
+                file.write_all(&number_of_chars.to_le_bytes()).expect("unable to write to disc");
+                file.seek(SeekFrom::End(0));
+                file.write_all((&text).as_ref()).expect("unable to write to disc");
+            },
+            DataType::Bool (bool) => {
+                let mut bool_value:u8 = 0;
+                if *bool {
+                    bool_value = 1;
+                }
+                file.seek(SeekFrom::End(0));
+                file.write_all(&bool_value.to_le_bytes());
+            },
+            DataType::Date (date) => {
+                file.seek(SeekFrom::End(0));
+                file.write_all(&date.to_le_bytes());
+            },
+            DataType::Time (date) => {
+                file.seek(SeekFrom::End(0));
+                file.write_all(&date.to_le_bytes());
+            },
+            DataType::DateTime (date) => {
+                file.seek(SeekFrom::End(0));
+                file.write_all(&date.to_le_bytes());
+            },
+            DataType::Null => {
+                let nul = "u{2400}";
+                file.seek(SeekFrom::End(0));
+                file.write_all((&nul).as_ref()).expect("unable to write NULL value");
+            }
+            _ => {}
+        }
+    }
+    file.write(b"\n").expect("unable to write to disc");
+    file.flush();
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::file::moireader::load_moi_file;
+    use crate::file::moihandler::{add_row, load_moi_file};
     use crate::file::mtdreader::read_mtd_file;
     use std::fs::File;
     use std::io::{BufWriter, Write};
     use log::error;
+
+    #[test]
+    fn test_read_max_id() {
+        //add_row("C:\\MiaSql\\system\\database.moi");
+    }
 
     #[test]
     fn create_user_table_moi() {
@@ -418,13 +538,22 @@ mod tests {
         #[test]
         fn test_read_mtd_file() {
             let foo = read_mtd_file("C:\\MiaSql\\system\\database.mtd");
+            println!("{:?}", foo);
             let bar = load_moi_file(&foo);
             match bar {
-                Ok(_) => {},
+                Ok(_) => {println!("{}", bar.unwrap())},
                 Err(e) => println!("test failed: {:?}", e)
             }
             println!("{:?}", foo);
         }
+
+    #[test]
+    fn test_read_moi_file() {
+        let foo = read_mtd_file("C:\\MiaSql\\system\\database.mtd");
+        let bar = load_moi_file(&foo);
+        println!("{:?}", bar.unwrap())
+    }
+
 
         #[test]
         fn test_fill_varchar() {
