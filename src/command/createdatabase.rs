@@ -1,5 +1,8 @@
 use sqlparser::ast::Statement;
 use crate::command::sqlcommands::SqlCommand;
+use crate::database::datatype::DataType;
+use crate::database::table::Row;
+use crate::server::dbmem::DbMem;
 use crate::server::queue::TransactionProtocol;
 
 pub fn parse(ast: Vec<Statement>) -> SqlCommand{
@@ -20,10 +23,14 @@ pub fn parse(ast: Vec<Statement>) -> SqlCommand{
     }
 }
 
-pub fn execute(transaction_protocol: TransactionProtocol) -> TransactionProtocol {
-    
-
-    transaction_protocol
+pub fn execute(db_name: &str) -> bool{
+    let mut row: Row = Row{
+        data: Vec::new(),
+    };
+    row.data.push(DataType::BigInt(0));
+    row.data.push(DataType::VarChar(db_name.len() as u8, String::from(db_name)));
+    DbMem::insert_row("system", "database", row);
+    true
 }
 
 

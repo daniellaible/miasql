@@ -1,13 +1,15 @@
-use std::sync::atomic::AtomicU64;
-use crate::server::queue::{TransactionProtocol};
-use std::thread;
-use log::{error, info};
-use crate::ledger;
+use crate::command::sqlcommands::SqlCommand;
 use crate::server::dbmem::DbMem;
+use crate::server::queue::TransactionProtocol;
+use crate::{command, ledger};
+use log::{error, info};
+use std::sync::atomic::AtomicU64;
+use std::thread;
+use crate::database::table::Row;
 
 pub static COUNTER: AtomicU64 = AtomicU64::new(0);
 
-pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<TransactionProtocol>{
+pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<TransactionProtocol> {
     info!("In the processor: {:?}", transaction.command);
 
     let transaction_id = get_transaction_counter();
@@ -25,7 +27,7 @@ pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<Trans
                 Some(_) => {
                     transaction.is_btree_updated = true;
                     info!("Btrees updated");
-                },
+                }
                 None => {
                     transaction.error = true;
                     info!("Btrees NOT updated");
@@ -41,7 +43,7 @@ pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<Trans
                 Some(_) => {
                     transaction.is_system_table_updated = true;
                     info!("System Table updated");
-                },
+                }
                 None => {
                     transaction.error = true;
                     info!("System Table NOT updated");
@@ -51,13 +53,13 @@ pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<Trans
 
         //update moi file
         let trans_clone_moi_file = transaction.clone();
-        let moi_file_thread_handle = thread:: spawn( move || {
+        let moi_file_thread_handle = thread::spawn(move || {
             let moi_file_result = update_moi_file(trans_clone_moi_file);
             match moi_file_result {
                 Some(_) => {
                     transaction.is_moi_file_updated = true;
                     info!("Moi file  updated");
-                },
+                }
                 None => {
                     transaction.error = true;
                     info!("Moi file NOT updated");
@@ -70,7 +72,7 @@ pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<Trans
         moi_file_thread_handle.join().unwrap();
     }
 
-/*    let transaction_id = get_transaction_counter();
+    /*    let transaction_id = get_transaction_counter();
     info!("transaction_id: {}", transaction_id);
     let mut transaction_protocol: TransactionProtocol = TransactionProtocol {
         is_processing: true,
@@ -87,7 +89,7 @@ pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<Trans
         error_msg: None,
     };*/
 
-/*    {
+    /*    {
         let btree_join_handle = thread::spawn(move || {
             update_table(transaction_protocol.transaction_id);
         });
@@ -101,7 +103,7 @@ pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<Trans
 }
 
 fn load_table_to_ram(tp: TransactionProtocol) {
-    for i in 0 .. tp.table_names.len() {
+    for i in 0..tp.table_names.len() {
         let is_table_loaded = DbMem::is_table_loaded(tp.db_name.clone(), tp.table_names[i].clone());
 
         if is_table_loaded == false {
@@ -111,9 +113,45 @@ fn load_table_to_ram(tp: TransactionProtocol) {
     }
 }
 
-fn update_system_table(tp: TransactionProtocol) -> Option<TransactionProtocol> {
+fn update_system_table(mut tp: TransactionProtocol) -> Option<TransactionProtocol> {
+    match &tp.command {
+        SqlCommand::CreateDatabase {database: db, .. } => {
+            let result = command::createdatabase::execute(db);
+            if result {
+                tp.is_system_table_updated = true;
+            }
+        }
+        _ => {
+            //no need for lots of commands
+        }
+    }
+
     Some(tp)
 }
+
+fn update_moi_file(tp: TransactionProtocol) -> Option<TransactionProtocol> {
+    match &tp.command {
+        SqlCommand::CreateDatabase {..} => {
+            
+        }
+        _ => {
+            
+        }
+    }
+    /*    println!("update file file");
+    let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
+    let mut queue = masterqueue.queue.lock().unwrap();
+
+    if let Some(transaction_protocol) = queue
+        .iter_mut()
+        .find(|tp| tp.transaction_id == transaction_id)
+    {
+        transaction_protocol.is_moi_file_updated = false;
+    }*/
+    Some(tp)
+}
+
+
 
 fn update_shard_file(transaction_id: u64) {
     println!("update shard");
@@ -141,17 +179,15 @@ fn update_cluster_file(transaction_id: u64) {
     }
 }
 
-fn update_table(tp: TransactionProtocol) -> Option<TransactionProtocol>{
+fn update_table(mut tp: TransactionProtocol) -> Option<TransactionProtocol> {
     println!("update b-tree");
-    let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
-    let queue = masterqueue.queue.lock().unwrap();
 
-/*    if let Some(transaction_protocol) = queue
-        .iter_mut()
-        .find(|tp| tp.transaction_id == transaction_id)
-    {
-        transaction_protocol.is_btree_updated = false;
-    }*/
+    match tp.command {
+        _ => {
+            //Create Database Command needs no btree update
+        }
+    }
+    tp.is_btree_updated = true;
     Some(tp)
 }
 
@@ -169,19 +205,7 @@ fn update_ledger_file(transaction_id: u64) {
     }
 }
 
-fn update_moi_file(tp: TransactionProtocol) -> Option<TransactionProtocol> {
-/*    println!("update file file");
-    let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
-    let mut queue = masterqueue.queue.lock().unwrap();
 
-    if let Some(transaction_protocol) = queue
-        .iter_mut()
-        .find(|tp| tp.transaction_id == transaction_id)
-    {
-        transaction_protocol.is_moi_file_updated = false;
-    }*/
-    Some(tp)
-}
 
 fn get_transaction_counter() -> u64 {
     COUNTER.fetch_add(1, std::sync::atomic::Ordering::SeqCst)
