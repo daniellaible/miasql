@@ -567,11 +567,11 @@ mod tests {
             match file_result {
                 Ok(file_item) => {
                     let mut writer = BufWriter::new(file_item);
-                    let max_id: u64 = 2;
+                    let max_id: u64 = 3;
                     writer.write(&max_id.to_le_bytes()).expect("unable to write to disc");
                     writer.write(b"\n").expect("unable to write to disc");
 
-                    let lines: u64 = 2;
+                    let lines: u64 = 3;
                     writer.write(&lines.to_le_bytes()).expect("unable to write to disc");
                     writer.write(b"\n").expect("unable to write to disc");
 
@@ -587,7 +587,10 @@ mod tests {
                         } else if id == 2 {
                             tablename = String::from("tables");
                             path = String::from("C:\\MiaSql\\system\\tables.mtd");
-                        } else {
+                        } else if id == 3 {
+                            tablename = String::from("user");
+                            path = String::from("C:\\MiaSql\\system\\user.mtd");
+                    } else {
                             println!("There's something strange in your neighbourhood ... who do you gonna call");
                         }
 

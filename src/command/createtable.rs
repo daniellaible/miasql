@@ -1,7 +1,6 @@
 use sqlparser::ast::{ColumnOption, CreateTable, Ident, ObjectNamePart, TableConstraint};
 use crate::command::constraint::Constraint;
 use crate::command::sqlcommands::SqlCommand;
-use crate::database::database::Database;
 use crate::database::datatype::DataType;
 
 #[derive(Debug, Clone, PartialEq)]

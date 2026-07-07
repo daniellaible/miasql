@@ -19,9 +19,13 @@ pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<Trans
     transaction.transaction_id = transaction_id;
 
     match &transaction.command {
-        SqlCommand::CreateDatabase { database, .. } => {
+        SqlCommand::CreateDatabase { .. } => {
             let last_id = moihandler::get_max_id("C:\\MiaSql\\system\\database.moi");
-            transaction.row_id = last_id +1;
+            transaction.row_id = last_id + 1;
+        }
+        SqlCommand::CreateTable { .. } => {
+            let last_id = moihandler::get_max_id("C::\\MiaSql\\system\\tables.moi");
+            transaction.row_id = last_id + 1;
         }
         _ => {}
     }
