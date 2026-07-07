@@ -23,14 +23,14 @@ pub fn parse(ast: Vec<Statement>) -> SqlCommand{
     }
 }
 
-pub fn execute(db_name: &str) -> bool{
+pub fn update_system_table(id: i64, db_name: &str) -> anyhow::Result<()>{
     let mut row: Row = Row{
         data: Vec::new(),
     };
-    row.data.push(DataType::BigInt(0));
+    row.data.push(DataType::BigInt(id));
     row.data.push(DataType::VarChar(db_name.len() as u8, String::from(db_name)));
     DbMem::insert_row("system", "database", row);
-    true
+    Ok(())
 }
 
 

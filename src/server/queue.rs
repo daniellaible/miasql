@@ -21,7 +21,6 @@ pub struct TransactionProtocol {
     pub is_btree_updated: bool,
     pub is_cluster_updated: bool,
     pub is_shard_updated: bool,
-    pub is_error_detected: bool,
     pub is_system_table_updated: bool,
     pub error: bool,
 }

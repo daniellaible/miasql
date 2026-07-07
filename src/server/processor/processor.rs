@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use crate::command::sqlcommands::SqlCommand;
 use crate::server::dbmem::DbMem;
 use crate::server::queue::TransactionProtocol;
@@ -24,7 +25,7 @@ pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<Trans
             transaction.row_id = last_id + 1;
         }
         SqlCommand::CreateTable { .. } => {
-            let last_id = moihandler::get_max_id("C::\\MiaSql\\system\\tables.moi");
+            let last_id = moihandler::get_max_id("C:\\MiaSql\\system\\tables.moi");
             transaction.row_id = last_id + 1;
         }
         _ => {}
@@ -129,9 +130,25 @@ fn load_table_to_ram(tp: TransactionProtocol) {
 fn update_system_table(mut tp: TransactionProtocol) -> Option<TransactionProtocol> {
     match &tp.command {
         SqlCommand::CreateDatabase {database: db, .. } => {
-            let result = command::createdatabase::execute(db);
-            if result {
-                tp.is_system_table_updated = true;
+            let result = command::createdatabase::update_system_table(tp.row_id, db);
+            match result {
+                Ok(_) => {
+                    tp.is_system_table_updated = true;
+                },
+                Err(_) => {
+                    tp.error = true
+                }
+            }
+        }
+        SqlCommand::CreateTable {table, ..} => {
+            let result = command::createtable::update_system_table(tp.row_id, Arc::from(tp.db_name.as_str()), Arc::from(table.as_str()));
+            match result{
+                Ok(_) => {
+                    tp.is_system_table_updated = true
+                },
+                Err(_) => {
+                    tp.error = true;
+                }
             }
         }
         _ => {

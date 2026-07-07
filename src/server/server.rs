@@ -161,7 +161,6 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                         is_btree_updated: false,
                         is_cluster_updated: false,
                         is_shard_updated: false,
-                        is_error_detected: false,
                         is_system_table_updated: false,
                         error: false,
                     };

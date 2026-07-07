@@ -31,23 +31,20 @@ impl DbMem {
     }
 
     pub fn insert_row(db_name: &str, table_name: &str, mut row: Row) {
-        let max_id_res: Result<i64> = find_max_id(db_name, table_name);
-        let mut id: i64 = -1;
-        match max_id_res {
-            Ok(old_id) => id = old_id + 1,
-            Err(err) => {
-                error!("{}", err)
-            }
-        }
-        row.data[0] = DataType::BigInt(id);
-
+        
         let mut dbs = DBS.lock().unwrap();
         for i in 0..dbs.tables.len() {
             let (db_n, table_n,  table) = &mut dbs.tables[i];
             if db_n.to_uppercase() == db_name.to_uppercase()
                 && table_n.to_uppercase() == table_name.to_uppercase()
             {
-                table.tree.insert(id, row.data.clone());
+                match row.data[0] {
+                    DataType::BigInt(number) => {
+                        table.tree.insert(number, row.data.clone());  
+                    }
+                    _ => { error!("The first element is not the id ???")}
+                }
+                 
             }
             println!("{:?}", table)
         }
