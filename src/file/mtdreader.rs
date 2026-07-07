@@ -88,10 +88,10 @@ pub fn read_mtd_file(path: &str) -> MtdFile {
                 type_defs = type_defs.replace("]", "");
                 type_defs = type_defs.replace("(", "");
                 type_defs = type_defs.replace(")", "");
-                let types_defs__split = type_defs.split(";");
+                let types_defs_split = type_defs.split(";");
 
                 let mut columns: Vec<DataType> = Vec::new();
-                for defs in types_defs__split {
+                for defs in types_defs_split {
 /*                    if defs.starts_with("VarChar") {
                         let mut splits = defs.split("(");
                         _ = splits.next();
@@ -130,7 +130,7 @@ pub fn read_mtd_file(path: &str) -> MtdFile {
                 let mut column_constraints = splits.next().unwrap().to_string();
                 column_constraints = column_constraints.replace("[", "");
                 column_constraints = column_constraints.replace("]", "");
-                let mut column_constraints_split = column_constraints.split(";");
+                let column_constraints_split = column_constraints.split(";");
                 let mut column_constraints: Vec<(u32, Constraint)> = Vec::new();
                 for constraint in column_constraints_split {
                     let mut clean_constraint = constraint.replace("(", "");
@@ -138,7 +138,7 @@ pub fn read_mtd_file(path: &str) -> MtdFile {
                     let mut tuple_splits = clean_constraint.split(",");
                     let left = tuple_splits.next();
                     let right = tuple_splits.next().unwrap();
-                    let columnNumber = left.unwrap().trim().parse::<u32>().unwrap();
+                    let column_number = left.unwrap().trim().parse::<u32>().unwrap();
 
                     let constraint = match right {
                         "NotNull" => Constraint::NotNull,
@@ -149,7 +149,7 @@ pub fn read_mtd_file(path: &str) -> MtdFile {
                         "Default" => Constraint::Default,
                         _ => Constraint::Undefined,
                     };
-                    column_constraints.push((columnNumber, constraint));
+                    column_constraints.push((column_number, constraint));
                 }
                 mtd.column_constraints = column_constraints;
             }
@@ -162,10 +162,10 @@ pub fn read_mtd_file(path: &str) -> MtdFile {
                 display_order_arr = display_order_arr.replace("[", "");
                 display_order_arr = display_order_arr.replace("]", "");
 
-                let mut single_order_split = display_order_arr.split(";");
+                let single_order_split = display_order_arr.split(";");
                 let mut order: Vec<(u32, u32)> = Vec::new();
 
-                for mut order_tuple in single_order_split {
+                for order_tuple in single_order_split {
                     let mut order_tuple = order_tuple.replace("(", "").to_string();
                     order_tuple = order_tuple.replace(")", "").to_string();
                     let mut tupel_value = order_tuple.split(",");
@@ -182,7 +182,7 @@ pub fn read_mtd_file(path: &str) -> MtdFile {
                 let mut moi_files = splits.next().unwrap().to_string();
                 moi_files = moi_files.replace("[", "");
                 moi_files = moi_files.replace("]", "");
-                let mut moi_files_split = moi_files.split(";");
+                let moi_files_split = moi_files.split(";");
                 for moi_file in moi_files_split {
                     mtd.moi_files.push(moi_file.to_string());
                 }

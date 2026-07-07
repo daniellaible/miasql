@@ -1,7 +1,8 @@
 use sqlparser::ast::{ColumnOption, CreateTable, Ident, ObjectNamePart, TableConstraint};
 use crate::command::constraint::Constraint;
 use crate::command::sqlcommands::SqlCommand;
-
+use crate::database::database::Database;
+use crate::database::datatype::DataType;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ParsedForeignKey {
@@ -15,10 +16,45 @@ pub fn parse(create: CreateTable) -> SqlCommand {
     let tablename = create.name.to_string();
     let iter_columns = create.columns.iter();
 
-     let mut columns: Vec<(String, String, Vec<Constraint>)> = Vec::new();
+     let mut columns: Vec<(String, DataType, Vec<Constraint>)> = Vec::new();
      for col_def in iter_columns {
          let name = col_def.name.value.to_string();
-         let data_type = col_def.data_type.to_string();
+         let data_type:DataType = match col_def.data_type{
+             sqlparser::ast::DataType::Varchar(_) => {
+                 DataType::VarChar(0, "".to_string())
+             },
+             sqlparser::ast::DataType::Decimal(_) => {
+                 DataType::Decimal(0 as f32)
+             }
+             sqlparser::ast::DataType::Float(_) => {
+                 DataType::Float(0 as f64)
+             }
+             sqlparser::ast::DataType::TinyInt(_) => {
+                 DataType::TinyInt(0)
+             }
+             sqlparser::ast::DataType::SmallInt(_) => {
+                 DataType::SmallInt(0)
+             }
+             sqlparser::ast::DataType::Int(_) => {
+                 DataType::Int(0)
+             }
+             sqlparser::ast::DataType::BigInt(_) => {
+                 DataType::BigInt(0)
+             }
+             sqlparser::ast::DataType::Bool => {
+                 DataType::Bool(false)
+             }
+             sqlparser::ast::DataType::Date => {
+                 DataType::Date(0)
+             }
+             sqlparser::ast::DataType::Time(_, _) => {
+                 DataType::Time(0)
+             }
+             sqlparser::ast::DataType::Datetime(_) => {
+                 DataType::DateTime(0)
+             }
+             _ => {DataType::Undefined}
+         };
 
          let iter_options = col_def.options.iter();
          let mut column_constraints:Vec<Constraint> = Vec::new();
@@ -32,8 +68,7 @@ pub fn parse(create: CreateTable) -> SqlCommand {
              };
              column_constraints.push(constraint.clone());
          }
-         let column_def:(String, String
-                         , Vec<Constraint>) = (name, data_type, column_constraints);
+         let column_def:(String, DataType, Vec<Constraint>) = (name, data_type, column_constraints);
          columns.push(column_def);
      }
 

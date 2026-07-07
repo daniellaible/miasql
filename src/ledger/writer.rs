@@ -30,7 +30,7 @@ fn append_to_file(line: &String){
 
     let mut writer = BufWriter::new(file.unwrap());
     writeln!(writer, "{}", line);
-    writer.flush();
+    let _ = writer.flush();
 }
 
 fn to_printable_line(command: &SqlCommand) -> String {

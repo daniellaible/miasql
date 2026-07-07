@@ -54,7 +54,7 @@ impl DbMem {
     }
 
     pub fn is_table_loaded(db_name: String, table_name: String) -> bool {
-        let mut dbs = DBS.lock().unwrap();
+        let dbs = DBS.lock().unwrap();
         for i in 0..dbs.tables.len() {
             let (db_n, table_n, _) = &dbs.tables[i];
             if db_n.to_uppercase() == db_name.to_uppercase()

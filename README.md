@@ -36,18 +36,18 @@ We don't have a website yet - we are working on it, but lets get the database ru
 
 ### Current Version is: 0.1.x
 
-| Version | Goal                                                                                     |
-|---------|------------------------------------------------------------------------------------------|
-| 0.1.0   | system files of the db can be read, system tables are created in memory                  |
-| 0.2.0   | basic select, insert, alter, truncate and drop statements are working in ram and on disc |
-| 0.3.0   | indexing is implemented on the tables                                                    |       
-| 0.4.0   | all the functions work on the select statement                                           |
-| 0.5.0   | implementing inner, outer, left, right and full joins                                    |    
-| 0.6.0   | user management and secure shell                                                         |
-| 0.7.0   | ledger implementation including restoring the backup and zipping (Alpha Release)                                 
-| 0.8.0   | backup importer from other databases                                                     |
-| 0.9.0   | adding clusters, shards and loadbalancer                                                 |
-| 1.0.0   | amaze - amaze - amaze - Question                                                      
+| Version | Goal                                                                                             |
+|---------|--------------------------------------------------------------------------------------------------|
+| 0.1.0   | system files of the db can be read, system tables are created in memory                          |
+| 0.2.0   | basic select, create, insert, alter, truncate and drop statements are working in ram and on disc |
+| 0.3.0   | indexing is implemented on the tables                                                            |       
+| 0.4.0   | all the functions work on the select statement                                                   |
+| 0.5.0   | implementing inner, outer, left, right and full joins                                            |    
+| 0.6.0   | user management and secure shell                                                                 |
+| 0.7.0   | ledger implementation including restoring the backup and zipping (Alpha Release)                 
+| 0.8.0   | backup importer from other databases                                                             |
+| 0.9.0   | adding clusters, shards and loadbalancer                                                         |
+| 1.0.0   | amaze - amaze - amaze - Question                                                                 
 
 
 Interfaces for Python / C(++) / Java / Rust / C# / TypeScript / PHP / VB        

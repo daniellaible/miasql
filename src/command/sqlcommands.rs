@@ -4,7 +4,9 @@ use crate::command::select::{JoinClause};
 use crate::command::update::UpdateSet;
 use crate::command::whereclause::WhereClause;
 use crate::database::datatype::DataType;
-
+/// # SqlCommand
+///
+/// This enum stores all the tokens of a sql command, after the user input has been tokenized
 #[derive(Clone, Debug, PartialEq)]
 pub enum SqlCommand {
     Select {
@@ -18,12 +20,18 @@ pub enum SqlCommand {
         joins: Vec<JoinClause>,
         limit: i32,
     },
+    /// command: CREATE_TABLE
+    /// table: <name of new table>
+    /// columns: Vector with tuple (column_name, datatype. Vec<column_constraints>)
     CreateTable {
         command: String,
         table: String,
-        columns: Vec<(String, String, Vec<Constraint>)>,
+        columns: Vec<(String, DataType, Vec<Constraint>)>,
         foreign_keys: Vec<ParsedForeignKey>,
     },
+    /// command: CREATE_DATABASE
+    /// database: <name of new database>
+    /// comment: !ignored at the moment
     CreateDatabase {
         command: String,
         database: String,
