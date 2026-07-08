@@ -4,7 +4,8 @@ use std::fs::File;
 use std::io;
 use std::io::BufRead;
 use std::path::Path;
-
+use uuid::Uuid;
+use crate::command::createtable::ParsedForeignKey;
 
 #[derive(Debug)]
 pub struct MtdFile {
@@ -92,15 +93,6 @@ pub fn read_mtd_file(path: &str) -> MtdFile {
 
                 let mut columns: Vec<DataType> = Vec::new();
                 for defs in types_defs_split {
-/*                    if defs.starts_with("VarChar") {
-                        let mut splits = defs.split("(");
-                        _ = splits.next();
-                        let mut almost = splits.next().unwrap().to_string();
-                        almost = almost.replace(")", "");
-                        almost = almost.replace("]", "");
-                        let length = almost.parse::<u16>().unwrap();
-                        columns.push(DataType::VarChar(length as u8, String::default()));
-                    }*/
                     match defs {
                         "VarChar" => columns.push(DataType::VarChar(0,String::new())),
                         "BigInt" => columns.push(DataType::BigInt(0)),
@@ -194,6 +186,11 @@ pub fn read_mtd_file(path: &str) -> MtdFile {
     else {
         MtdFile::default()
     }
+}
+
+pub fn new_mtd_file(table: &String, columns: &Vec<(String, DataType, Vec<Constraint>)>, foreign_keys: &Vec<ParsedForeignKey>, uuid: Uuid) -> anyhow::Result<()>{
+    
+    Ok(())
 }
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>

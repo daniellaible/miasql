@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use crate::command::sqlcommands::SqlCommand;
 use crate::server::dbmem::DbMem;
-use crate::server::queue::TransactionProtocol;
+use crate::server::queue::TransactionContext;
 use crate::{command, ledger};
 use log::{error, info};
 use std::sync::atomic::AtomicU64;
@@ -9,11 +9,11 @@ use std::thread;
 use uuid::Uuid;
 use crate::database::datatype::DataType;
 use crate::database::table::Row;
-use crate::file::moihandler;
+use crate::file::{moihandler, mtdhandler};
 
 pub static COUNTER: AtomicU64 = AtomicU64::new(0);
 
-pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<TransactionProtocol> {
+pub fn process_transaction(mut transaction: TransactionContext) -> Option<TransactionContext> {
     info!("In the processor: {:?}", transaction.command);
 
     let transaction_id = get_transaction_counter();
@@ -28,6 +28,8 @@ pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<Trans
         SqlCommand::CreateTable { .. } => {
             let last_id = moihandler::get_max_id("C:\\MiaSql\\system\\tables.moi");
             transaction.row_id = last_id + 1;
+            let uuid = Uuid::new_v4();
+            transaction.table_uuid = uuid;
         }
         _ => {}
     }
@@ -105,12 +107,22 @@ pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<Trans
     Some(transaction)
 }
 
-fn update_mtd_file(tp: TransactionProtocol) -> anyhow::Result<()> {
-    info!("We need to write the mtd file");
+fn update_mtd_file(tp: TransactionContext) -> anyhow::Result<()> {
+    match &tp.command {
+        SqlCommand::CreateTable {table, columns, foreign_keys, ..} => {
+            match mtdhandler::new_mtd_file(table, columns, foreign_keys, tp.table_uuid.clone()) {
+                Ok(_) => {},
+                Err(_) => {}
+            }
+        }
+        _ => {}
+    }
+
+
     Ok(())
 }
 
-fn load_table_to_ram(tp: TransactionProtocol) {
+fn load_table_to_ram(tp: TransactionContext) {
     for i in 0..tp.table_names.len() {
         let is_table_loaded = DbMem::is_table_loaded(tp.db_name.clone(), tp.table_names[i].clone());
 
@@ -121,7 +133,7 @@ fn load_table_to_ram(tp: TransactionProtocol) {
     }
 }
 
-fn update_system_table(mut tp: TransactionProtocol) -> anyhow::Result<TransactionProtocol> {
+fn update_system_table(mut tp: TransactionContext) -> anyhow::Result<TransactionContext> {
     match &tp.command {
         SqlCommand::CreateDatabase {database: db, .. } => {
             let result = command::createdatabase::update_system_table(tp.row_id, db);
@@ -153,7 +165,7 @@ fn update_system_table(mut tp: TransactionProtocol) -> anyhow::Result<Transactio
     Ok(tp)
 }
 
-fn update_moi_file(mut tp: TransactionProtocol) -> anyhow::Result<TransactionProtocol> {
+fn update_moi_file(mut tp: TransactionContext) -> anyhow::Result<TransactionContext> {
     match &tp.command {
         SqlCommand::CreateDatabase {database, ..} => {
             let mut row: Row = Row{
@@ -169,8 +181,8 @@ fn update_moi_file(mut tp: TransactionProtocol) -> anyhow::Result<TransactionPro
             };
             let database = tp.db_name.clone();
             tp.table_names.push(table.clone());
-            let uuid = Uuid::new_v4();
-            let path = "C:\\MiaSql\\tables\\".to_owned() + uuid.to_string().as_str() + ".mtd";
+
+            let path = "C:\\MiaSql\\tables\\".to_owned() + tp.table_uuid.to_string().as_str() + ".mtd";
             row.data.push(DataType::BigInt(tp.row_id));
             row.data.push(DataType::VarChar(database.len() as u8, String::from(database)));
             row.data.push(DataType::VarChar(table.len() as u8, String::from(table)));
@@ -212,7 +224,7 @@ fn update_cluster_file(transaction_id: u64) {
     }
 }
 
-fn update_table(mut tp: TransactionProtocol) -> anyhow::Result<TransactionProtocol> {
+fn update_table(mut tp: TransactionContext) -> anyhow::Result<TransactionContext> {
     println!("update b-tree");
 
     match tp.command {
@@ -244,7 +256,7 @@ fn get_transaction_counter() -> u64 {
     COUNTER.fetch_add(1, std::sync::atomic::Ordering::SeqCst)
 }
 
-fn remove_transaction(transaction_id: u64) -> Option<TransactionProtocol> {
+fn remove_transaction(transaction_id: u64) -> Option<TransactionContext> {
     let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
     let mut queue = masterqueue.queue.lock().unwrap();
 

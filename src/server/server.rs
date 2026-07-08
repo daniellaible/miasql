@@ -1,6 +1,6 @@
 use crate::command::sqlcommands::SqlCommand;
 use crate::server;
-use crate::server::queue::{MasterQueueSingelton, TransactionProtocol};
+use crate::server::queue::{MasterQueueSingelton, TransactionContext};
 use log::{error, info};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
@@ -146,10 +146,10 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                 _ => {}
             };
 
-            let mut transaction_result: Option<TransactionProtocol> = None;
+            let mut transaction_result: Option<TransactionContext> = None;
             if !db_used.is_empty() && !is_use_command {
                 if sql_command != SqlCommand::Undefined {
-                    let transaction: TransactionProtocol = TransactionProtocol {
+                    let transaction: TransactionContext = TransactionContext {
                         db_name: db_used.clone(),
                         table_uuid: Uuid::default(),
                         row_id: -1,

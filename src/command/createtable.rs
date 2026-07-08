@@ -6,7 +6,7 @@ use crate::command::sqlcommands::SqlCommand;
 use crate::database::datatype::DataType;
 use crate::database::table::Row;
 use crate::server::dbmem::DbMem;
-use crate::server::queue::TransactionProtocol;
+use crate::server::queue::TransactionContext;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ParsedForeignKey {

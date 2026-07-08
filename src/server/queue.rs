@@ -8,7 +8,7 @@ use std::{thread, time};
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
-pub struct TransactionProtocol {
+pub struct TransactionContext {
     pub db_name: String,
     pub table_uuid: Uuid,
     pub row_id: i64,
@@ -27,7 +27,7 @@ pub struct TransactionProtocol {
     pub error: bool,
 }
 
-impl std::fmt::Display for TransactionProtocol<> {
+impl std::fmt::Display for TransactionContext<> {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         write!(fmt, "id: {} command:{:?}  error:{:?}", self.transaction_id, self.command, self.error)
     }
@@ -36,7 +36,7 @@ impl std::fmt::Display for TransactionProtocol<> {
 #[derive(Debug)]
 pub struct MasterQueue {
     pub is_working: AtomicBool,
-    pub queue: Mutex<VecDeque<TransactionProtocol>>,
+    pub queue: Mutex<VecDeque<TransactionContext>>,
 }
 
 pub struct MasterQueueSingelton;
@@ -46,7 +46,7 @@ static INSTANCE: OnceLock<MasterQueue> = OnceLock::new();
 impl MasterQueueSingelton {
     pub fn instance() -> &'static MasterQueue {
         let config = ConfigSingelton::instance().lock().unwrap();
-        let ringbuffer: VecDeque<TransactionProtocol> =
+        let ringbuffer: VecDeque<TransactionContext> =
             VecDeque::with_capacity(config.masterqueue_capacity as usize);
         INSTANCE.get_or_init(|| MasterQueue {
             is_working: AtomicBool::new(false),
@@ -57,7 +57,7 @@ impl MasterQueueSingelton {
     // TODO: here we could end up in a race condition or is it actually impossible since there is just one queue
     // and do_all_transactions is not public
     // High frequency parallel testing
-    pub fn add(&self, transaction: TransactionProtocol) -> Option<TransactionProtocol> {
+    pub fn add(&self, transaction: TransactionContext) -> Option<TransactionContext> {
         let mut wait_duration = time::Duration::from_millis(1);
         let mut is_transaction_completed = false;
         let mut transaction_result  = None;
@@ -76,7 +76,7 @@ impl MasterQueueSingelton {
 
     }
 }
-pub fn do_transactions(tp: TransactionProtocol) -> Option<TransactionProtocol> {
+pub fn do_transactions(tp: TransactionContext) -> Option<TransactionContext> {
     MasterQueueSingelton::instance().is_working.store(true, Ordering::SeqCst);
     //let mut queue = MasterQueueSingelton::instance().queue.lock().unwrap();
     let transaction_result = processor::process_transaction(tp);

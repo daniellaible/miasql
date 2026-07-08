@@ -3,7 +3,7 @@ use crate::command::sqlcommands::SqlCommand;
 use crate::database::datatype::DataType;
 use crate::database::table::Row;
 use crate::server::dbmem::DbMem;
-use crate::server::queue::TransactionProtocol;
+use crate::server::queue::TransactionContext;
 
 pub fn parse(ast: Vec<Statement>) -> SqlCommand{
     let stmt = match ast.into_iter().next() {
