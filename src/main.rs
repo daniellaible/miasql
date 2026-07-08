@@ -1,7 +1,7 @@
 use log::info;
 use tokio::net::TcpListener;
 use crate::database::table::Table;
-use crate::file::mtdreader::{read_mtd_file, MtdFile};
+use crate::file::mtdhandler::{read_mtd_file, MtdFile};
 use crate::server::config::config::ConfigSingelton;
 use crate::server::config::configreader;
 use crate::server::dbmem::DbMem;
@@ -36,7 +36,7 @@ mod command {
 }
 
 mod file{
-    pub mod mtdreader;
+    pub mod mtdhandler;
     pub mod moihandler;
 }
 

@@ -1,7 +1,7 @@
 use crate::database::bptree::BPlusTree;
 use crate::database::datatype::DataType;
 use crate::database::table::{Row, Table};
-use crate::file::mtdreader::MtdFile;
+use crate::file::mtdhandler::MtdFile;
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, Error, ErrorKind, Read, Seek, SeekFrom, Write};
 use anyhow::anyhow;
@@ -461,7 +461,7 @@ pub fn add_row(path: &str, row: Row) -> anyhow::Result<()>{
 #[cfg(test)]
 mod tests {
     use crate::file::moihandler::{add_row, load_moi_file};
-    use crate::file::mtdreader::read_mtd_file;
+    use crate::file::mtdhandler::read_mtd_file;
     use std::fs::File;
     use std::io::{BufWriter, Write};
     use log::error;

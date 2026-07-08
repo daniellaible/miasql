@@ -6,6 +6,7 @@ use crate::{command, ledger};
 use log::{error, info};
 use std::sync::atomic::AtomicU64;
 use std::thread;
+use uuid::Uuid;
 use crate::database::datatype::DataType;
 use crate::database::table::Row;
 use crate::file::moihandler;
@@ -38,11 +39,11 @@ pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<Trans
         let btree_thread_handle = thread::spawn(move || {
             let table_update_result = update_table(trans_clone_btree);
             match table_update_result {
-                Some(_) => {
+                Ok(_) => {
                     transaction.is_btree_updated = true;
                     info!("Btrees updated");
                 }
-                None => {
+                Err(_) => {
                     transaction.error = true;
                     info!("Btrees NOT updated");
                 }
@@ -54,13 +55,29 @@ pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<Trans
         let system_table_thread_handle = thread::spawn(move || {
             let system_table_update_result = update_system_table(trans_clone_sys_tab);
             match system_table_update_result {
-                Some(_) => {
+                Ok(_) => {
                     transaction.is_system_table_updated = true;
                     info!("System Table updated");
                 }
-                None => {
+                Err(_) => {
                     transaction.error = true;
                     info!("System Table NOT updated");
+                }
+            }
+        });
+
+        //update/creat mtd file
+        let trans_clone_mtd_file = transaction.clone();
+        let mtd_file_thread_handle = thread::spawn(move || {
+            let mtd_file_result = update_mtd_file(trans_clone_mtd_file);
+            match mtd_file_result{
+                Ok(_) => {
+                    transaction.is_mtd_file_updated = true;
+                    info!("MTD file  updated");
+                }
+                Err(_) => {
+                    transaction.error = true;
+                    info!("MTD file NOT updated");
                 }
             }
         });
@@ -70,11 +87,11 @@ pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<Trans
         let moi_file_thread_handle = thread::spawn(move || {
             let moi_file_result = update_moi_file(trans_clone_moi_file);
             match moi_file_result {
-                Some(_) => {
+                Ok(_) => {
                     transaction.is_moi_file_updated = true;
                     info!("Moi file  updated");
                 }
-                None => {
+                Err(_) => {
                     transaction.error = true;
                     info!("Moi file NOT updated");
                 }
@@ -85,35 +102,12 @@ pub fn process_transaction(mut transaction: TransactionProtocol) -> Option<Trans
         system_table_thread_handle.join().unwrap();
         moi_file_thread_handle.join().unwrap();
     }
-
-    /*    let transaction_id = get_transaction_counter();
-    info!("transaction_id: {}", transaction_id);
-    let mut transaction_protocol: TransactionProtocol = TransactionProtocol {
-        is_processing: true,
-        is_finished: false,
-        transaction_id,
-        command: command.clone(),
-        is_moi_file_updated: false,
-        is_ledger_updated: false,
-        is_btree_updated: false,
-        is_cluster_updated: false,
-        is_shard_updated: false,
-        is_error_detected: false,
-        is_system_table_updated: false,
-        error_msg: None,
-    };*/
-
-    /*    {
-        let btree_join_handle = thread::spawn(move || {
-            update_table(transaction_protocol.transaction_id);
-        });
-
-        match command {
-
-        }
-    }*/
-
     Some(transaction)
+}
+
+fn update_mtd_file(tp: TransactionProtocol) -> anyhow::Result<()> {
+    info!("We need to write the mtd file");
+    Ok(())
 }
 
 fn load_table_to_ram(tp: TransactionProtocol) {
@@ -127,7 +121,7 @@ fn load_table_to_ram(tp: TransactionProtocol) {
     }
 }
 
-fn update_system_table(mut tp: TransactionProtocol) -> Option<TransactionProtocol> {
+fn update_system_table(mut tp: TransactionProtocol) -> anyhow::Result<TransactionProtocol> {
     match &tp.command {
         SqlCommand::CreateDatabase {database: db, .. } => {
             let result = command::createdatabase::update_system_table(tp.row_id, db);
@@ -156,10 +150,10 @@ fn update_system_table(mut tp: TransactionProtocol) -> Option<TransactionProtoco
         }
     }
 
-    Some(tp)
+    Ok(tp)
 }
 
-fn update_moi_file(tp: TransactionProtocol) -> Option<TransactionProtocol> {
+fn update_moi_file(mut tp: TransactionProtocol) -> anyhow::Result<TransactionProtocol> {
     match &tp.command {
         SqlCommand::CreateDatabase {database, ..} => {
             let mut row: Row = Row{
@@ -169,21 +163,25 @@ fn update_moi_file(tp: TransactionProtocol) -> Option<TransactionProtocol> {
             row.data.push(DataType::VarChar(database.len() as u8, String::from(database)));
             moihandler::add_row("C:\\MiaSql\\system\\database.moi", row).expect("Unable to update database moi file");
         }
+        SqlCommand::CreateTable {table, ..} => {
+            let mut row: Row = Row{
+                data: Vec::new(),
+            };
+            let database = tp.db_name.clone();
+            tp.table_names.push(table.clone());
+            let uuid = Uuid::new_v4();
+            let path = "C:\\MiaSql\\tables\\".to_owned() + uuid.to_string().as_str() + ".mtd";
+            row.data.push(DataType::BigInt(tp.row_id));
+            row.data.push(DataType::VarChar(database.len() as u8, String::from(database)));
+            row.data.push(DataType::VarChar(table.len() as u8, String::from(table)));
+            row.data.push(DataType::VarChar(path.len() as u8, String::from(path)));
+            moihandler::add_row("C:\\MiaSql\\system\\tables.moi", row).expect("Unable to update database moi file");
+        }
         _ => {
 
         }
     }
-    /*    println!("update file file");
-    let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
-    let mut queue = masterqueue.queue.lock().unwrap();
-
-    if let Some(transaction_protocol) = queue
-        .iter_mut()
-        .find(|tp| tp.transaction_id == transaction_id)
-    {
-        transaction_protocol.is_moi_file_updated = false;
-    }*/
-    Some(tp)
+    Ok(tp)
 }
 
 
@@ -214,7 +212,7 @@ fn update_cluster_file(transaction_id: u64) {
     }
 }
 
-fn update_table(mut tp: TransactionProtocol) -> Option<TransactionProtocol> {
+fn update_table(mut tp: TransactionProtocol) -> anyhow::Result<TransactionProtocol> {
     println!("update b-tree");
 
     match tp.command {
@@ -223,7 +221,7 @@ fn update_table(mut tp: TransactionProtocol) -> Option<TransactionProtocol> {
         }
     }
     tp.is_btree_updated = true;
-    Some(tp)
+    Ok(tp)
 }
 
 fn update_ledger_file(transaction_id: u64) {

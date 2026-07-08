@@ -4,6 +4,7 @@ use crate::server::queue::{MasterQueueSingelton, TransactionProtocol};
 use log::{error, info};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
+use uuid::Uuid;
 
 pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
     let mut buf = [0u8; 4096];
@@ -150,6 +151,7 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                 if sql_command != SqlCommand::Undefined {
                     let transaction: TransactionProtocol = TransactionProtocol {
                         db_name: db_used.clone(),
+                        table_uuid: Uuid::default(),
                         row_id: -1,
                         table_names: table_names,
                         is_processing: false,
@@ -157,11 +159,13 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                         transaction_id: 0,
                         command: sql_command.clone(),
                         is_moi_file_updated: false,
+                        is_mtd_file_updated: false,
                         is_ledger_updated: false,
                         is_btree_updated: false,
                         is_cluster_updated: false,
                         is_shard_updated: false,
                         is_system_table_updated: false,
+                        
                         error: false,
                     };
                     transaction_result = MasterQueueSingelton.add(transaction);

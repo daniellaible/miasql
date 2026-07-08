@@ -5,11 +5,12 @@ use std::collections::VecDeque;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Mutex, OnceLock};
 use std::{thread, time};
-
+use uuid::Uuid;
 
 #[derive(Debug, Clone)]
 pub struct TransactionProtocol {
     pub db_name: String,
+    pub table_uuid: Uuid,
     pub row_id: i64,
     pub table_names: Vec<String>,
     pub is_processing: bool,
@@ -17,6 +18,7 @@ pub struct TransactionProtocol {
     pub transaction_id: u64,
     pub command: SqlCommand,
     pub is_moi_file_updated: bool,
+    pub is_mtd_file_updated: bool,
     pub is_ledger_updated: bool,
     pub is_btree_updated: bool,
     pub is_cluster_updated: bool,
@@ -56,14 +58,7 @@ impl MasterQueueSingelton {
     // and do_all_transactions is not public
     // High frequency parallel testing
     pub fn add(&self, transaction: TransactionProtocol) -> Option<TransactionProtocol> {
-/*        MasterQueueSingelton::instance()
-            .queue
-            .lock()
-            .unwrap()
-            .push_back(transaction);*/
-
         let mut wait_duration = time::Duration::from_millis(1);
-
         let mut is_transaction_completed = false;
         let mut transaction_result  = None;
         while !is_transaction_completed {
@@ -72,7 +67,7 @@ impl MasterQueueSingelton {
                 is_transaction_completed = true;
             } else {
                 thread::sleep(wait_duration);
-                if wait_duration.as_millis() < 125 {
+                if wait_duration.as_millis() <= 128 {
                     wait_duration = wait_duration * 2;
                 }
             }
