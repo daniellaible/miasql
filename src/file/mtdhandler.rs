@@ -1,11 +1,11 @@
 use crate::command::constraint::Constraint;
+use crate::command::createtable::ParsedForeignKey;
 use crate::database::datatype::DataType;
 use std::fs::File;
 use std::io;
-use std::io::BufRead;
+use std::io::{BufRead, BufWriter, Write};
 use std::path::Path;
 use uuid::Uuid;
-use crate::command::createtable::ParsedForeignKey;
 
 #[derive(Debug)]
 pub struct MtdFile {
@@ -40,8 +40,6 @@ pub fn read_mtd_file(path: &str) -> MtdFile {
     if let Ok(lines) = read_lines(path) {
         let mut mtd: MtdFile = MtdFile::default();
         for line in lines.map_while(Result::ok) {
-
-
             if line.starts_with("version") {
                 let mut splits = line.split("=");
                 _ = splits.next();
@@ -94,7 +92,7 @@ pub fn read_mtd_file(path: &str) -> MtdFile {
                 let mut columns: Vec<DataType> = Vec::new();
                 for defs in types_defs_split {
                     match defs {
-                        "VarChar" => columns.push(DataType::VarChar(0,String::new())),
+                        "VarChar" => columns.push(DataType::VarChar(0, String::new())),
                         "BigInt" => columns.push(DataType::BigInt(0)),
                         "Int" => columns.push(DataType::Int(0)),
                         "SmallInt" => columns.push(DataType::SmallInt(0)),
@@ -182,14 +180,104 @@ pub fn read_mtd_file(path: &str) -> MtdFile {
         }
 
         mtd
-    }
-    else {
+    } else {
         MtdFile::default()
     }
 }
 
-pub fn new_mtd_file(table: &String, columns: &Vec<(String, DataType, Vec<Constraint>)>, foreign_keys: &Vec<ParsedForeignKey>, uuid: Uuid) -> anyhow::Result<()>{
-    
+pub fn new_mtd_file(
+    db_name: &String,
+    table: &String,
+    columns: &Vec<(String, DataType, Vec<Constraint>)>,
+    foreign_keys: &Vec<ParsedForeignKey>,
+    uuid: Uuid,
+) -> anyhow::Result<()> {
+    let file_result = File::create("C:\\MiaSql\\system\\bla.moi");
+
+    match file_result {
+        Ok(file_item) => {
+            let mut writer = BufWriter::new(file_item);
+            let version_line = "version=1.0\n";
+            writer
+                .write_all((&version_line).as_ref())
+                .expect("unable to write version_line to disc");
+
+            let num_of_columns =
+                "numberOfColumns=".to_owned() + columns.len().to_string().as_str() + "\n";
+            writer
+                .write_all((&num_of_columns).as_ref())
+                .expect("unable to write num_of_columns to disc");
+
+            let dbname = "dbname=".to_owned() + db_name + "\n";
+            writer
+                .write_all((&dbname).as_ref())
+                .expect("unable to write dbname to disc");
+
+            let tablename = "tablename=".to_owned() + table + "\n";
+            writer
+                .write_all((&tablename).as_ref())
+                .expect("unable to write tablename to disc");
+
+            let column_names = "columnNames=[".to_owned();
+            writer
+                .write_all((&column_names).as_ref())
+                .expect("unable to write the start of columnnames to disc");
+
+            for i in 0..columns.len() {
+                let column = &columns[i];
+                let column_name = &column.0;
+
+                if i == columns.len() - 1 {
+                    let single_column_name = column_name.to_owned() + "]\n";
+                    writer
+                        .write_all((&single_column_name).as_ref())
+                        .expect("unable to write the start of single_column_name to disc");
+                } else {
+                    let single_column_name = column_name.to_owned() + ";";
+                    writer
+                        .write_all((&single_column_name).as_ref())
+                        .expect("unable to write the start of single_column_name to disc");
+                }
+            }
+
+            let column_names = "columnTypeDefinition=[".to_owned();
+            writer
+                .write_all((&column_names).as_ref())
+                .expect("unable to write the start of columnnames to disc");
+            for i in 0..columns.len() {
+                let column = &columns[i];
+                let column_datatype = &column.1;
+                let dt_as_str = match column_datatype {
+                    DataType::BigInt(_) => "BigInt",
+                    DataType::Int(_) => "Int",
+                    DataType::SmallInt(_) => "SmallInt",
+                    DataType::TinyInt(_) => "TinyInt",
+                    DataType::Decimal(_) => "Decimal",
+                    DataType::Float(_) => "Float",
+                    DataType::VarChar(_, _) => "VarChar",
+                    DataType::Bool(_) => "Bool",
+                    DataType::Date(_) => "Date",
+                    DataType::Time(_) => "Time",
+                    DataType::DateTime(_) => "DateTime",
+                    DataType::Null => "Null",
+                    DataType::Undefined => "Undefined",
+                };
+                if i == columns.len() - 1 {
+                    let dt_string = dt_as_str.to_owned() + "]/n";
+                    writer
+                        .write_all((&dt_string).as_ref())
+                        .expect("unable to write the start of columnnames to disc");
+                } else {
+                    let dt_string = dt_as_str.to_owned() + ";";
+                    writer
+                        .write_all((&dt_string).as_ref())
+                        .expect("unable to write the start of columnnames to disc");
+                }
+            }
+        }
+        Err(_) => {}
+    };
+
     Ok(())
 }
 
@@ -202,6 +290,4 @@ where
 }
 
 #[cfg(test)]
-mod tests {
-}
-
+mod tests {}

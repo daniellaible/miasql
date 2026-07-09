@@ -91,8 +91,30 @@ Todo: here we need the Joins | aggregate functions | regular functions
 ##### Create
 
 ###### Create Table
+Before you create a new table, you have to specify which database instance you are using.
+Please check out the USE command how to do so.   
+
+The CREATE TABLE command has the following structure:
+> CREATE TABLE table_name (    
+> 		&emsp;&emsp;&emsp;column_name data_type constraint,   
+> 		&emsp;&emsp;&emsp;column_name data_type constraint,   
+> 		&emsp;&emsp;&emsp;column_name data_type constraint,    
+> );
+
+Please check out the section called datatypes if you want to know all available datatypes in MiaSql.
+If you have questions about constraints, there is also a section about Constraints.
+
+The Primary Key of a table must always be the first column.   
+The Primary Key must be of type BigInt. 
+VarChars do not need the length attribute. You can use it, but it will be ignored.
 
 ###### Create Database
+This command creates a new database instance. The database server can handle several database
+instances at the same time, but only one per user.
+> CREATE DATABASE testdb;
+
+The command above creates a new database called testdb. Before you can work with it, you have to
+specify that you want to use this database instance. You do this by using the USE command.
 
 ##### Delete
 
@@ -113,7 +135,14 @@ Truncate deletes all data from a table without deleting the table itself.
 ##### Insert
 
 ##### Update
->
+
+#### Use
+To be able to communicate with the database server, you need to specify with database instance you
+are using. You do this with the USE command.
+> USE testdb;
+
+After specifing the database instance you want to use, you can select and manipulate all the tables 
+in the withing thise database instance - if you have the permission to do so.
 
 ##### Delete
 Syntax of a delete statement:

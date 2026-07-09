@@ -68,6 +68,8 @@ pub fn parse(create: CreateTable) -> SqlCommand {
                  ColumnOption::NotNull => Constraint::NotNull,
                  ColumnOption::Unique(_) => Constraint::Unique,
                  ColumnOption::PrimaryKey(_) => Constraint::PrimaryKey,
+                 ColumnOption::Default(_) => Constraint::Default,
+                 ColumnOption::Check(_) => Constraint::Check,
                  _ => Constraint::Undefined,
              };
              column_constraints.push(constraint.clone());
@@ -87,7 +89,6 @@ pub fn parse(create: CreateTable) -> SqlCommand {
 }
 
 pub fn extract_foreign_keys(create_table: CreateTable) -> Vec<ParsedForeignKey> {
-
     let mut foreign_keys = Vec::new();
 
     for constraint in &create_table.constraints {
@@ -117,6 +118,29 @@ pub fn extract_foreign_keys(create_table: CreateTable) -> Vec<ParsedForeignKey> 
         }
     }
     foreign_keys
+}
+
+pub fn update_system_table(id: i64, db_name: Arc<str>, table_name: Arc<str>) -> anyhow::Result<()> {
+    let mut row: Row = Row{
+        data: Vec::new(),
+    };
+    let db = &*db_name;
+    let table = &*table_name;
+
+    let mut location = "C:\\MiaSql\\tables\\".to_owned();
+    location = location + db.to_lowercase().as_str();
+    location = location + "_";
+    location = location + table_name.to_lowercase().as_str();
+    location = location + ".mtd";
+
+    row.data.push(DataType::BigInt(id));
+    row.data.push(DataType::VarChar(db.len() as u8, String::from(db)));
+    row.data.push(DataType::VarChar(table.len() as u8, String::from(table)));
+    row.data.push(DataType::VarChar(table.len() as u8, String::from(location)));
+
+    DbMem::insert_row("system", "tables", row);
+
+    Ok(())
 }
 
 
@@ -153,27 +177,4 @@ mod tests {
             _ => panic!("expected query"),
         };
     }
-}
-
-pub fn update_system_table(id: i64, db_name: Arc<str>, table_name: Arc<str>) -> anyhow::Result<()> {
-    let mut row: Row = Row{
-        data: Vec::new(),
-    };
-    let db = &*db_name;
-    let table = &*table_name;
-    
-    let mut location = "C:\\MiaSql\\tables\\".to_owned();
-    location = location + db.to_lowercase().as_str();
-    location = location + "_";
-    location = location + table_name.to_lowercase().as_str();
-    location = location + ".mtd";
-    
-    row.data.push(DataType::BigInt(id));
-    row.data.push(DataType::VarChar(db.len() as u8, String::from(db)));
-    row.data.push(DataType::VarChar(table.len() as u8, String::from(table)));
-    row.data.push(DataType::VarChar(table.len() as u8, String::from(location)));
-
-    DbMem::insert_row("system", "tables", row);
-
-    Ok(())
 }

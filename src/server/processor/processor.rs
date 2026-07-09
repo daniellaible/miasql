@@ -110,7 +110,7 @@ pub fn process_transaction(mut transaction: TransactionContext) -> Option<Transa
 fn update_mtd_file(tp: TransactionContext) -> anyhow::Result<()> {
     match &tp.command {
         SqlCommand::CreateTable {table, columns, foreign_keys, ..} => {
-            match mtdhandler::new_mtd_file(table, columns, foreign_keys, tp.table_uuid.clone()) {
+            match mtdhandler::new_mtd_file(&tp.db_name, table, columns, foreign_keys, tp.table_uuid.clone()) {
                 Ok(_) => {},
                 Err(_) => {}
             }
