@@ -143,29 +143,7 @@ pub fn read_mtd_file(path: &str) -> MtdFile {
                 }
                 mtd.column_constraints = column_constraints;
             }
-
-            if line.starts_with("displayOrder") {
-                let mut splits = line.split("=");
-                _ = splits.next();
-
-                let mut display_order_arr = splits.next().unwrap().to_string();
-                display_order_arr = display_order_arr.replace("[", "");
-                display_order_arr = display_order_arr.replace("]", "");
-
-                let single_order_split = display_order_arr.split(";");
-                let mut order: Vec<(u32, u32)> = Vec::new();
-
-                for order_tuple in single_order_split {
-                    let mut order_tuple = order_tuple.replace("(", "").to_string();
-                    order_tuple = order_tuple.replace(")", "").to_string();
-                    let mut tupel_value = order_tuple.split(",");
-                    let left = tupel_value.next().unwrap().trim().parse::<u32>().unwrap();
-                    let right = tupel_value.next().unwrap().trim().parse::<u32>().unwrap();
-                    order.push((left, right));
-                }
-                mtd.display_order = order;
-            }
-
+            
             if line.starts_with("moiFiles") {
                 let mut splits = line.split("=");
                 _ = splits.next();
@@ -192,7 +170,7 @@ pub fn new_mtd_file(
     foreign_keys: &Vec<ParsedForeignKey>,
     uuid: Uuid,
 ) -> anyhow::Result<()> {
-    let file_result = File::create("C:\\MiaSql\\system\\bla.moi");
+    let file_result = File::create("C:\\MiaSql\\system\\bla.mtd");
 
     match file_result {
         Ok(file_item) => {
