@@ -143,7 +143,7 @@ pub fn read_mtd_file(path: &str) -> MtdFile {
                 }
                 mtd.column_constraints = column_constraints;
             }
-            
+
             if line.starts_with("moiFiles") {
                 let mut splits = line.split("=");
                 _ = splits.next();
@@ -170,7 +170,8 @@ pub fn new_mtd_file(
     foreign_keys: &Vec<ParsedForeignKey>,
     uuid: Uuid,
 ) -> anyhow::Result<()> {
-    let file_result = File::create("C:\\MiaSql\\system\\bla.mtd");
+    let path = "C:\\MiaSql\\tables\\".to_owned() + uuid.to_string().as_str() + ".mtd";
+    let file_result = File::create(path.clone());
 
     match file_result {
         Ok(file_item) => {
@@ -241,7 +242,7 @@ pub fn new_mtd_file(
                     DataType::Undefined => "Undefined",
                 };
                 if i == columns.len() - 1 {
-                    let dt_string = dt_as_str.to_owned() + "]/n";
+                    let dt_string = dt_as_str.to_owned() + "]\n";
                     writer
                         .write_all((&dt_string).as_ref())
                         .expect("unable to write the start of columnnames to disc");
@@ -252,6 +253,35 @@ pub fn new_mtd_file(
                         .expect("unable to write the start of columnnames to disc");
                 }
             }
+
+            let column_constraints = "columnConstraints=[".to_owned();
+            writer
+                .write_all((&column_constraints).as_ref())
+                .expect("unable to write the start of column_constraints to disc");
+            for i in 0..columns.len() {
+                let column = &columns[i];
+                let constraints = &column.2;
+                for j in 0 .. constraints.len(){
+                    if i == columns.len() -1  && j == constraints.len()-1 {
+                        let constraint = constraints[j].clone();
+                        let output = "(".to_owned() + i.to_string().as_str() + "," + constraint.to_string().as_str() + ")]\n";
+                        writer
+                            .write_all((&output).as_ref())
+                            .expect("unable to write the start of output to disc");
+                    }else {
+                        let constraint = constraints[j].clone();
+                        let output = "(".to_owned() + i.to_string().as_str() + "," + constraint.to_string().as_str() + ");";
+                        writer
+                            .write_all((&output).as_ref())
+                            .expect("unable to write the start of output to disc");
+                    }
+                }
+            }
+
+            let moi_path = "moiFiles=[".to_owned() + path.as_str() + "]";
+            writer
+                .write_all((&moi_path).as_ref())
+                .expect("unable to write the start of moi to disc");
         }
         Err(_) => {}
     };
