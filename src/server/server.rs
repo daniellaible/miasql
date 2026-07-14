@@ -152,6 +152,7 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                     let transaction: TransactionContext = TransactionContext {
                         db_name: db_used.clone(),
                         table_uuid: Uuid::default(),
+                        user: username.clone(),
                         row_id: -1,
                         table_names: table_names,
                         is_processing: false,

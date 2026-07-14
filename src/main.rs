@@ -38,11 +38,9 @@ mod command {
 mod file{
     pub mod mtdhandler;
     pub mod moihandler;
+    pub mod ledgerhandler;
 }
 
-mod ledger{
-    pub mod writer;
-}
 
 mod server {
     pub mod processor{

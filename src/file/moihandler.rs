@@ -3,7 +3,7 @@ use crate::database::datatype::DataType;
 use crate::database::table::{Row, Table};
 use crate::file::mtdhandler::MtdFile;
 use std::fs::{File, OpenOptions};
-use std::io::{BufReader, Error, ErrorKind, Read, Seek, SeekFrom, Write};
+use std::io::{BufReader, BufWriter, Error, ErrorKind, Read, Seek, SeekFrom, Write};
 use anyhow::anyhow;
 use log::error;
 
@@ -221,7 +221,29 @@ pub fn get_max_id(path:& str) -> i64{
     i64::from_le_bytes(i64_buffer)
 }
 
-///This function increments the max id, after a new row has been added
+pub fn create_moi_file(path: &str) -> anyhow::Result<()>{
+    let file_result = File::create(path);
+
+    match file_result {
+        Ok(file_item) => {
+            let mut writer = BufWriter::new(file_item);
+            let max_id: u64 = 3;
+            writer.write(&max_id.to_le_bytes()).expect("unable to write to disc");
+            writer.write(b"\n").expect("unable to write to disc");
+
+            let lines: u64 = 3;
+            writer.write(&lines.to_le_bytes()).expect("unable to write to disc");
+            writer.write(b"\n").expect("unable to write to disc");
+            return Ok(());
+        }
+        Err(_) => {
+            //TODO This error handling sucks
+            Ok(())
+        }
+    }
+}
+
+    ///This function increments the max id, after a new row has been added
 pub fn add_row(path: &str, row: Row) -> anyhow::Result<()>{
     let mut i64_buffer = [0u8; std::mem::size_of::<i64>()];
     let mut u8_buffer = [0u8; std::mem::size_of::<u8>()];
@@ -464,7 +486,6 @@ mod tests {
     use crate::file::mtdhandler::read_mtd_file;
     use std::fs::File;
     use std::io::{BufWriter, Write};
-    use log::error;
 
     #[test]
     fn test_read_max_id() {

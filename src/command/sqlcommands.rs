@@ -1,3 +1,4 @@
+use std::fmt;
 use crate::command::constraint::Constraint;
 use crate::command::createtable::ParsedForeignKey;
 use crate::command::select::{JoinClause};
@@ -105,4 +106,4 @@ pub enum SqlCommand {
     ShowDatabases { command: String,},
     ShowTables { command: String, database: String},
     Undefined ,
-} 
+}

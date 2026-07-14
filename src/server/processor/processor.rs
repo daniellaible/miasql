@@ -2,7 +2,7 @@ use std::sync::Arc;
 use crate::command::sqlcommands::SqlCommand;
 use crate::server::dbmem::DbMem;
 use crate::server::queue::TransactionContext;
-use crate::{command, ledger};
+use crate::{command, file};
 use log::{error, info};
 use std::sync::atomic::AtomicU64;
 use std::thread;
@@ -10,6 +10,7 @@ use uuid::Uuid;
 use crate::database::datatype::DataType;
 use crate::database::table::Row;
 use crate::file::{moihandler, mtdhandler};
+use crate::file::moihandler::create_moi_file;
 
 pub static COUNTER: AtomicU64 = AtomicU64::new(0);
 
@@ -36,6 +37,17 @@ pub fn process_transaction(mut transaction: TransactionContext) -> Option<Transa
     load_table_to_ram(transaction.clone());
 
     {
+
+        //update ledger file
+        let ledger_clone_file = transaction.clone();
+        let ledger_thread_handle = thread::spawn(move || {
+            let result = update_ledger_file(ledger_clone_file);
+            match result {
+                Ok(_) => {println!("cool")}
+                Err(_) => {println!("uncool")}
+            }
+        });
+        
         //update the b-tree
         let trans_clone_btree = transaction.clone();
         let btree_thread_handle = thread::spawn(move || {
@@ -68,7 +80,7 @@ pub fn process_transaction(mut transaction: TransactionContext) -> Option<Transa
             }
         });
 
-        //update/creat mtd file
+        //update/create mtd file
         let trans_clone_mtd_file = transaction.clone();
         let mtd_file_thread_handle = thread::spawn(move || {
             let mtd_file_result = update_mtd_file(trans_clone_mtd_file);
@@ -100,25 +112,26 @@ pub fn process_transaction(mut transaction: TransactionContext) -> Option<Transa
             }
         });
 
+
         btree_thread_handle.join().unwrap();
         system_table_thread_handle.join().unwrap();
         moi_file_thread_handle.join().unwrap();
+        mtd_file_thread_handle.join().unwrap();
+        ledger_thread_handle.join().unwrap();
     }
     Some(transaction)
 }
 
-fn update_mtd_file(tp: TransactionContext) -> anyhow::Result<()> {
+fn update_mtd_file(mut tp: TransactionContext) -> anyhow::Result<()> {
     match &tp.command {
         SqlCommand::CreateTable {table, columns, foreign_keys, ..} => {
             match mtdhandler::new_mtd_file(&tp.db_name, table, columns, foreign_keys, tp.table_uuid.clone()) {
-                Ok(_) => {},
-                Err(_) => {}
+                Ok(_) => {tp.is_mtd_file_updated = true},
+                Err(_) => {tp.error = true}
             }
         }
         _ => {}
     }
-
-
     Ok(())
 }
 
@@ -186,42 +199,15 @@ fn update_moi_file(mut tp: TransactionContext) -> anyhow::Result<TransactionCont
             row.data.push(DataType::BigInt(tp.row_id));
             row.data.push(DataType::VarChar(database.len() as u8, String::from(database)));
             row.data.push(DataType::VarChar(table.len() as u8, String::from(table)));
-            row.data.push(DataType::VarChar(path.len() as u8, String::from(path)));
+            row.data.push(DataType::VarChar(path.len() as u8, String::from(path.clone())));
             moihandler::add_row("C:\\MiaSql\\system\\tables.moi", row).expect("Unable to update database moi file");
+
+            create_moi_file(&path);
         }
         _ => {
-
         }
     }
     Ok(tp)
-}
-
-
-
-fn update_shard_file(transaction_id: u64) {
-    println!("update shard");
-    let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
-    let mut queue = masterqueue.queue.lock().unwrap();
-
-    if let Some(transaction_protocol) = queue
-        .iter_mut()
-        .find(|tp| tp.transaction_id == transaction_id)
-    {
-        transaction_protocol.is_shard_updated = false;
-    }
-}
-
-fn update_cluster_file(transaction_id: u64) {
-    println!("update cluster");
-    let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
-    let mut queue = masterqueue.queue.lock().unwrap();
-
-    if let Some(transaction_protocol) = queue
-        .iter_mut()
-        .find(|tp| tp.transaction_id == transaction_id)
-    {
-        transaction_protocol.is_cluster_updated = false;
-    }
 }
 
 fn update_table(mut tp: TransactionContext) -> anyhow::Result<TransactionContext> {
@@ -236,20 +222,13 @@ fn update_table(mut tp: TransactionContext) -> anyhow::Result<TransactionContext
     Ok(tp)
 }
 
-fn update_ledger_file(transaction_id: u64) {
-    let _ = ledger::writer::write_ledger(transaction_id);
-
-    let masterqueue = crate::server::queue::MasterQueueSingelton::instance();
-    let mut queue = masterqueue.queue.lock().unwrap();
-
-    if let Some(transaction_protocol) = queue
-        .iter_mut()
-        .find(|tp| tp.transaction_id == transaction_id)
-    {
-        transaction_protocol.is_ledger_updated = true;
+fn update_ledger_file(tp: TransactionContext) -> anyhow::Result<()>{
+    let result = file::ledgerhandler::append_to_file(&tp.user, &tp.command, &tp.db_name);
+    match result {
+        Ok(_) => {Ok(())}
+        Err(_) => {Ok(())}
     }
 }
-
 
 
 fn get_transaction_counter() -> u64 {

@@ -1,10 +1,6 @@
 # To Do's
-+ implement use database command -> need user for that -> needs basic login
-+ implement create table command()
-
 + MiaLedger path is not coming from the config file.
 + MiaLedger ledger number is a constant right now get it from a sytsem table
-+ MiaLedger is turned of in the processor a the moment. Turn it back on, when ready
 + MiaLedger should start a new file when reaching the 4GB limitation
 
 ## Bugs

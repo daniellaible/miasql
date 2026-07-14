@@ -10,6 +10,7 @@ use uuid::Uuid;
 #[derive(Debug, Clone)]
 pub struct TransactionContext {
     pub db_name: String,
+    pub user: String,
     pub table_uuid: Uuid,
     pub row_id: i64,
     pub table_names: Vec<String>,
