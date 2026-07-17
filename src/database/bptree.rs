@@ -44,7 +44,7 @@ struct LeafNode<K, V, const MAX_KEYS: usize> {
 }
 
 #[derive(Clone, Debug)]
-pub struct BPlusTree<K, V, const MAX_KEYS: usize = 32> {
+pub struct BPlusTree<K, V, const MAX_KEYS: usize = 64> {
     root: Link<K, V, MAX_KEYS>,
     len: usize,
 }
@@ -86,8 +86,8 @@ where
 
     pub fn get(&self, key: &K) -> Option<V> {
         let leaf = self.find_leaf(self.root.clone(), key);
-        let leaf_b = leaf.lock().unwrap();
-        let Node::Leaf(ln) = &*leaf_b else {
+        let leaf_guard = leaf.lock().unwrap();
+        let Node::Leaf(ln) = &*leaf_guard else {
             unreachable!("find_leaf must return leaf");
         };
         match ln.keys.binary_search(key) {

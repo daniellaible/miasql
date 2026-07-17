@@ -1,5 +1,5 @@
 use crate::command::constraint::Constraint;
-use crate::command::createtable::ParsedForeignKey;
+use crate::command::createtable::ForeignKeyToken;
 use crate::database::datatype::DataType;
 use std::fs::File;
 use std::io;
@@ -167,7 +167,7 @@ pub fn new_mtd_file(
     db_name: &String,
     table: &String,
     columns: &Vec<(String, DataType, Vec<Constraint>)>,
-    foreign_keys: &Vec<ParsedForeignKey>,
+    foreign_keys: &Vec<ForeignKeyToken>,
     uuid: Uuid,
 ) -> anyhow::Result<()> {
     let path = "C:\\MiaSql\\tables\\".to_owned() + uuid.to_string().as_str() + ".mtd";

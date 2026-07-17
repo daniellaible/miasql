@@ -9,7 +9,7 @@ use crate::server::dbmem::DbMem;
 use crate::server::queue::TransactionContext;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ParsedForeignKey {
+pub struct ForeignKeyToken {
     pub name: Option<String>,
     pub columns: Vec<String>,
     pub foreign_table: String,
@@ -88,7 +88,7 @@ pub fn parse(create: CreateTable) -> SqlCommand {
     }
 }
 
-pub fn extract_foreign_keys(create_table: CreateTable) -> Vec<ParsedForeignKey> {
+pub fn extract_foreign_keys(create_table: CreateTable) -> Vec<ForeignKeyToken> {
     let mut foreign_keys = Vec::new();
 
     for constraint in &create_table.constraints {
@@ -105,7 +105,7 @@ pub fn extract_foreign_keys(create_table: CreateTable) -> Vec<ParsedForeignKey> 
                     .join("."),
             };
 
-            foreign_keys.push(ParsedForeignKey {
+            foreign_keys.push(ForeignKeyToken {
                 name: fk.name.as_ref().map(|ident| ident.value.clone()),
                 columns: fk.columns.iter().map(|ident| ident.value.clone()).collect(),
                 foreign_table,

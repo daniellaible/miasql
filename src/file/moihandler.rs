@@ -17,7 +17,6 @@ pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
     table.table_name = mtd.tablename.clone();
     table.column_names = mtd.column_names.clone();
     table.column_types = mtd.column_type_definitions.clone();
-    table.display_order = mtd.display_order.clone();
     table.constraint = mtd.column_constraints.clone();
 
     let column_defs = &mtd.column_type_definitions;

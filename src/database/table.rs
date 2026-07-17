@@ -1,17 +1,22 @@
 use crate::command::constraint::Constraint;
+use crate::command::createtable::ForeignKeyToken;
+use crate::command::sqlcommands::SqlCommand;
 use crate::database::bptree::BPlusTree;
 use crate::database::datatype::DataType;
-use std::error::Error;
-use std::fmt;
-use std::io::{self, Read, Write};
-use uuid::Uuid;
+use crate::server::dbmem::DbMem;
 use crate::server::queue::TransactionContext;
+use std::error::Error;
+use std::{fmt, thread};
+use std::io::{Read, Write};
+use std::ops::Deref;
+use std::sync::Arc;
+use uuid::Uuid;
+use crate::database::table;
 
 #[derive(Debug)]
 pub struct Row {
     pub data: Vec<DataType>,
 }
-
 
 #[derive(Debug, Clone)]
 pub struct Table {
@@ -21,10 +26,10 @@ pub struct Table {
     pub mtd_path: String,
     pub tree: BPlusTree<i64, Vec<DataType>, 3>,
     pub uuid: Uuid,
-    pub display_order: Vec<(u32, u32)>,
     pub column_names: Vec<String>,
     pub column_types: Vec<DataType>,
     pub constraint: Vec<(u32, Constraint)>,
+    pub foreign_keys: Vec<ForeignKeyToken>,
 }
 
 impl fmt::Display for Table {
@@ -47,7 +52,7 @@ impl Table {
             mtd_path: Default::default(),
             column_names: vec![],
             column_types: vec![],
-            display_order: vec![],
+            foreign_keys: vec![],
             constraint: vec![],
         }
     }
@@ -65,8 +70,9 @@ impl Table {
         uuid: Uuid,
         mtd_path: String,
         column_names: Vec<String>,
-        display_order: Vec<(u32, u32)>,
-        constraints: (u32, Vec<Constraint>),
+        column_types: Vec<DataType>,
+        constraints: Vec<(u32, Constraint)>,
+        foreign_keys: Vec<ForeignKeyToken>,
     ) -> Table {
         // todo check if there are duplicates in the names
 
@@ -75,12 +81,12 @@ impl Table {
             db_name: "".to_string(),
             table_name,
             tree,
-            mtd_path,
             uuid,
-            display_order: vec![],
+            mtd_path,
             column_names,
             column_types: vec![],
             constraint: vec![],
+            foreign_keys: vec![],
         }
     }
 
@@ -91,19 +97,78 @@ impl Table {
 }
 
 pub fn update_table(mut tp: TransactionContext) -> anyhow::Result<TransactionContext> {
-    println!("update b-tree");
 
-    match tp.command {
+    match tp.command.clone() {
+        //here we create a new table in memory
+        SqlCommand::CreateTable {
+            table,
+            columns,
+            foreign_keys,
+            ..
+        } => {
+            //do the column parsing
+
+            let mut column_names = parse_to_names(columns.clone());
+            let datatypes: Vec<DataType> = parse_to_datatypes(columns.clone());
+            let constraints: Vec<(u32, Constraint)> = parse_to_constraints(columns.clone());
+
+
+            let names = column_names.to_vec();
+
+            let tree: BPlusTree<i64, Vec<DataType>, 3> = BPlusTree::default();
+            let table = Table::new(
+                0,
+                tp.db_name.clone(),
+                table,
+                tree,
+                tp.table_uuid,
+                "".to_string(),
+                names,
+                datatypes,
+                constraints,
+                foreign_keys,
+            );
+            DbMem::add_table(table)
+        }
         _ => {
-            //Create Database Command needs no btree update
         }
     }
     tp.is_btree_updated = true;
     Ok(tp)
 }
 
+fn parse_to_constraints(columns: Vec<(String, DataType, Vec<Constraint>)>) -> Vec<(u32, Constraint)> {
+    let mut result:Vec<(u32, Constraint)> = vec![];
+
+    for i in 0.. columns.len(){
+        let column = columns[i].clone();
+        let constraints = column.2;
+
+        for j in 0 .. constraints.len(){
+            let constraint:(u32, Constraint) = (i as u32, constraints[j].clone());
+            result.push(constraint);
+        }
+    }
+    result
+}
+
+fn parse_to_datatypes(columns: Vec<(String, DataType, Vec<Constraint>)>) -> Vec<DataType> {
+    let mut result:Vec<DataType> = vec![];
+    for i in 0.. columns.len(){
+        let column = columns[i].clone();
+        result.push(column.1);
+    }
+    result
+}
+
+fn parse_to_names(columns: Vec<(String, DataType, Vec<Constraint>)>) -> Vec<String> {
+    let mut result:Vec<String> = vec![];
+    for i in 0.. columns.len(){
+        let column = columns[i].clone();
+        result.push(column.0);
+    }
+    result
+}
 
 #[cfg(test)]
-mod tests {
-
-}
+mod tests {}

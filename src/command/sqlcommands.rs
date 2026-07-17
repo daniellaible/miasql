@@ -1,6 +1,6 @@
 use std::fmt;
 use crate::command::constraint::Constraint;
-use crate::command::createtable::ParsedForeignKey;
+use crate::command::createtable::ForeignKeyToken;
 use crate::command::select::{JoinClause};
 use crate::command::update::UpdateSet;
 use crate::command::whereclause::WhereClause;
@@ -28,7 +28,7 @@ pub enum SqlCommand {
         command: String,
         table: String,
         columns: Vec<(String, DataType, Vec<Constraint>)>,
-        foreign_keys: Vec<ParsedForeignKey>,
+        foreign_keys: Vec<ForeignKeyToken>,
     },
     /// command: CREATE_DATABASE
     /// database: <name of new database>
