@@ -6,12 +6,8 @@ use crate::database::datatype::DataType;
 use crate::server::dbmem::DbMem;
 use crate::server::queue::TransactionContext;
 use std::error::Error;
-use std::{fmt, thread};
-use std::io::{Read, Write};
-use std::ops::Deref;
-use std::sync::Arc;
+use std::{fmt};
 use uuid::Uuid;
-use crate::database::table;
 
 #[derive(Debug)]
 pub struct Row {
@@ -71,22 +67,22 @@ impl Table {
         mtd_path: String,
         column_names: Vec<String>,
         column_types: Vec<DataType>,
-        constraints: Vec<(u32, Constraint)>,
+        constraint: Vec<(u32, Constraint)>,
         foreign_keys: Vec<ForeignKeyToken>,
     ) -> Table {
         // todo check if there are duplicates in the names
 
         Table {
             max_id,
-            db_name: "".to_string(),
+            db_name,
             table_name,
             tree,
             uuid,
             mtd_path,
             column_names,
-            column_types: vec![],
-            constraint: vec![],
-            foreign_keys: vec![],
+            column_types,
+            constraint,
+            foreign_keys,
         }
     }
 
@@ -106,14 +102,9 @@ pub fn update_table(mut tp: TransactionContext) -> anyhow::Result<TransactionCon
             foreign_keys,
             ..
         } => {
-            //do the column parsing
-
-            let mut column_names = parse_to_names(columns.clone());
+            let column_names = parse_to_names(columns.clone());
             let datatypes: Vec<DataType> = parse_to_datatypes(columns.clone());
             let constraints: Vec<(u32, Constraint)> = parse_to_constraints(columns.clone());
-
-
-            let names = column_names.to_vec();
 
             let tree: BPlusTree<i64, Vec<DataType>, 3> = BPlusTree::default();
             let table = Table::new(
@@ -123,12 +114,13 @@ pub fn update_table(mut tp: TransactionContext) -> anyhow::Result<TransactionCon
                 tree,
                 tp.table_uuid,
                 "".to_string(),
-                names,
+                column_names,
                 datatypes,
                 constraints,
                 foreign_keys,
             );
-            DbMem::add_table(table)
+            DbMem::add_table(table);
+            DbMem::print_tables();
         }
         _ => {
         }
