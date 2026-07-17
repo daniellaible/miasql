@@ -6,7 +6,9 @@ use std::fs::{File, OpenOptions};
 use std::io::{BufReader, BufWriter, Error, ErrorKind, Read, Seek, SeekFrom, Write};
 use anyhow::anyhow;
 use log::error;
-
+use crate::command::sqlcommands::SqlCommand;
+use crate::file::moihandler;
+use crate::server::queue::TransactionContext;
 
 pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
     let mut table = Table::default();
@@ -243,7 +245,6 @@ pub fn create_moi_file(path: &str) -> anyhow::Result<()>{
     }
 }
 
-    ///This function increments the max id, after a new row has been added
 pub fn add_row(path: &str, row: Row) -> anyhow::Result<()>{
     let mut i64_buffer = [0u8; std::mem::size_of::<i64>()];
     let mut u8_buffer = [0u8; std::mem::size_of::<u8>()];
@@ -478,6 +479,38 @@ pub fn add_row(path: &str, row: Row) -> anyhow::Result<()>{
         Ok(_) => anyhow::Ok(()),
         Err(_) =>  Err(anyhow!("Unable to write moi file"))
     }
+}
+
+pub fn update(mut tp: TransactionContext) -> anyhow::Result<TransactionContext>{
+    match &tp.command {
+        SqlCommand::CreateDatabase {database, ..} => {
+            let mut row: Row = Row{
+                data: Vec::new(),
+            };
+            row.data.push(DataType::BigInt(tp.row_id));
+            row.data.push(DataType::VarChar(database.len() as u8, String::from(database)));
+            moihandler::add_row("C:\\MiaSql\\system\\database.moi", row).expect("Unable to update database moi file");
+        }
+        SqlCommand::CreateTable {table, ..} => {
+            let mut row: Row = Row{
+                data: Vec::new(),
+            };
+            let database = tp.db_name.clone();
+            tp.table_names.push(table.clone());
+
+            let path = "C:\\MiaSql\\tables\\".to_owned() + tp.table_uuid.to_string().as_str() + ".mtd";
+            row.data.push(DataType::BigInt(tp.row_id));
+            row.data.push(DataType::VarChar(database.len() as u8, String::from(database)));
+            row.data.push(DataType::VarChar(table.len() as u8, String::from(table)));
+            row.data.push(DataType::VarChar(path.len() as u8, String::from(path.clone())));
+            moihandler::add_row("C:\\MiaSql\\system\\tables.moi", row).expect("Unable to update database moi file");
+
+            create_moi_file(&path);
+        }
+        _ => {
+        }
+    }
+    Ok(tp)
 }
 
 #[cfg(test)]

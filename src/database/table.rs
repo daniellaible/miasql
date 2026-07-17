@@ -5,6 +5,7 @@ use std::error::Error;
 use std::fmt;
 use std::io::{self, Read, Write};
 use uuid::Uuid;
+use crate::server::queue::TransactionContext;
 
 #[derive(Debug)]
 pub struct Row {
@@ -87,6 +88,18 @@ impl Table {
         self.max_id += 1;
         self.max_id
     }
+}
+
+pub fn update_table(mut tp: TransactionContext) -> anyhow::Result<TransactionContext> {
+    println!("update b-tree");
+
+    match tp.command {
+        _ => {
+            //Create Database Command needs no btree update
+        }
+    }
+    tp.is_btree_updated = true;
+    Ok(tp)
 }
 
 
