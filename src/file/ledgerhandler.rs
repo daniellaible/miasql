@@ -42,61 +42,61 @@ fn to_printable_line(command: &SqlCommand, database: &str, counter: u64, user: &
         match command {
 
         SqlCommand::CreateTable {table, columns, foreign_keys,  .. } => {
-            line = format!( "{:?}; {counter}; {user}; {database}; CREATE_TABLE; TABLE={}; COLUMNS={:?}; FOREIGN_KEYS={:?}",timestamp, table, columns, foreign_keys );
+            line = format!( "{:?}; {counter}; {user}; {database}; CREATE_TABLE; TABLE={}; COLUMNS={:?}; FOREIGN_KEYS={:?} \n",timestamp, table, columns, foreign_keys );
             line.replace("\"", "")
         }
         SqlCommand::CreateDatabase {database, comment, .. } => {
-            line = format!("{:?}; {counter}; {user}; {database}; CREATE_DATABASE; DATABASE={}; COMMENT={:?}",timestamp,database, comment );
+            line = format!("{:?}; {counter}; {user}; {database}; CREATE_DATABASE; DATABASE={}; COMMENT={:?}\n",timestamp,database, comment );
             line.replace("\"", "")
         }
         SqlCommand::DropTable { table, ..} => {
-            line = format!( "{:?}; {counter}; {user}; {database}; DROP_TABLE; TABLE={}",timestamp, table);
+            line = format!( "{:?}; {counter}; {user}; {database}; DROP_TABLE; TABLE={}\n",timestamp, table);
             line.replace("\"", "")
         }
         SqlCommand::DropDatabase {database, .. } => {
-            line = format!( "{:?}; {counter}; {user}; {database}; DROP_DATABASE; DATABASE={}",timestamp, database);
+            line = format!( "{:?}; {counter}; {user}; {database}; DROP_DATABASE; DATABASE={}\n",timestamp, database);
             line.replace("\"", "")
         }
         SqlCommand::Delete {table, where_clause, .. } => {
-            line = format!( "{:?}; {counter}; {user}; {database}; DELETE; TABLE={}; WHERE={:?}",timestamp, table, where_clause);
+            line = format!( "{:?}; {counter}; {user}; {database}; DELETE; TABLE={}; WHERE={:?}\n",timestamp, table, where_clause);
             line.replace("\"", "")
         }
         SqlCommand::Truncate {tables, .. } => {
-            line = format!( "{:?}; {counter}; {user}; {database}; TRUNCATE; TABLES={:?}",timestamp, tables);
+            line = format!( "{:?}; {counter}; {user}; {database}; TRUNCATE; TABLES={:?}\n",timestamp, tables);
             line.replace("\"", "")
         }
         SqlCommand::Update {table, sets, where_clause, .. } => {
-            line = format!( "{:?}; {counter}; {user}; {database}; UPDATE; TABLE={}; SETS={:?}; WHERE={:?}",timestamp, table, sets, where_clause);
+            line = format!( "{:?}; {counter}; {user}; {database}; UPDATE; TABLE={}; SETS={:?}; WHERE={:?}\n",timestamp, table, sets, where_clause);
             line.replace("\"", "")
         }
         SqlCommand::Insert {table, columns, values, .. } => {
-            line = format!( "{:?}; {counter}; {user}; {database}; INSERT; TABLE={}; COLUMNS={:?}; VALUES={:?}",timestamp, table, columns, values);
+            line = format!( "{:?}; {counter}; {user}; {database}; INSERT; TABLE={}; COLUMNS={:?}; VALUES={:?}\n",timestamp, table, columns, values);
             line.replace("\"", "")
         }
         SqlCommand::AlterAddColumn {table, columns, .. } => {
-            line = format!( "{:?}; {counter}; {user}; {database}; ALTER_ADD_COLUMN; TABLE={}; COLUMNS={:?}",timestamp, table, columns);
+            line = format!( "{:?}; {counter}; {user}; {database}; ALTER_ADD_COLUMN; TABLE={}; COLUMNS={:?}\n",timestamp, table, columns);
             line.replace("\"", "")
         }
         SqlCommand::AlterDropColumn { table, columns, .. } => {
-            line = format!( "{:?}; {counter}; {user}; {database}; ALTER_DROP_COLUMN; TABLE={}; COLUMNS={:?}",timestamp, table, columns);
+            line = format!( "{:?}; {counter}; {user}; {database}; ALTER_DROP_COLUMN; TABLE={}; COLUMNS={:?}\n",timestamp, table, columns);
             line.replace("\"", "")
         }
         SqlCommand::AlterRenameColumn {table, old, new,.. } => {
-            line = format!( "{:?}; {counter}; {user}; {database}; ALTER_RENAME_COLUMN; TABLE={}; OLD={}; NEW={}",timestamp, table, old, new);
+            line = format!( "{:?}; {counter}; {user}; {database}; ALTER_RENAME_COLUMN; TABLE={}; OLD={}; NEW={}\n",timestamp, table, old, new);
             line.replace("\"", "")
         }
         SqlCommand::AlterModifyColumn {table, column, data_type, constraints,.. } => {
-            line = format!( "{:?}; {counter}; {user}; {database}; ALTER_RENAME_COLUMN; TABLE={}; COLUMN={}; DATATYPE={:?}; CONSTRAINTS={:?}",timestamp, table, column, data_type, constraints);
+            line = format!( "{:?}; {counter}; {user}; {database}; ALTER_RENAME_COLUMN; TABLE={}; COLUMN={}; DATATYPE={:?}; CONSTRAINTS={:?}\n",timestamp, table, column, data_type, constraints);
             line.replace("\"", "")
         }
         SqlCommand::AlterTableRename {table, new_name,.. } => {
-            line = format!( "{:?}; {counter}; {user}; {database}; ALTER_RENAME_TABLE; TABLE={}; NEW_NAME={}",timestamp, table, new_name);
+            line = format!( "{:?}; {counter}; {user}; {database}; ALTER_RENAME_TABLE; TABLE={}; NEW_NAME={}\n",timestamp, table, new_name);
             line.replace("\"", "")
         }
         _ => {
             String::new()
         }
-    }
+    }  
 }
 
 

@@ -61,6 +61,10 @@ pub enum SqlCommand {
         sets: Vec<UpdateSet>,
         where_clause: WhereClause
     },
+    /// command is always INSERT
+    /// table is the table name you want to insert it toto
+    /// columns are the columns you want to insert it into
+    /// values are the values of the columns, 2dim array because you can insert more than one row at a time
     Insert {
         command: String,
         table: String,

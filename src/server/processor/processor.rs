@@ -37,7 +37,6 @@ pub fn process_transaction(mut transaction: TransactionContext) -> Option<Transa
     load_table_to_ram(transaction.clone());
 
     {
-
         //update ledger file
         let ledger_clone_file = transaction.clone();
         let ledger_thread_handle = thread::spawn(move || {
@@ -47,7 +46,7 @@ pub fn process_transaction(mut transaction: TransactionContext) -> Option<Transa
                 Err(_) => {println!("uncool")}
             }
         });
-        
+
         //update the b-tree
         let trans_clone_btree = transaction.clone();
         let btree_thread_handle = thread::spawn(move || {
@@ -111,7 +110,6 @@ pub fn process_transaction(mut transaction: TransactionContext) -> Option<Transa
                 }
             }
         });
-
 
         btree_thread_handle.join().unwrap();
         system_table_thread_handle.join().unwrap();

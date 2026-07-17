@@ -1,4 +1,5 @@
 # To Do's
++ Create tabe needs to implemnt foreign keys
 + MiaLedger path is not coming from the config file.
 + MiaLedger ledger number is a constant right now get it from a sytsem table
 + MiaLedger should start a new file when reaching the 4GB limitation
