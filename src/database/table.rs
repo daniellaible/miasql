@@ -120,7 +120,6 @@ pub fn update_table(mut tp: TransactionContext) -> anyhow::Result<TransactionCon
                 foreign_keys,
             );
             DbMem::add_table(table);
-            DbMem::print_tables();
         }
         _ => {
         }

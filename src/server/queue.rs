@@ -65,6 +65,7 @@ impl MasterQueueSingelton {
         while !is_transaction_completed {
             if !MasterQueueSingelton::instance().is_working.load(Ordering::SeqCst) {
                 transaction_result = do_transactions(transaction.clone());
+                MasterQueueSingelton::instance().is_working.store(false, Ordering::SeqCst);
                 is_transaction_completed = true;
             } else {
                 thread::sleep(wait_duration);
@@ -79,8 +80,6 @@ impl MasterQueueSingelton {
 }
 pub fn do_transactions(tp: TransactionContext) -> Option<TransactionContext> {
     MasterQueueSingelton::instance().is_working.store(true, Ordering::SeqCst);
-    //let mut queue = MasterQueueSingelton::instance().queue.lock().unwrap();
     let transaction_result = processor::process_transaction(tp);
-    MasterQueueSingelton::instance().is_working.store(false, Ordering::SeqCst);
     transaction_result
 }

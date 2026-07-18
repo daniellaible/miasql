@@ -1,3 +1,4 @@
+use std::time::Instant;
 use crate::command::sqlcommands::SqlCommand;
 use crate::server;
 use crate::server::queue::{MasterQueueSingelton, TransactionContext};
@@ -31,6 +32,7 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
             is_logged_in = true;
 
         } else {
+
             let n = stream.read(&mut buf).await?;
             if n == 0 {
                 return Ok(());
@@ -169,11 +171,14 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                         
                         error: false,
                     };
+                    let start = Instant::now();
                     transaction_result = MasterQueueSingelton.add(transaction);
                     match transaction_result{
                         None => error!("something went clearly wrong with your transaction"),
                         Some(tp) => info!("{}", tp)
                     }
+                    let duration = start.elapsed();
+                    println!("Request took: {:?}", duration);
 
                 }else{
                     answer = format!("I don't understand: {command_string}");
@@ -184,7 +189,6 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                     answer = format!("Please tell me which database to use!");
                 }
             }
-
             //write transaction_result to user
             stream.write_all((&answer).as_ref()).await.expect("Something wrong with the in-/output stream");
         }

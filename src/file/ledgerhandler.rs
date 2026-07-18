@@ -2,7 +2,7 @@ use std::fs::{File, OpenOptions};
 use std::path::Path;
 use std::io::{BufWriter, Write};
 use std::time::SystemTime;
-
+use anyhow::anyhow;
 use crate::command::sqlcommands::SqlCommand;
 
 
@@ -15,10 +15,22 @@ pub fn append_to_file(user: &str, command: &SqlCommand, given_db:&str) -> anyhow
     };
     let path = "C:\\MiaSql\\ledger\\".to_owned() + db_name + ".mldg";
     let output_file_path = Path::new(&path);
-    let mut counter: u64 = 0;
+
+    match command {
+        SqlCommand::CreateDatabase {..} => {
+            if output_file_path.exists() {
+                return Err(anyhow!("There is already a database ledger with this name"));
+            }
+        }
+        _ => {}
+    };
+
+    let counter: u64 = 0;
     if !output_file_path.exists() {
         match File::create(&path) {
-            Err(why) => panic!("couldn't create {}: {}", &path, why),
+            Err(why) => {
+                return Err(anyhow!("couldn't create {}: {}", &path, why));
+            },
             Ok(file) => file,
         };
     }
@@ -96,7 +108,7 @@ fn to_printable_line(command: &SqlCommand, database: &str, counter: u64, user: &
         _ => {
             String::new()
         }
-    }  
+    }
 }
 
 
