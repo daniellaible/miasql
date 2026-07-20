@@ -101,7 +101,7 @@ async fn run_server() -> std::io::Result<()> {
         println!("client connected: {addr}");
 
         tokio::spawn(async move {
-            if let Err(e) = crate::server::server::handle_client(stream).await {
+            if let Err(e) = server::server::handle_client(stream).await {
                 eprintln!("client error: {e}");
             }
         });
@@ -114,7 +114,11 @@ mod tests {
     #[test]
     fn calculate_stack_overflow_time(){
         let max_id = i64::MAX;
-        let millis_in_year = 1000 * 60 * 60 * 24 * 365;
+        let seconds = 60;
+        let minutes = 60;
+        let hours = 24;
+        let days = 365;
+        let millis_in_year = 1000 * seconds * minutes * hours * days;
         println!("Wieviele Jahre braucht es für einen StackOverflow bei 1000/s : {}", max_id / millis_in_year);
     }
 }

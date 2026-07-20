@@ -1,3 +1,4 @@
+use std::ops::Deref;
 use crate::command::sqlcommands::SqlCommand;
 use crate::database::table;
 use crate::file::{moihandler, mtdhandler};
@@ -8,14 +9,12 @@ use anyhow::anyhow;
 use log::info;
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
-use std::thread;
+use tokio::net::TcpStream;
 use uuid::Uuid;
 
 pub static COUNTER: AtomicU64 = AtomicU64::new(0);
 
-pub fn process_transaction(
-    mut transaction: TransactionContext,
-) -> anyhow::Result<TransactionContext> {
+pub fn process_transaction(mut stream: &TcpStream, mut transaction: TransactionContext) -> anyhow::Result<TransactionContext> {
     info!("In the processor: {:?}", transaction.command);
 
     let transaction_id = get_transaction_counter();
@@ -84,7 +83,6 @@ pub fn process_transaction(
 
     //update/create mtd file
     let trans_clone_mtd_file = transaction.clone();
-
     let mtd_file_result = update_mtd_file(trans_clone_mtd_file);
     match mtd_file_result {
         Ok(_) => {
@@ -98,9 +96,20 @@ pub fn process_transaction(
         }
     }
 
+    let trans_select_show = transaction.clone();
+    let select_result = select_and_show(&stream, trans_select_show);
+    match mtd_file_result {
+        Ok(_) => {
+
+        }
+        Err(why) => {
+
+        }
+    }
+
     //update moi file
     let trans_clone_moi_file = transaction.clone();
-   
+
         let moi_file_result = moihandler::update(trans_clone_moi_file);
         match moi_file_result {
             Ok(_) => {
@@ -113,8 +122,36 @@ pub fn process_transaction(
                 return Err(anyhow!("unable to update moi file because:{}", why));
             }
         }
-    
+
     Ok(transaction)
+}
+
+fn select_and_show(mut stream: &TcpStream, tc: TransactionContext)  {
+    match tc.command {
+        SqlCommand::Select { .. } => {}
+        SqlCommand::ShowDatabases { .. } => {
+            let table = DbMem::find_table("system", "database");
+            match table{
+                Some(t) => {
+                    let table_clone = Arc::clone(&t);
+                    let guard = table_clone.lock().unwrap();
+
+                    let tree = &guard.tree;
+                    let root = &tree.root;
+                    let left_leaf = tree.leftmost_leaf(root.clone());
+                    
+                    loop{
+                        let leaf_guard = left_leaf.lock().unwrap();
+                        
+                        //shit
+                    }
+                },
+                None => {}
+            }
+        }
+        SqlCommand::ShowTables { .. } => {}
+        _ => {}
+    }
 }
 
 fn update_mtd_file(mut tp: TransactionContext) -> anyhow::Result<()> {
@@ -176,9 +213,7 @@ fn update_system_table(mut tp: TransactionContext) -> anyhow::Result<Transaction
                 }
             }
         }
-        _ => {
-            //no need for lots of commands
-        }
+        _ => { }
     }
 
     Ok(tp)

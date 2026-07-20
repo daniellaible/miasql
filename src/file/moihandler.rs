@@ -506,6 +506,11 @@ pub fn update(mut tp: TransactionContext) -> anyhow::Result<TransactionContext>{
 
             create_moi_file(&path);
         }
+        SqlCommand::Insert {table, columns, values, ..} => {
+            println!("{:?}", columns);
+            println!("{:?}", values)
+        }
+
         _ => {
         }
     }

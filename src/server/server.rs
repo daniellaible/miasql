@@ -17,7 +17,7 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
     loop {
         if !is_logged_in {
             let login_prompt = String::from("login:");
-            stream
+            &stream
                 .write_all((&login_prompt).as_ref())
                 .await
                 .expect("Unable to write login prompts");
@@ -172,7 +172,7 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                         error: false,
                     };
                     let start = Instant::now();
-                    transaction_result = MasterQueueSingelton.add(transaction);
+                    transaction_result = MasterQueueSingelton.add(&stream, transaction);
                     match transaction_result{
                         None => error!("something went clearly wrong with your transaction"),
                         Some(tp) => info!("{}", tp)
@@ -189,8 +189,8 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                     answer = format!("Please tell me which database to use!");
                 }
             }
-            //write transaction_result to user
-            stream.write_all((&answer).as_ref()).await.expect("Something wrong with the in-/output stream");
+
+            &stream.write_all((&answer).as_ref()).await.expect("Something wrong with the in-/output stream");
         }
     }
 }
