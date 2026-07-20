@@ -1,13 +1,13 @@
-use std::time::Instant;
 use crate::command::sqlcommands::SqlCommand;
 use crate::server;
 use crate::server::queue::{MasterQueueSingelton, TransactionContext};
 use log::{error, info};
+use std::time::Instant;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use uuid::Uuid;
 
-pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
+pub async fn handle_client(stream: &mut TcpStream) -> std::io::Result<()> {
     let mut buf = [0u8; 4096];
 
     let mut is_logged_in = false;
@@ -30,9 +30,7 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
             username = std::str::from_utf8(&buf[..n]).unwrap().to_string();
             username = username.replace("\r\n", "");
             is_logged_in = true;
-
         } else {
-
             let n = stream.read(&mut buf).await?;
             if n == 0 {
                 return Ok(());
@@ -41,9 +39,7 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
             server::parser::tokenizer::tokeniz(std::str::from_utf8(&buf[..n]).unwrap());
 
             let mut input = match str::from_utf8(&buf[..n]) {
-                Ok(x) => {
-                    x.to_string()
-                },
+                Ok(x) => x.to_string(),
                 Err(_) => {
                     error!("Unable to parse the buffer into a str");
                     String::new()
@@ -76,75 +72,75 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                 SqlCommand::Undefined {} => String::new(),
             };
 
-            let table_names:Vec<String> = match sql_command.clone(){
-                SqlCommand::Select {table, .. } => {
+            let table_names: Vec<String> = match sql_command.clone() {
+                SqlCommand::Select { table, .. } => {
                     let mut tv = Vec::new();
                     tv.push(table);
                     tv
                 }
-                SqlCommand::DropTable {table, .. } => {
+                SqlCommand::DropTable { table, .. } => {
                     let mut tv = Vec::new();
                     tv.push(table);
                     tv
                 }
-                SqlCommand::Delete {table, .. } => {
+                SqlCommand::Delete { table, .. } => {
                     let mut tv = Vec::new();
                     tv.push(table);
                     tv
                 }
-                SqlCommand::Truncate {tables, .. } => {
-                    tables
-                }
-                SqlCommand::Update {table, .. } => {
+                SqlCommand::Truncate { tables, .. } => tables,
+                SqlCommand::Update { table, .. } => {
                     let mut tv = Vec::new();
                     tv.push(table);
                     tv
                 }
-                SqlCommand::Insert {table, .. } => {
+                SqlCommand::Insert { table, .. } => {
                     let mut tv = Vec::new();
                     tv.push(table);
                     tv
                 }
-                SqlCommand::AlterAddColumn {table, .. } => {
+                SqlCommand::AlterAddColumn { table, .. } => {
                     let mut tv = Vec::new();
                     tv.push(table);
                     tv
                 }
-                SqlCommand::AlterDropColumn {table, .. } => {
+                SqlCommand::AlterDropColumn { table, .. } => {
                     let mut tv = Vec::new();
                     tv.push(table);
                     tv
                 }
-                SqlCommand::AlterRenameColumn {table, .. } => {
+                SqlCommand::AlterRenameColumn { table, .. } => {
                     let mut tv = Vec::new();
                     tv.push(table);
                     tv
                 }
-                SqlCommand::AlterModifyColumn {table, .. } => {
+                SqlCommand::AlterModifyColumn { table, .. } => {
                     let mut tv = Vec::new();
                     tv.push(table);
                     tv
                 }
-                SqlCommand::AlterTableRename {table, .. } => {
+                SqlCommand::AlterTableRename { table, .. } => {
                     let mut tv = Vec::new();
                     tv.push(table);
                     tv
                 }
-                _ => {Vec::new()}
+                _ => Vec::new(),
             };
-            
+
             is_use_command = false;
-            match sql_command.clone(){
-                SqlCommand::Use{database, ..} => {
+            match sql_command.clone() {
+                SqlCommand::Use { database, .. } => {
                     answer = format!("using:  {database} \r\n");
                     is_use_command = true;
                     db_used = database;
-                },
+                }
                 _ => {}
             };
 
-            match sql_command{
-                SqlCommand::Undefined => {answer = format!("I didn't understand your last command \r\n")},
+            match sql_command {
+                SqlCommand::Undefined => {
+                    answer = format!("I didn't understand your last command \r\n")
+                }
                 _ => {}
             };
 
@@ -168,29 +164,30 @@ pub async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
                         is_cluster_updated: false,
                         is_shard_updated: false,
                         is_system_table_updated: false,
-                        
+
                         error: false,
                     };
                     let start = Instant::now();
-                    transaction_result = MasterQueueSingelton.add(&stream, transaction);
-                    match transaction_result{
+                    transaction_result = MasterQueueSingelton.add(stream, transaction);
+                    match transaction_result {
                         None => error!("something went clearly wrong with your transaction"),
-                        Some(tp) => info!("{}", tp)
+                        Some(tp) => info!("{}", tp),
                     }
                     let duration = start.elapsed();
                     println!("Request took: {:?}", duration);
-
-                }else{
+                } else {
                     answer = format!("I don't understand: {command_string}");
                 }
-                
-            }else{
+            } else {
                 if !is_use_command {
                     answer = format!("Please tell me which database to use!");
                 }
             }
 
-            &stream.write_all((&answer).as_ref()).await.expect("Something wrong with the in-/output stream");
+            &stream
+                .write_all((&answer).as_ref())
+                .await
+                .expect("Something wrong with the in-/output stream");
         }
     }
 }
@@ -202,10 +199,6 @@ pub fn parse_incomming(incomming: &str) -> SqlCommand {
     if management_command == "QUIT" || management_command == "BYE" {
         SqlCommand::Quit {
             command: String::from("QUIT"),
-        }
-    } else if management_command == "SHOW DATABASES" {
-        SqlCommand::ShowDatabases {
-            command: String::from("SHOW DATABASE"),
         }
     } else if management_command.starts_with("USE ") {
         let splits = management_command.split(" ");

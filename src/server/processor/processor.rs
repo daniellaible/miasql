@@ -9,12 +9,14 @@ use anyhow::anyhow;
 use log::info;
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
+use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 use uuid::Uuid;
+use crate::database::bptree::Node;
 
 pub static COUNTER: AtomicU64 = AtomicU64::new(0);
 
-pub fn process_transaction(mut stream: &TcpStream, mut transaction: TransactionContext) -> anyhow::Result<TransactionContext> {
+pub fn process_transaction(stream: &TcpStream, mut transaction: TransactionContext) -> anyhow::Result<TransactionContext> {
     info!("In the processor: {:?}", transaction.command);
 
     let transaction_id = get_transaction_counter();
@@ -97,15 +99,8 @@ pub fn process_transaction(mut stream: &TcpStream, mut transaction: TransactionC
     }
 
     let trans_select_show = transaction.clone();
-    let select_result = select_and_show(&stream, trans_select_show);
-    match mtd_file_result {
-        Ok(_) => {
+    select_and_show(&stream, trans_select_show);
 
-        }
-        Err(why) => {
-
-        }
-    }
 
     //update moi file
     let trans_clone_moi_file = transaction.clone();
@@ -126,27 +121,37 @@ pub fn process_transaction(mut stream: &TcpStream, mut transaction: TransactionC
     Ok(transaction)
 }
 
-fn select_and_show(mut stream: &TcpStream, tc: TransactionContext)  {
+fn select_and_show(stream: &TcpStream, tc: TransactionContext)  {
     match tc.command {
         SqlCommand::Select { .. } => {}
         SqlCommand::ShowDatabases { .. } => {
-            let table = DbMem::find_table("system", "database");
-            match table{
-                Some(t) => {
-                    let table_clone = Arc::clone(&t);
-                    let guard = table_clone.lock().unwrap();
+            if let Some(table_arc) = DbMem::find_table("system", "database") {
+                let table_guard = table_arc.lock().unwrap();
+                let tree = &table_guard.tree;
 
-                    let tree = &guard.tree;
-                    let root = &tree.root;
-                    let left_leaf = tree.leftmost_leaf(root.clone());
-                    
-                    loop{
-                        let leaf_guard = left_leaf.lock().unwrap();
-                        
-                        //shit
+                let mut cur = Some(tree.leftmost_leaf(tree.root.clone()));
+
+                while let Some(node_arc) = cur {
+                    let (rows_to_send, next_leaf) = {
+                        let node_guard = node_arc.lock().unwrap();
+                        let Node::Leaf(leaf) = &*node_guard else {
+                            unreachable!("leftmost_leaf/next chain must be leaves");
+                        };
+
+                        // values are your row payload in this B+ tree
+                        (leaf.values.clone(), leaf.next.clone())
+                    }; // node_guard dropped here
+
+                    for row in rows_to_send {
+                        let line = format!("{:?}\n", row);
+                        if let Err(e) = stream.try_write(line.as_bytes()){
+                            eprintln!("write failed: {e}");
+                            return;
+                        }
                     }
-                },
-                None => {}
+
+                    cur = next_leaf;
+                }
             }
         }
         SqlCommand::ShowTables { .. } => {}

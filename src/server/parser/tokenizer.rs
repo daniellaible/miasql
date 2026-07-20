@@ -19,6 +19,9 @@ pub fn tokeniz(input: &str) -> SqlCommand {
 
 
     match ast[0].clone() {
+        Statement::ShowDatabases { .. }=> {
+            command = command::showdatabases::parse();
+        }
         Statement::AlterTable(alter) => {
             command = command::alter::parse(alter.clone());
         }

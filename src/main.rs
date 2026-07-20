@@ -1,5 +1,5 @@
 use log::info;
-use tokio::net::TcpListener;
+use tokio::net::{TcpListener, TcpStream};
 use crate::database::table::Table;
 use crate::file::mtdhandler::{read_mtd_file, MtdFile};
 use crate::server::config::config::ConfigSingelton;
@@ -28,6 +28,7 @@ mod command {
     pub mod insert;
     pub mod permissions;
     pub mod select;
+    pub mod showdatabases;
     pub mod sqlcommands;
     pub mod sqloperator;
     pub mod truncate;
@@ -97,11 +98,11 @@ async fn run_server() -> std::io::Result<()> {
 
     loop {
         info!("We are looping in the main function");
-        let (stream, addr) = listener.accept().await?;
+        let (mut stream, addr) = listener.accept().await?;
         println!("client connected: {addr}");
 
         tokio::spawn(async move {
-            if let Err(e) = server::server::handle_client(stream).await {
+            if let Err(e) = server::server::handle_client(&mut stream).await {
                 eprintln!("client error: {e}");
             }
         });
@@ -119,7 +120,7 @@ mod tests {
         let hours = 24;
         let days = 365;
         let millis_in_year = 1000 * seconds * minutes * hours * days;
-        println!("Wieviele Jahre braucht es für einen StackOverflow bei 1000/s : {}", max_id / millis_in_year);
+        println!("Wieviele Jahre braucht es für einen StackOverflow bei 1000 Einträgen/s : {}", max_id / millis_in_year);
     }
 }
 

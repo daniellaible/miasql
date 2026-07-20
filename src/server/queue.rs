@@ -59,14 +59,14 @@ impl MasterQueueSingelton {
 
     // TODO: here we could end up in a race condition or is it actually impossible since there is just one queue
     // and do_all_transactions is not public
-    // High frequency parallel testing
-    pub fn add(&self, mut stream: &TcpStream, transaction: TransactionContext) -> Option<TransactionContext> {
+    // High frequency parallel testing needed
+    pub fn add(&self, stream: & mut TcpStream, transaction: TransactionContext) -> Option<TransactionContext> {
         let mut wait_duration = time::Duration::from_millis(1);
         let mut is_transaction_completed = false;
         let mut transaction_result  = None;
         while !is_transaction_completed {
             if !MasterQueueSingelton::instance().is_working.load(Ordering::SeqCst) {
-                transaction_result = do_transactions(&stream, transaction.clone());
+                transaction_result = do_transactions(stream, transaction.clone());
                 MasterQueueSingelton::instance().is_working.store(false, Ordering::SeqCst);
                 is_transaction_completed = true;
             } else {
@@ -80,7 +80,7 @@ impl MasterQueueSingelton {
 
     }
 }
-pub fn do_transactions(stream: &TcpStream, tp: TransactionContext) -> Option<TransactionContext> {
+pub fn do_transactions(stream: &mut TcpStream, tp: TransactionContext) -> Option<TransactionContext> {
     MasterQueueSingelton::instance().is_working.store(true, Ordering::SeqCst);
     let transaction_result = processor::process_transaction(stream, tp);
     match transaction_result{
