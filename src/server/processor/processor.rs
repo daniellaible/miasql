@@ -1,17 +1,19 @@
-use std::ops::Deref;
+
 use crate::command::sqlcommands::SqlCommand;
-use crate::database::table;
 use crate::file::{moihandler, mtdhandler};
 use crate::server::dbmem::DbMem;
 use crate::server::queue::TransactionContext;
 use crate::{command, file};
-use anyhow::anyhow;
+use anyhow::{anyhow, Error};
 use log::info;
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
-use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 use uuid::Uuid;
+use crate::command::createdatabase::create_database;
+use crate::command::createtable::create_table;
+use crate::command::showdatabases::show_databases;
+use crate::command::showtables::show_tables;
 use crate::database::bptree::Node;
 
 pub static COUNTER: AtomicU64 = AtomicU64::new(0);
@@ -22,50 +24,88 @@ pub fn process_transaction(stream: &TcpStream, mut transaction: TransactionConte
     let transaction_id = get_transaction_counter();
     transaction.is_processing = true;
     transaction.transaction_id = transaction_id;
+    load_table_to_ram(transaction.clone());
 
     match &transaction.command {
-        SqlCommand::CreateDatabase { .. } => {
+        SqlCommand::Select { .. } => {
+            todo!()
+        }
+        SqlCommand::DropTable {..} => {
+            todo!()
+        }
+        SqlCommand::DropDatabase {..} => {
+            todo!()
+        }
+        SqlCommand::Delete {..} =>{
+            todo!()
+        }
+        SqlCommand::Truncate {..} => {
+
+        }
+        SqlCommand::Update {..} => {
+
+        }
+        SqlCommand::Insert {..} => {
+
+        }
+        SqlCommand::AlterAddColumn { .. } => {
+
+        }
+        SqlCommand::AlterDropColumn { .. } => {
+
+        }
+        SqlCommand::AlterRenameColumn {..} => {
+
+        }
+        SqlCommand::AlterModifyColumn {..} => {
+
+        }
+        SqlCommand::AlterTableRename {..} => {
+
+        }
+        SqlCommand::ShowDatabases {..} => {
+            let resultset = show_databases(transaction.clone());
+        }
+        SqlCommand::ShowTables { ..} => {
+            let resultset = show_tables(transaction.clone());
+        }
+
+        SqlCommand::CreateDatabase {database, .. } => {
             let last_id = moihandler::get_max_id("C:\\MiaSql\\system\\database.moi");
             transaction.row_id = last_id + 1;
+            let result  = create_database(transaction.clone(), database);
+            match result{
+                Ok(context) => {
+                    if !context.error {
+                        let line = format!("{} was created\n", database);
+                        if let Err(e) = stream.try_write(line.as_bytes()){
+                            eprintln!("write failed: {e}");
+                        }
+                        return Ok(context);
+                    }else{
+                        let line = format!("There was an errir while {} was created\n", database);
+                        if let Err(e) = stream.try_write(line.as_bytes()){
+                            eprintln!("write failed: {e} {context}");
+                        }
+                        return Ok(context);
+                    }
+                }
+                Err(why) => {
+                    panic!("Something strange happend here {:?}", why);
+                }
+            }
         }
         SqlCommand::CreateTable { .. } => {
             let last_id = moihandler::get_max_id("C:\\MiaSql\\system\\tables.moi");
             transaction.row_id = last_id + 1;
             let uuid = Uuid::new_v4();
             transaction.table_uuid = uuid;
+            //Todo Error Matching
+            transaction = create_table(transaction.clone()).unwrap();
         }
         _ => {}
     }
-    load_table_to_ram(transaction.clone());
 
-    //update ledger file
-    let ledger_clone_file = transaction.clone();
-    let result = file::ledgerhandler::append_to_file(
-        &ledger_clone_file.user,
-        &ledger_clone_file.command,
-        &ledger_clone_file.db_name,
-    );
-    match result {
-        Ok(_) => {}
-        Err(why) => {
-            return Err(anyhow!("unable to update ledger file because: {}", why));
-        }
-    }
-
-    //update the b-tree
-    let trans_clone_btree = transaction.clone();
-    let table_update_result = table::update_table(trans_clone_btree);
-    match table_update_result {
-        Ok(_) => {
-            transaction.is_btree_updated = true;
-            info!("Btrees updated");
-        }
-        Err(why) => {
-            transaction.is_btree_updated = false;
-            transaction.error = true;
-            return Err(anyhow!("unable to update tree because:{}", why));
-        }
-    }
 
     //update system table if necessary
     let trans_clone_sys_tab = transaction.clone();
@@ -137,10 +177,8 @@ fn select_and_show(stream: &TcpStream, tc: TransactionContext)  {
                         let Node::Leaf(leaf) = &*node_guard else {
                             unreachable!("leftmost_leaf/next chain must be leaves");
                         };
-
-                        // values are your row payload in this B+ tree
                         (leaf.values.clone(), leaf.next.clone())
-                    }; // node_guard dropped here
+                    };
 
                     for row in rows_to_send {
                         let line = format!("{:?}\n", row);
@@ -149,7 +187,6 @@ fn select_and_show(stream: &TcpStream, tc: TransactionContext)  {
                             return;
                         }
                     }
-
                     cur = next_leaf;
                 }
             }
@@ -196,15 +233,6 @@ fn load_table_to_ram(tp: TransactionContext) {
 
 fn update_system_table(mut tp: TransactionContext) -> anyhow::Result<TransactionContext> {
     match &tp.command {
-        SqlCommand::CreateDatabase { database: db, .. } => {
-            let result = command::createdatabase::update_system_table(tp.row_id, db);
-            match result {
-                Ok(_) => {
-                    tp.is_system_table_updated = true;
-                }
-                Err(_) => tp.error = true,
-            }
-        }
         SqlCommand::CreateTable { table, .. } => {
             let result = command::createtable::update_system_table(
                 tp.row_id,

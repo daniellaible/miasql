@@ -34,6 +34,8 @@ mod command {
     pub mod truncate;
     pub mod update;
     pub mod whereclause;
+    pub mod resultset;
+    pub mod showtables;
 }
 
 mod file{

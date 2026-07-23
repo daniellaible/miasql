@@ -1,7 +1,9 @@
+use anyhow::{anyhow, Error};
 use sqlparser::ast::Statement;
 use crate::command::sqlcommands::SqlCommand;
 use crate::database::datatype::DataType;
 use crate::database::table::Row;
+use crate::{file};
 use crate::server::dbmem::DbMem;
 use crate::server::queue::TransactionContext;
 
@@ -20,6 +22,34 @@ pub fn parse(ast: Vec<Statement>) -> SqlCommand{
             }
         }
         _ => SqlCommand::Undefined,
+    }
+}
+
+pub fn create_database(mut transaction: TransactionContext, dbname: &str) -> anyhow::Result<TransactionContext, Error>{
+    let ledger_clone_file = transaction.clone();
+    let result = file::ledgerhandler::append_to_file(
+        &ledger_clone_file.user,
+        &ledger_clone_file.command,
+        &ledger_clone_file.db_name,
+    );
+    match result {
+        Ok(_) => {}
+        Err(why) => {
+            transaction.error = true;
+            return Err(anyhow!("unable to update ledger file because: {}", why));
+        }
+    }
+
+    let result = update_system_table(transaction.row_id, dbname);
+    match result {
+        Ok(_) => {
+            transaction.is_system_table_updated = true;
+            Ok(transaction)
+        }
+        Err(why) => {
+            transaction.error = true;
+            Err(anyhow!("unable to update system table because: {}", why))
+        }
     }
 }
 

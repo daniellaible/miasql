@@ -1,10 +1,14 @@
 use std::sync::Arc;
+use anyhow::{anyhow, Error};
 use log::__private_api::loc;
+use log::info;
 use sqlparser::ast::{ColumnOption, CreateTable, Ident, ObjectNamePart, TableConstraint};
 use crate::command::constraint::Constraint;
 use crate::command::sqlcommands::SqlCommand;
 use crate::database::datatype::DataType;
+use crate::database::table;
 use crate::database::table::Row;
+use crate::file;
 use crate::server::dbmem::DbMem;
 use crate::server::queue::TransactionContext;
 
@@ -118,6 +122,37 @@ pub fn extract_foreign_keys(create_table: CreateTable) -> Vec<ForeignKeyToken> {
         }
     }
     foreign_keys
+}
+
+pub fn create_table(mut transaction: TransactionContext) -> anyhow::Result<TransactionContext, Error>{
+    let ledger_clone_file = transaction.clone();
+    let result = file::ledgerhandler::append_to_file(
+        &ledger_clone_file.user,
+        &ledger_clone_file.command,
+        &ledger_clone_file.db_name,
+    );
+    match result {
+        Ok(_) => {}
+        Err(why) => {
+            return Err(anyhow!("unable to update ledger file because: {}", why));
+        }
+    }
+
+    let trans_clone_btree = transaction.clone();
+    let table_update_result = table::update_table(trans_clone_btree);
+    match table_update_result {
+        Ok(_) => {
+            transaction.is_btree_updated = true;
+            info!("Btrees updated");
+        }
+        Err(why) => {
+            transaction.is_btree_updated = false;
+            transaction.error = true;
+            return Err(anyhow!("unable to update tree because:{}", why));
+        }
+    }
+    
+    todo!()
 }
 
 pub fn update_system_table(id: i64, db_name: Arc<str>, table_name: Arc<str>) -> anyhow::Result<()> {

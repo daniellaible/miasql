@@ -1,11 +1,11 @@
 # To Do's
-+ Create table needs to implemnt foreign keys
++ Create table needs to implement foreign keys
 + Create database needs to check if there is already a database with the same name
 + MiaLedger path is not coming from the config file.
 + MiaLedger ledger number is a constant right now get it from a sytsem table
 + MiaLedger should start a new file when reaching the 4GB limitation
 + if an error in the processor happens, it needs to be reverted
-
++ do we need a alterRenameDatabase command=
 ## Bugs
 
 
