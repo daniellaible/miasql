@@ -1,31 +1,35 @@
-use anyhow::{anyhow, Error};
-use sqlparser::ast::Statement;
 use crate::command::sqlcommands::SqlCommand;
 use crate::database::datatype::DataType;
 use crate::database::table::Row;
-use crate::{file};
+use crate::file;
+use crate::file::moihandler;
 use crate::server::dbmem::DbMem;
 use crate::server::queue::TransactionContext;
+use anyhow::{Error, anyhow};
+use sqlparser::ast::Statement;
 
-pub fn parse(ast: Vec<Statement>) -> SqlCommand{
+pub fn parse(ast: Vec<Statement>) -> SqlCommand {
     let stmt = match ast.into_iter().next() {
         Some(s) => s,
         None => return SqlCommand::Undefined,
     };
 
     match stmt {
-        Statement::CreateDatabase { db_name, comment, .. } => {
-            SqlCommand::CreateDatabase {
-                command: String::from("CREATE DATABASE"),
-                database: db_name.to_string(),
-                comment: comment.unwrap_or_default(),
-            }
-        }
+        Statement::CreateDatabase {
+            db_name, comment, ..
+        } => SqlCommand::CreateDatabase {
+            command: String::from("CREATE DATABASE"),
+            database: db_name.to_string(),
+            comment: comment.unwrap_or_default(),
+        },
         _ => SqlCommand::Undefined,
     }
 }
 
-pub fn create_database(mut transaction: TransactionContext, dbname: &str) -> anyhow::Result<TransactionContext, Error>{
+pub fn create_database(
+    mut transaction: TransactionContext,
+    dbname: &str,
+) -> anyhow::Result<TransactionContext, Error> {
     let ledger_clone_file = transaction.clone();
     let result = file::ledgerhandler::append_to_file(
         &ledger_clone_file.user,
@@ -33,43 +37,66 @@ pub fn create_database(mut transaction: TransactionContext, dbname: &str) -> any
         &ledger_clone_file.db_name,
     );
     match result {
-        Ok(_) => {}
-        Err(why) => {
-            transaction.error = true;
-            return Err(anyhow!("unable to update ledger file because: {}", why));
-        }
-    }
-
-    let result = update_system_table(transaction.row_id, dbname);
-    match result {
         Ok(_) => {
-            transaction.is_system_table_updated = true;
-            Ok(transaction)
+            let id = transaction.row_id.clone();
+            let mut result_system_table_update = update_system_table(transaction, id);
+            match result_system_table_update {
+                Ok(mut t) => {
+                    t.is_system_table_updated = true;
+
+                    let result_moi_update: anyhow::Result<TransactionContext> =
+                        update_database_moi(t.clone());
+                    match result_moi_update {
+                        Ok(mut t) => {
+                            t.is_moi_file_updated = true;
+                            Ok(t)
+                        }
+                        Err(why) => Err(anyhow!("Unable to create database {:?}", t)),
+                    }
+                }
+                Err(why) => Err(anyhow!("Unableto update system table because: {}", why)),
+            }
         }
-        Err(why) => {
-            transaction.error = true;
-            Err(anyhow!("unable to update system table because: {}", why))
-        }
+        Err(why) => Err(anyhow!("unable to update ledger file because: {}", why)),
     }
 }
 
-pub fn update_system_table(id: i64, db_name: &str) -> anyhow::Result<()>{
-    let mut row: Row = Row{
-        data: Vec::new(),
-    };
-    row.data.push(DataType::BigInt(id));
-    row.data.push(DataType::VarChar(db_name.len() as u8, String::from(db_name)));
-    DbMem::insert_row("system", "database", row);
-    Ok(())
+pub fn update_database_moi(
+    mut transaction: TransactionContext,
+) -> anyhow::Result<TransactionContext, Error> {
+    let mut row: Row = Row { data: Vec::new() };
+    row.data.push(DataType::BigInt(transaction.row_id));
+    row.data.push(DataType::VarChar(
+        transaction.db_name.len().clone() as u8,
+        String::from(transaction.db_name.clone()),
+    ));
+    moihandler::add_row("C:\\MiaSql\\system\\database.moi", row)
+        .expect("Unable to update database moi file");
+    transaction.is_moi_file_updated = true;
+    Ok(transaction)
 }
 
+pub fn update_system_table(
+    mut transaction: TransactionContext,
+    id: i64,
+) -> anyhow::Result<(TransactionContext)> {
+    let mut row: Row = Row { data: Vec::new() };
+    row.data.push(DataType::BigInt(id));
+    row.data.push(DataType::VarChar(
+        transaction.db_name.len().clone() as u8,
+        String::from(transaction.db_name.clone()),
+    ));
+    DbMem::insert_row("system", "database", row);
+    transaction.is_system_table_updated = true;
+    anyhow::Ok(transaction)
+}
 
 #[cfg(test)]
 mod tests {
-    use sqlparser::dialect::GenericDialect;
-    use sqlparser::parser::Parser;
     use crate::command::createdatabase::parse;
     use crate::command::sqlcommands::SqlCommand;
+    use sqlparser::dialect::GenericDialect;
+    use sqlparser::parser::Parser;
 
     fn parse_sql(sql: &str) -> SqlCommand {
         let dialect = GenericDialect {};
@@ -80,7 +107,11 @@ mod tests {
     #[test]
     fn simple_create_database() {
         match parse_sql("CREATE DATABASE employee") {
-            SqlCommand::CreateDatabase { command, database, comment } => {
+            SqlCommand::CreateDatabase {
+                command,
+                database,
+                comment,
+            } => {
                 assert_eq!(command, "CREATE DATABASE");
                 assert_eq!(database, "employee");
                 assert_eq!(comment, "");
@@ -102,7 +133,9 @@ mod tests {
     #[test]
     fn create_database_lowercase_keyword() {
         match parse_sql("create database mydb") {
-            SqlCommand::CreateDatabase { command, database, .. } => {
+            SqlCommand::CreateDatabase {
+                command, database, ..
+            } => {
                 assert_eq!(command, "CREATE DATABASE");
                 assert_eq!(database, "mydb");
             }
@@ -124,7 +157,9 @@ mod tests {
     fn create_database_if_not_exists() {
         // IF NOT EXISTS is ignored in our output but must not crash
         match parse_sql("CREATE DATABASE IF NOT EXISTS employee") {
-            SqlCommand::CreateDatabase { command, database, .. } => {
+            SqlCommand::CreateDatabase {
+                command, database, ..
+            } => {
                 assert_eq!(command, "CREATE DATABASE");
                 assert_eq!(database, "employee");
             }
@@ -192,10 +227,8 @@ mod tests {
     #[test]
     fn create_table_statement_returns_undefined() {
         let dialect = sqlparser::dialect::GenericDialect {};
-        let ast = sqlparser::parser::Parser::parse_sql(
-            &dialect,
-            "CREATE TABLE foo (id INT)",
-        ).unwrap();
+        let ast =
+            sqlparser::parser::Parser::parse_sql(&dialect, "CREATE TABLE foo (id INT)").unwrap();
         let result = parse(ast);
         assert_eq!(result, SqlCommand::Undefined);
     }
