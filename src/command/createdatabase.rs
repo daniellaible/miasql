@@ -39,13 +39,13 @@ pub fn create_database(
     match result {
         Ok(_) => {
             let id = transaction.row_id.clone();
-            let mut result_system_table_update = update_system_table(transaction, id);
+            let mut result_system_table_update = update_system_table(transaction, String::from(dbname), id);
             match result_system_table_update {
                 Ok(mut t) => {
                     t.is_system_table_updated = true;
 
                     let result_moi_update: anyhow::Result<TransactionContext> =
-                        update_database_moi(t.clone());
+                        update_database_moi(t.clone(), dbname.to_string());
                     match result_moi_update {
                         Ok(mut t) => {
                             t.is_moi_file_updated = true;
@@ -62,13 +62,13 @@ pub fn create_database(
 }
 
 pub fn update_database_moi(
-    mut transaction: TransactionContext,
+    mut transaction: TransactionContext, dbname: String
 ) -> anyhow::Result<TransactionContext, Error> {
     let mut row: Row = Row { data: Vec::new() };
     row.data.push(DataType::BigInt(transaction.row_id));
     row.data.push(DataType::VarChar(
-        transaction.db_name.len().clone() as u8,
-        String::from(transaction.db_name.clone()),
+        dbname.len() as u8,
+        String::from(dbname),
     ));
     moihandler::add_row("C:\\MiaSql\\system\\database.moi", row)
         .expect("Unable to update database moi file");
@@ -78,13 +78,14 @@ pub fn update_database_moi(
 
 pub fn update_system_table(
     mut transaction: TransactionContext,
+    dbname: String,
     id: i64,
 ) -> anyhow::Result<(TransactionContext)> {
     let mut row: Row = Row { data: Vec::new() };
     row.data.push(DataType::BigInt(id));
     row.data.push(DataType::VarChar(
-        transaction.db_name.len().clone() as u8,
-        String::from(transaction.db_name.clone()),
+        dbname.len() as u8,
+        String::from(dbname),
     ));
     DbMem::insert_row("system", "database", row);
     transaction.is_system_table_updated = true;

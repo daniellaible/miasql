@@ -5,7 +5,8 @@
 + MiaLedger ledger number is a constant right now get it from a sytsem table
 + MiaLedger should start a new file when reaching the 4GB limitation
 + if an error in the processor happens, it needs to be reverted
-+ do we need a alterRenameDatabase command=
++ do we need a alterRenameDatabase command
++ do not panic when the database you want to create already exists (same name problem)
 ## Bugs
 
 
