@@ -3,12 +3,14 @@ use anyhow::{anyhow, Error};
 use log::__private_api::loc;
 use log::info;
 use sqlparser::ast::{ColumnOption, CreateTable, Ident, ObjectNamePart, TableConstraint};
+use uuid::Uuid;
 use crate::command::constraint::Constraint;
 use crate::command::sqlcommands::SqlCommand;
 use crate::database::datatype::DataType;
 use crate::database::table;
 use crate::database::table::Row;
-use crate::file;
+use crate::{command, file};
+use crate::file::{moihandler, mtdhandler};
 use crate::server::dbmem::DbMem;
 use crate::server::queue::TransactionContext;
 
@@ -124,38 +126,84 @@ pub fn extract_foreign_keys(create_table: CreateTable) -> Vec<ForeignKeyToken> {
     foreign_keys
 }
 
-pub fn create_table(mut transaction: TransactionContext) -> anyhow::Result<TransactionContext, Error>{
+pub fn create_table(mut transaction: TransactionContext, tablename: String, columns:Vec<(String, DataType, Vec<Constraint>)>) -> anyhow::Result<TransactionContext, Error>{
     let ledger_clone_file = transaction.clone();
-    let result = file::ledgerhandler::append_to_file(
+    let ledger_result = file::ledgerhandler::append_to_file(
         &ledger_clone_file.user,
         &ledger_clone_file.command,
         &ledger_clone_file.db_name,
     );
-    match result {
-        Ok(_) => {}
+    match ledger_result {
+        Ok(_) => {
+            let trans_clone_btree = transaction.clone();
+            let btree_update_result = table::create_table_in_mem(trans_clone_btree);
+            match btree_update_result {
+                Ok(t) => {
+                    transaction.is_btree_updated = true;
+
+                    let last_id = moihandler::get_max_id("C:\\MiaSql\\system\\tables.moi");
+                    transaction.row_id = last_id + 1;
+                    let uuid = Uuid::new_v4();
+                    transaction.table_uuid = uuid;
+
+                    let tab_name = tablename.clone();
+                    let table_name_mtd = tab_name.clone();
+                    let system_table_result = update_system_table_in_mem(transaction.row_id, Arc::from(transaction.db_name.as_str()), Arc::from(tablename));
+                    match system_table_result {
+                        Ok(t) => {
+
+                            transaction.is_system_table_updated= true;
+                            let row = create_system_table_row(transaction.row_id, Arc::from(transaction.db_name.as_str()), Arc::from(tab_name));
+                            let add_row_result = moihandler::add_row("C:\\MiaSql\\system\\tables.moi", row);
+                            match add_row_result{
+                                Ok(_) => {
+                                    let create_mtd_file_result = mtdhandler::new_mtd_file(&transaction.db_name, &table_name_mtd, &columns, &vec![], transaction.table_uuid);
+                                    match create_mtd_file_result {
+                                        Ok(_) => {
+                                            transaction.is_mtd_file_updated = true;
+                                            return Ok(transaction);
+                                        }
+                                        _ => {
+                                            transaction.error = true;
+                                            return Err(anyhow!("unable to create mtd file"))
+                                        }
+                                    }
+
+                                }
+                                _ => {
+                                    return Err(anyhow!("unable to add row to system.tables"))
+                                }
+                            }
+
+                        }
+                        Err(why) => {
+                            transaction.is_system_table_updated = false;
+                            transaction.error = true;
+                            return Err(anyhow!("unable to update system table in memory:{}", why))
+                        }
+                    }
+                }
+                Err(why) => {
+                    transaction.is_btree_updated = false;
+                    transaction.error = true;
+                    return Err(anyhow!("unable to update tree because:{}", why))
+                }
+            }
+        }
         Err(why) => {
             return Err(anyhow!("unable to update ledger file because: {}", why));
         }
     }
 
-    let trans_clone_btree = transaction.clone();
-    let table_update_result = table::update_table(trans_clone_btree);
-    match table_update_result {
-        Ok(_) => {
-            transaction.is_btree_updated = true;
-            info!("Btrees updated");
-        }
-        Err(why) => {
-            transaction.is_btree_updated = false;
-            transaction.error = true;
-            return Err(anyhow!("unable to update tree because:{}", why));
-        }
-    }
-    
-    todo!()
 }
 
-pub fn update_system_table(id: i64, db_name: Arc<str>, table_name: Arc<str>) -> anyhow::Result<()> {
+pub fn update_system_table_in_mem(id: i64, db_name: Arc<str>, table_name: Arc<str>) -> anyhow::Result<()> {
+    let row = create_system_table_row(id, db_name, table_name);
+    DbMem::insert_row("system", "tables", row);
+    Ok(())
+}
+
+fn create_system_table_row(id: i64,db_name: Arc<str>, table_name: Arc<str>) -> Row {
     let mut row: Row = Row{
         data: Vec::new(),
     };
@@ -172,12 +220,8 @@ pub fn update_system_table(id: i64, db_name: Arc<str>, table_name: Arc<str>) -> 
     row.data.push(DataType::VarChar(db.len() as u8, String::from(db)));
     row.data.push(DataType::VarChar(table.len() as u8, String::from(table)));
     row.data.push(DataType::VarChar(table.len() as u8, String::from(location)));
-
-    DbMem::insert_row("system", "tables", row);
-
-    Ok(())
+    row
 }
-
 
 
 #[cfg(test)]

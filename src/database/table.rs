@@ -92,10 +92,9 @@ impl Table {
     }
 }
 
-pub fn update_table(mut tp: TransactionContext) -> anyhow::Result<TransactionContext> {
+pub fn create_table_in_mem(mut tp: TransactionContext) -> anyhow::Result<TransactionContext> {
 
     match tp.command.clone() {
-        //here we create a new table in memory
         SqlCommand::CreateTable {
             table,
             columns,

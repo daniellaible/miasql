@@ -1,24 +1,26 @@
-
+use crate::command::createdatabase::create_database;
+use crate::command::createtable::create_table;
+use crate::command::showdatabases::show_databases;
+use crate::command::showtables::show_tables;
 use crate::command::sqlcommands::SqlCommand;
+use crate::database::bptree::Node;
 use crate::file::{moihandler, mtdhandler};
 use crate::server::dbmem::DbMem;
 use crate::server::queue::TransactionContext;
-use crate::{command, file};
-use anyhow::{anyhow, Error};
+use crate::{command};
+use anyhow::{anyhow};
 use log::info;
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
 use tokio::net::TcpStream;
 use uuid::Uuid;
-use crate::command::createdatabase::create_database;
-use crate::command::createtable::create_table;
-use crate::command::showdatabases::show_databases;
-use crate::command::showtables::show_tables;
-use crate::database::bptree::Node;
 
 pub static COUNTER: AtomicU64 = AtomicU64::new(0);
 
-pub fn process_transaction(stream: &TcpStream, mut transaction: TransactionContext) -> anyhow::Result<TransactionContext> {
+pub fn process_transaction(
+    stream: &TcpStream,
+    mut transaction: TransactionContext,
+) -> anyhow::Result<()> {
     info!("In the processor: {:?}", transaction.command);
 
     let transaction_id = get_transaction_counter();
@@ -26,68 +28,55 @@ pub fn process_transaction(stream: &TcpStream, mut transaction: TransactionConte
     transaction.transaction_id = transaction_id;
     load_table_to_ram(transaction.clone());
 
+
     match &transaction.command {
         SqlCommand::Select { .. } => {
             todo!()
         }
-        SqlCommand::DropTable {..} => {
+        SqlCommand::DropTable { .. } => {
             todo!()
         }
-        SqlCommand::DropDatabase {..} => {
+        SqlCommand::DropDatabase { .. } => {
             todo!()
         }
-        SqlCommand::Delete {..} =>{
+        SqlCommand::Delete { .. } => {
             todo!()
         }
-        SqlCommand::Truncate {..} => {
-
-        }
-        SqlCommand::Update {..} => {
-
-        }
-        SqlCommand::Insert {..} => {
-
-        }
-        SqlCommand::AlterAddColumn { .. } => {
-
-        }
-        SqlCommand::AlterDropColumn { .. } => {
-
-        }
-        SqlCommand::AlterRenameColumn {..} => {
-
-        }
-        SqlCommand::AlterModifyColumn {..} => {
-
-        }
-        SqlCommand::AlterTableRename {..} => {
-
-        }
-        SqlCommand::ShowDatabases {..} => {
+        SqlCommand::Truncate { .. } => {Ok(())}
+        SqlCommand::Update { .. } => {Ok(())}
+        SqlCommand::Insert { .. } => {Ok(())}
+        SqlCommand::AlterAddColumn { .. } => {Ok(())}
+        SqlCommand::AlterDropColumn { .. } => {Ok(())}
+        SqlCommand::AlterRenameColumn { .. } => {Ok(())}
+        SqlCommand::AlterModifyColumn { .. } => {Ok(())}
+        SqlCommand::AlterTableRename { .. } => {Ok(())}
+        SqlCommand::ShowDatabases { .. } => {
             let resultset = show_databases(transaction.clone());
+            todo!()
         }
-        SqlCommand::ShowTables { ..} => {
+        SqlCommand::ShowTables { .. } => {
             let resultset = show_tables(transaction.clone());
+            todo!()
         }
 
-        SqlCommand::CreateDatabase {database, .. } => {
+        SqlCommand::CreateDatabase { database, .. } => {
             let last_id = moihandler::get_max_id("C:\\MiaSql\\system\\database.moi");
             transaction.row_id = last_id + 1;
-            let result  = create_database(transaction.clone(), database);
-            match result{
+            let result = create_database(transaction.clone(), database);
+            match result {
                 Ok(context) => {
                     if !context.error {
                         let line = format!("{} was created\n", database);
-                        if let Err(e) = stream.try_write(line.as_bytes()){
+                        if let Err(e) = stream.try_write(line.as_bytes()) {
                             eprintln!("write failed: {e}");
                         }
-                        return Ok(context);
-                    }else{
-                        let line = format!("There was an errir while {} was created\n", database);
-                        if let Err(e) = stream.try_write(line.as_bytes()){
+                        Ok(())
+                    } else {
+                        let line = format!("There was an error while {} was created\n", database);
+                        if let Err(e) = stream.try_write(line.as_bytes()) {
                             eprintln!("write failed: {e} {context}");
                         }
-                        return Ok(context);
+                        Ok(())
                     }
                 }
                 Err(why) => {
@@ -95,20 +84,37 @@ pub fn process_transaction(stream: &TcpStream, mut transaction: TransactionConte
                 }
             }
         }
-        SqlCommand::CreateTable { .. } => {
-            let last_id = moihandler::get_max_id("C:\\MiaSql\\system\\tables.moi");
-            transaction.row_id = last_id + 1;
-            let uuid = Uuid::new_v4();
-            transaction.table_uuid = uuid;
-            //Todo Error Matching
-            transaction = create_table(transaction.clone()).unwrap();
+        SqlCommand::CreateTable { table, columns, .. } => {
+            let result = create_table(transaction.clone(), table.to_string(), columns.clone());
+            match result {
+                Ok(t) => {
+                    if !t.error {
+                        let line = format!("{} was created\n", table);
+                        if let Err(e) = stream.try_write(line.as_bytes()) {
+                            eprintln!("write failed: {e}");
+                        }
+                        Ok(())
+                    } else {
+                        let line = format!("There was an error while {} was created\n", table);
+                        if let Err(e) = stream.try_write(line.as_bytes()) {
+                            eprintln!("write failed: {e} {t}");
+                        }
+                        Ok(())
+                    }
+                }
+                _ => {
+                    panic!("Something strange happend here while creating a table");
+                }
+            }
         }
-        _ => {}
+        _ => {
+            Ok(())
+        }
     }
-
+}
 
     //update system table if necessary
-    let trans_clone_sys_tab = transaction.clone();
+    /*    let trans_clone_sys_tab = transaction.clone();
 
     let system_table_update_result = update_system_table(trans_clone_sys_tab);
     match system_table_update_result {
@@ -121,10 +127,10 @@ pub fn process_transaction(stream: &TcpStream, mut transaction: TransactionConte
             transaction.error = true;
             return Err(anyhow!("unable to update system table because:{}", why));
         }
-    }
+    }*/
 
     //update/create mtd file
-    let trans_clone_mtd_file = transaction.clone();
+    /*    let trans_clone_mtd_file = transaction.clone();
     let mtd_file_result = update_mtd_file(trans_clone_mtd_file);
     match mtd_file_result {
         Ok(_) => {
@@ -136,32 +142,29 @@ pub fn process_transaction(stream: &TcpStream, mut transaction: TransactionConte
             transaction.error = true;
             return Err(anyhow!("unable to update mtd file because:{}", why));
         }
-    }
+    }*/
 
-    let trans_select_show = transaction.clone();
-    select_and_show(&stream, trans_select_show);
-
+    /*    let trans_select_show = transaction.clone();
+    select_and_show(&stream, trans_select_show);*/
 
     //update moi file
-    let trans_clone_moi_file = transaction.clone();
+    /*    let trans_clone_moi_file = transaction.clone();
 
-        let moi_file_result = moihandler::update(trans_clone_moi_file);
-        match moi_file_result {
-            Ok(_) => {
-                transaction.is_moi_file_updated = true;
-                info!("Moi file  updated");
-            }
-            Err(why) => {
-                transaction.is_moi_file_updated = false;
-                transaction.error = true;
-                return Err(anyhow!("unable to update moi file because:{}", why));
-            }
+    let moi_file_result = moihandler::update(trans_clone_moi_file);
+    match moi_file_result {
+        Ok(_) => {
+            transaction.is_moi_file_updated = true;
+            info!("Moi file  updated");
         }
+        Err(why) => {
+            transaction.is_moi_file_updated = false;
+            transaction.error = true;
+            return Err(anyhow!("unable to update moi file because:{}", why));
+        }
+    }*/
 
-    Ok(transaction)
-}
 
-fn select_and_show(stream: &TcpStream, tc: TransactionContext)  {
+fn select_and_show(stream: &TcpStream, tc: TransactionContext) {
     match tc.command {
         SqlCommand::Select { .. } => {}
         SqlCommand::ShowDatabases { .. } => {
@@ -182,7 +185,7 @@ fn select_and_show(stream: &TcpStream, tc: TransactionContext)  {
 
                     for row in rows_to_send {
                         let line = format!("{:?}\n", row);
-                        if let Err(e) = stream.try_write(line.as_bytes()){
+                        if let Err(e) = stream.try_write(line.as_bytes()) {
                             eprintln!("write failed: {e}");
                             return;
                         }
@@ -234,7 +237,7 @@ fn load_table_to_ram(tp: TransactionContext) {
 fn update_system_table(mut tp: TransactionContext) -> anyhow::Result<TransactionContext> {
     match &tp.command {
         SqlCommand::CreateTable { table, .. } => {
-            let result = command::createtable::update_system_table(
+            let result = command::createtable::update_system_table_in_mem(
                 tp.row_id,
                 Arc::from(tp.db_name.as_str()),
                 Arc::from(table.as_str()),
@@ -246,7 +249,7 @@ fn update_system_table(mut tp: TransactionContext) -> anyhow::Result<Transaction
                 }
             }
         }
-        _ => { }
+        _ => {}
     }
 
     Ok(tp)

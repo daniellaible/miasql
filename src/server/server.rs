@@ -168,11 +168,7 @@ pub async fn handle_client(stream: &mut TcpStream) -> std::io::Result<()> {
                         error: false,
                     };
                     let start = Instant::now();
-                    transaction_result = MasterQueueSingelton.add(stream, transaction);
-                    match transaction_result {
-                        None => error!("something went clearly wrong with your transaction"),
-                        Some(tp) => info!("{}", tp),
-                    }
+                    MasterQueueSingelton.add(stream, transaction);
                     let duration = start.elapsed();
                     println!("Request took: {:?}", duration);
                 } else {
