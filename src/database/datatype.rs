@@ -1,5 +1,7 @@
 //! These are the datatypes we will support in the beginning
 
+use std::fmt;
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum DataType {
     BigInt (i64),
@@ -15,5 +17,11 @@ pub enum DataType {
     DateTime (u64),
     Null,
     Undefined,
+}
+
+impl fmt::Display for DataType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
