@@ -80,7 +80,11 @@ pub fn process_transaction(
                     }
                 }
                 Err(why) => {
-                    panic!("Something strange happend here {:?}", why);
+                    let line = format!("There was an error while {} was created - database already exists\n", database);
+                    if let Err(e) = stream.try_write(line.as_bytes()) {
+                        eprintln!("write failed: {why}");
+                    }
+                    Ok(())
                 }
             }
         }

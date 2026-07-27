@@ -151,7 +151,6 @@ pub fn create_table(mut transaction: TransactionContext, tablename: String, colu
                     let system_table_result = update_system_table_in_mem(transaction.row_id, Arc::from(transaction.db_name.as_str()), Arc::from(tablename));
                     match system_table_result {
                         Ok(t) => {
-
                             transaction.is_system_table_updated= true;
                             let row = create_system_table_row(transaction.row_id, Arc::from(transaction.db_name.as_str()), Arc::from(tab_name));
                             let add_row_result = moihandler::add_row("C:\\MiaSql\\system\\tables.moi", row);
@@ -161,40 +160,37 @@ pub fn create_table(mut transaction: TransactionContext, tablename: String, colu
                                     match create_mtd_file_result {
                                         Ok(_) => {
                                             transaction.is_mtd_file_updated = true;
-                                            return Ok(transaction);
+                                            Ok(transaction)
                                         }
                                         _ => {
                                             transaction.error = true;
-                                            return Err(anyhow!("unable to create mtd file"))
+                                            Err(anyhow!("unable to create mtd file"))
                                         }
                                     }
-
                                 }
                                 _ => {
-                                    return Err(anyhow!("unable to add row to system.tables"))
+                                    Err(anyhow!("unable to add row to system.tables"))
                                 }
                             }
-
                         }
                         Err(why) => {
                             transaction.is_system_table_updated = false;
                             transaction.error = true;
-                            return Err(anyhow!("unable to update system table in memory:{}", why))
+                            Err(anyhow!("unable to update system table in memory:{}", why))
                         }
                     }
                 }
                 Err(why) => {
                     transaction.is_btree_updated = false;
                     transaction.error = true;
-                    return Err(anyhow!("unable to update tree because:{}", why))
+                    Err(anyhow!("unable to update tree because:{}", why))
                 }
             }
         }
         Err(why) => {
-            return Err(anyhow!("unable to update ledger file because: {}", why));
+            Err(anyhow!("unable to update ledger file because: {}", why))
         }
     }
-
 }
 
 pub fn update_system_table_in_mem(id: i64, db_name: Arc<str>, table_name: Arc<str>) -> anyhow::Result<()> {

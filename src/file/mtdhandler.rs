@@ -270,17 +270,17 @@ pub fn new_mtd_file(
                             .expect("unable to write the start of output to disc");
                     }else {
                         let constraint = constraints[j].clone();
-                        let output = "(".to_owned() + i.to_string().as_str() + "," + constraint.to_string().as_str() + ");";
+                        let output = "(".to_owned() + i.to_string().as_str() + "," + constraint.to_string().as_str() + ");\n";
                         writer
                             .write_all((&output).as_ref())
                             .expect("unable to write the start of output to disc");
                     }
                 }
             }
-
-            let moi_path = "moiFiles=[".to_owned() + path.as_str() + "]";
+            let moi_path = "C:\\MiaSql\\tables\\".to_owned() + uuid.to_string().as_str() + ".moi";
+            let moi = "moiFiles=[".to_owned() + moi_path.as_str() + "]";
             writer
-                .write_all((&moi_path).as_ref())
+                .write_all((&moi).as_ref())
                 .expect("unable to write the start of moi to disc");
         }
         Err(_) => {}
