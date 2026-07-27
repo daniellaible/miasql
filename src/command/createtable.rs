@@ -11,6 +11,7 @@ use crate::database::table;
 use crate::database::table::Row;
 use crate::{command, file};
 use crate::file::{moihandler, mtdhandler};
+use crate::file::moihandler::create_moi_file;
 use crate::server::dbmem::DbMem;
 use crate::server::queue::TransactionContext;
 
@@ -148,11 +149,11 @@ pub fn create_table(mut transaction: TransactionContext, tablename: String, colu
 
                     let tab_name = tablename.clone();
                     let table_name_mtd = tab_name.clone();
-                    let system_table_result = update_system_table_in_mem(transaction.row_id, Arc::from(transaction.db_name.as_str()), Arc::from(tablename));
+                    let system_table_result = update_system_table_in_mem(transaction.row_id, Arc::from(transaction.db_name.as_str()), Arc::from(tablename), transaction.table_uuid.to_string());
                     match system_table_result {
                         Ok(t) => {
                             transaction.is_system_table_updated= true;
-                            let row = create_system_table_row(transaction.row_id, Arc::from(transaction.db_name.as_str()), Arc::from(tab_name));
+                            let row = create_system_table_row(transaction.row_id, Arc::from(transaction.db_name.as_str()), Arc::from(tab_name), transaction.table_uuid.to_string());
                             let add_row_result = moihandler::add_row("C:\\MiaSql\\system\\tables.moi", row);
                             match add_row_result{
                                 Ok(_) => {
@@ -160,7 +161,19 @@ pub fn create_table(mut transaction: TransactionContext, tablename: String, colu
                                     match create_mtd_file_result {
                                         Ok(_) => {
                                             transaction.is_mtd_file_updated = true;
-                                            Ok(transaction)
+                                            let moi_path = "C:\\MiaSql\\tables\\".to_owned() + uuid.to_string().as_str() + ".moi";
+                                            let moi_creating_result = create_moi_file(&moi_path);
+                                            match moi_creating_result{
+                                                Ok(t) => {
+                                                    transaction.is_moi_file_updated = true;
+                                                    Ok(transaction)
+
+                                                }
+                                                Err(why)=> {
+                                                    transaction.error = true;
+                                                    Err(anyhow!("unable to create mtd file"))
+                                                }
+                                            }
                                         }
                                         _ => {
                                             transaction.error = true;
@@ -193,13 +206,13 @@ pub fn create_table(mut transaction: TransactionContext, tablename: String, colu
     }
 }
 
-pub fn update_system_table_in_mem(id: i64, db_name: Arc<str>, table_name: Arc<str>) -> anyhow::Result<()> {
-    let row = create_system_table_row(id, db_name, table_name);
+pub fn update_system_table_in_mem(id: i64, db_name: Arc<str>, table_name:Arc<str>, table_uuid: String) -> anyhow::Result<()> {
+    let row = create_system_table_row(id, db_name, table_name, table_uuid);
     DbMem::insert_row("system", "tables", row);
     Ok(())
 }
 
-fn create_system_table_row(id: i64,db_name: Arc<str>, table_name: Arc<str>) -> Row {
+fn create_system_table_row(id: i64,db_name: Arc<str>, table_name:Arc<str>, tableuuid: String) -> Row {
     let mut row: Row = Row{
         data: Vec::new(),
     };
@@ -207,15 +220,13 @@ fn create_system_table_row(id: i64,db_name: Arc<str>, table_name: Arc<str>) -> R
     let table = &*table_name;
 
     let mut location = "C:\\MiaSql\\tables\\".to_owned();
-    location = location + db.to_lowercase().as_str();
-    location = location + "_";
-    location = location + table_name.to_lowercase().as_str();
+    location = location + tableuuid.as_str();
     location = location + ".mtd";
 
     row.data.push(DataType::BigInt(id));
     row.data.push(DataType::VarChar(db.len() as u8, String::from(db)));
     row.data.push(DataType::VarChar(table.len() as u8, String::from(table)));
-    row.data.push(DataType::VarChar(table.len() as u8, String::from(location)));
+    row.data.push(DataType::VarChar(location.len() as u8, String::from(location)));
     row
 }
 

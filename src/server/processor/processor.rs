@@ -8,12 +8,10 @@ use crate::file::{moihandler, mtdhandler};
 use crate::server::dbmem::DbMem;
 use crate::server::queue::TransactionContext;
 use crate::{command};
-use anyhow::{anyhow};
 use log::info;
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
 use tokio::net::TcpStream;
-use uuid::Uuid;
 
 pub static COUNTER: AtomicU64 = AtomicU64::new(0);
 
@@ -245,6 +243,7 @@ fn update_system_table(mut tp: TransactionContext) -> anyhow::Result<Transaction
                 tp.row_id,
                 Arc::from(tp.db_name.as_str()),
                 Arc::from(table.as_str()),
+                tp.table_uuid.to_string()
             );
             match result {
                 Ok(_) => tp.is_system_table_updated = true,
