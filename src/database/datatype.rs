@@ -21,7 +21,45 @@ pub enum DataType {
 
 impl fmt::Display for DataType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
+        match &self {
+            DataType::BigInt(x) => {
+                write!(f, "{:?}", x)
+            }
+            DataType::Int(x) => {
+                write!(f, "{:?}", x)
+            }
+            DataType::SmallInt(x) => {
+                write!(f, "{:?}", x)
+            }
+            DataType::TinyInt(x) => {
+                write!(f, "{:?}", x)
+            }
+            DataType::Decimal(x) => {
+                write!(f, "{:?}", x)
+            }
+            DataType::Float(x) => {
+                write!(f, "{:?}", x)
+            }
+            DataType::VarChar(x, s) => {
+                write!(f, "{:?}", s)
+            }
+            DataType::Bool(b) => {write!(f, "{:?}", b)}
+            DataType::Date(d) => {
+                write!(f, "{:?}", d)
+            }
+            DataType::Time(d) => {
+                write!(f, "{:?}", d)
+            }
+            DataType::DateTime(d) => {
+                write!(f, "{:?}", d)
+            }
+            DataType::Null => {
+                write!(f, "NULL" )
+            }
+            DataType::Undefined => {
+                write!(f, "UNDEF" )
+            }
+        }
     }
 }
 
