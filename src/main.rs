@@ -44,7 +44,6 @@ mod file{
     pub mod ledgerhandler;
 }
 
-
 mod server {
     pub mod processor{
         pub mod processor;
@@ -85,7 +84,6 @@ fn import_system_tables() {
     DbMem::add_table(db_table);
     DbMem::add_table(tables_table);
     DbMem::add_table(user_table);
-    DbMem::print_tables();
 }
 
 fn import_config() {
@@ -101,7 +99,7 @@ async fn run_server() -> std::io::Result<()> {
     loop {
         info!("We are looping in the main function");
         let (mut stream, addr) = listener.accept().await?;
-        println!("client connected: {addr}");
+        info!("client connected: {addr}");
 
         tokio::spawn(async move {
             if let Err(e) = server::server::handle_client(&mut stream).await {

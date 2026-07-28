@@ -1,7 +1,7 @@
 use crate::command::createdatabase::create_database;
 use crate::command::createtable::create_table;
 use crate::command::showdatabases::show_databases;
-use crate::command::showtables::show_tables;
+use crate::command::showtables::show_table;
 use crate::command::sqlcommands::SqlCommand;
 use crate::database::bptree::Node;
 use crate::file::{moihandler, mtdhandler};
@@ -11,7 +11,9 @@ use crate::{command};
 use log::info;
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
+use anyhow::Error;
 use tokio::net::TcpStream;
+use crate::command::resultset::ResultSet;
 
 pub static COUNTER: AtomicU64 = AtomicU64::new(0);
 
@@ -25,7 +27,6 @@ pub fn process_transaction(
     transaction.is_processing = true;
     transaction.transaction_id = transaction_id;
     load_table_to_ram(transaction.clone());
-
 
     match &transaction.command {
         SqlCommand::Select { .. } => {
@@ -50,34 +51,13 @@ pub fn process_transaction(
         SqlCommand::AlterTableRename { .. } => {Ok(())}
         SqlCommand::ShowDatabases { .. } => {
             let result = show_databases();
-            match result{
-                Ok(res) => {
-                    for i in 0..res.header.len(){
-                        stream.try_write(res.header[i].as_bytes());
-                        stream.try_write("\n".as_bytes());
-                    }
-                    for j in 0 .. res.rows.len(){
-                        let row = &res.rows[j];
-                        for k in 0 .. row.data.len(){
-                            let dt = &row.data[k];
-                            let datatype = dt.to_string();
-                            stream.try_write(datatype.as_bytes());
-                            stream.try_write("\n".as_bytes());
-                        }
-                    }
-                    Ok(())
-                }
-                Err(why) => {
-                    let line = "Something went wrong";
-                    stream.try_write(line.as_bytes());
-                    stream.try_write("\n".as_bytes());
-                    Ok(())
-                }
-            }
+            print_resultset_to_stream(result, &stream);
+            Ok(())
         }
         SqlCommand::ShowTables { .. } => {
-            let resultset = show_tables(transaction.clone());
-            todo!()
+            let resultset = show_table("system", "tables");
+            print_resultset_to_stream(resultset, &stream);
+            Ok(())
         }
 
         SqlCommand::CreateDatabase { database, .. } => {
@@ -111,6 +91,7 @@ pub fn process_transaction(
         }
         SqlCommand::CreateTable { table, columns, .. } => {
             let result = create_table(transaction.clone(), table.to_string(), columns.clone());
+
             match result {
                 Ok(t) => {
                     if !t.error {
@@ -134,6 +115,32 @@ pub fn process_transaction(
         }
         _ => {
             Ok(())
+        }
+    }
+}
+
+fn print_resultset_to_stream(result: anyhow::Result<ResultSet, Error>, stream:&TcpStream){
+    match result{
+        Ok(res) => {
+            for i in 0..res.header.len(){
+                let columnname = res.header[i].as_str().to_owned() + " ";
+                stream.try_write(columnname.as_bytes());
+            }
+            stream.try_write("\n\r".as_bytes());
+            for j in 0 .. res.rows.len(){
+                let row = &res.rows[j];
+                for k in 0 .. row.data.len(){
+                    let dt = &row.data[k];
+                    let datatype = dt.to_string() + " ";
+                    stream.try_write(datatype.as_bytes());
+                }
+                stream.try_write("\n\r".as_bytes());
+            }
+        }
+        Err(why) => {
+            let line = "Something went wrong";
+            stream.try_write(line.as_bytes());
+            stream.try_write("\n".as_bytes());
         }
     }
 }

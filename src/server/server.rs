@@ -13,7 +13,7 @@ pub async fn handle_client(stream: &mut TcpStream) -> std::io::Result<()> {
     let mut is_logged_in = false;
     let mut is_use_command = false;
     let mut username = String::from("");
-    let mut db_used = String::from("");
+    let mut db_used = String::from("system");
     loop {
         if !is_logged_in {
             let login_prompt = String::from("login:");
@@ -144,7 +144,7 @@ pub async fn handle_client(stream: &mut TcpStream) -> std::io::Result<()> {
                 _ => {}
             };
 
-            let mut transaction_result: Option<TransactionContext> = None;
+
             if !db_used.is_empty() && !is_use_command {
                 if sql_command != SqlCommand::Undefined {
                     let transaction: TransactionContext = TransactionContext {
@@ -204,7 +204,7 @@ pub fn parse_incomming(incomming: &str) -> SqlCommand {
             command: String::from("USE"),
             database: db_name.to_string(),
         }
-    } else if management_command == "SHOW TABLES " {
+    } else if management_command == "SHOW TABLES" {
         SqlCommand::ShowTables {
             command: String::from("SHOW TABLES"),
             database: "".to_string(),
