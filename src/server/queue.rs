@@ -40,22 +40,18 @@ impl std::fmt::Display for TransactionContext {
 }
 
 #[derive(Debug)]
-pub struct MasterQueue {
+pub struct TableGuard {
     pub is_working: AtomicBool,
-    //pub queue: Mutex<VecDeque<TransactionContext>>,
 }
 
 pub struct MasterQueueSingelton;
 
-static INSTANCE: OnceLock<MasterQueue> = OnceLock::new();
+static INSTANCE: OnceLock<TableGuard> = OnceLock::new();
 
 impl MasterQueueSingelton {
-    pub fn instance() -> &'static MasterQueue {
-        let config = ConfigSingelton::instance().lock().unwrap();
-        //let ringbuffer: VecDeque<TransactionContext> =  VecDeque::with_capacity(config.masterqueue_capacity as usize);
-        INSTANCE.get_or_init(|| MasterQueue {
+    pub fn instance() -> &'static TableGuard {
+        INSTANCE.get_or_init(|| TableGuard {
             is_working: AtomicBool::new(false),
-            //queue: Mutex::new(ringbuffer),
         })
     }
 

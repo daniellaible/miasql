@@ -43,7 +43,7 @@ pub fn append_to_file(user: &str, command: &SqlCommand, given_db:&str) -> anyhow
 
     let printable = to_printable_line(command, db_name, counter, user);
     writer.write_all((&printable).as_ref()).expect("unable to write to ledger");
-    writer.flush();
+    let _ = writer.flush();
     Ok(())
 }
 

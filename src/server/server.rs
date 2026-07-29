@@ -1,4 +1,3 @@
-use std::thread;
 use crate::command::sqlcommands::SqlCommand;
 use crate::server;
 use crate::server::queue::{MasterQueueSingelton, TransactionContext};
@@ -20,7 +19,7 @@ pub async fn handle_client(stream: &mut TcpStream) -> anyhow::Result<()> {
     loop {
         if !is_logged_in {
             let login_prompt = String::from("login:");
-            &stream
+            stream
                 .write_all((&login_prompt).as_ref())
                 .await
                 .expect("Unable to write login prompts");
@@ -177,7 +176,7 @@ pub async fn handle_client(stream: &mut TcpStream) -> anyhow::Result<()> {
                             MasterQueueSingelton.add(transaction)
                         });
 
-                    match handle.await {
+                    let _ = match handle.await {
                         Ok(inner_result) => {
                             print_resultset_to_stream(inner_result, &stream);
                             Ok(())
@@ -196,7 +195,7 @@ pub async fn handle_client(stream: &mut TcpStream) -> anyhow::Result<()> {
                 }
             }
 
-            &stream
+            stream
                 .write_all((&answer).as_ref())
                 .await
                 .expect("Something wrong with the in-/output stream");
@@ -239,23 +238,23 @@ fn print_resultset_to_stream(result: anyhow::Result<ResultSet, Error>, stream:&T
         Ok(res) => {
             for i in 0..res.header.len(){
                 let columnname = res.header[i].as_str().to_owned() + " ";
-                stream.try_write(columnname.as_bytes());
+                let _ = stream.try_write(columnname.as_bytes());
             }
-            stream.try_write("\n\r".as_bytes());
+            let _ = stream.try_write("\n\r".as_bytes());
             for j in 0 .. res.rows.len(){
                 let row = &res.rows[j];
                 for k in 0 .. row.data.len(){
                     let dt = &row.data[k];
                     let datatype = dt.to_string() + " ";
-                    stream.try_write(datatype.as_bytes());
+                    let _ = stream.try_write(datatype.as_bytes());
                 }
-                stream.try_write("\n\r".as_bytes());
+                let _ = stream.try_write("\n\r".as_bytes());
             }
         }
-        Err(why) => {
+        Err(_) => {
             let line = "Something went wrong";
-            stream.try_write(line.as_bytes());
-            stream.try_write("\n".as_bytes());
+            let _ = stream.try_write(line.as_bytes());
+            let _ = stream.try_write("\n".as_bytes());
         }
     }
 }

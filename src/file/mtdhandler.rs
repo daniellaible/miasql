@@ -16,7 +16,6 @@ pub struct MtdFile {
     pub column_names: Vec<String>,
     pub column_type_definitions: Vec<DataType>,
     pub column_constraints: Vec<(u32, Constraint)>,
-    pub display_order: Vec<(u32, u32)>,
     pub moi_files: Vec<String>,
 }
 
@@ -30,7 +29,6 @@ impl MtdFile {
             column_names: vec![],
             column_type_definitions: vec![],
             column_constraints: vec![],
-            display_order: vec![],
             moi_files: vec![],
         }
     }

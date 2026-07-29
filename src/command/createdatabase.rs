@@ -27,7 +27,7 @@ pub fn parse(ast: Vec<Statement>) -> SqlCommand {
 }
 
 pub fn create_database(
-    mut transaction: TransactionContext,
+    transaction: TransactionContext,
     dbname: &str,
 ) -> anyhow::Result<TransactionContext, Error> {
     let ledger_clone_file = transaction.clone();
@@ -39,7 +39,7 @@ pub fn create_database(
     match result {
         Ok(_) => {
             let id = transaction.row_id.clone();
-            let mut result_system_table_update = update_system_table(transaction, String::from(dbname), id);
+            let result_system_table_update = update_system_table(transaction, String::from(dbname), id);
             match result_system_table_update {
                 Ok(mut t) => {
                     t.is_system_table_updated = true;
@@ -51,7 +51,7 @@ pub fn create_database(
                             t.is_moi_file_updated = true;
                             Ok(t)
                         }
-                        Err(why) => Err(anyhow!("Unable to create database {:?}", t)),
+                        Err(_) => Err(anyhow!("Unable to create database {:?}", t)),
                     }
                 }
                 Err(why) => Err(anyhow!("Unableto update system table because: {}", why)),
@@ -80,7 +80,7 @@ pub fn update_system_table(
     mut transaction: TransactionContext,
     dbname: String,
     id: i64,
-) -> anyhow::Result<(TransactionContext)> {
+) -> anyhow::Result<TransactionContext> {
     let mut row: Row = Row { data: Vec::new() };
     row.data.push(DataType::BigInt(id));
     row.data.push(DataType::VarChar(

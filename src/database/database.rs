@@ -6,12 +6,3 @@ pub struct Database {
     pub tables: Vec<Table>,
 }
 
-impl Database {
-    pub fn default() -> Self {
-        Database {
-            db_name: "".to_string(),
-            tables: Vec::new(),
-        }
-    }
-    
-}

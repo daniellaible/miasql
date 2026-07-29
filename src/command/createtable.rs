@@ -1,7 +1,5 @@
 use std::sync::Arc;
 use anyhow::{anyhow, Error};
-use log::__private_api::loc;
-use log::info;
 use sqlparser::ast::{ColumnOption, CreateTable, Ident, ObjectNamePart, TableConstraint};
 use uuid::Uuid;
 use crate::command::constraint::Constraint;
@@ -9,7 +7,7 @@ use crate::command::sqlcommands::SqlCommand;
 use crate::database::datatype::DataType;
 use crate::database::table;
 use crate::database::table::Row;
-use crate::{command, file};
+use crate::{file};
 use crate::file::{moihandler, mtdhandler};
 use crate::file::moihandler::create_moi_file;
 use crate::server::dbmem::DbMem;
@@ -139,7 +137,7 @@ pub fn create_table(mut transaction: TransactionContext, tablename: String, colu
             let trans_clone_btree = transaction.clone();
             let btree_update_result = table::create_table_in_mem(trans_clone_btree);
             match btree_update_result {
-                Ok(t) => {
+                Ok(_) => {
                     transaction.is_btree_updated = true;
 
                     let last_id = moihandler::get_max_id("C:\\MiaSql\\system\\tables.moi");
@@ -151,7 +149,7 @@ pub fn create_table(mut transaction: TransactionContext, tablename: String, colu
                     let table_name_mtd = tab_name.clone();
                     let system_table_result = update_system_table_in_mem(transaction.row_id, Arc::from(transaction.db_name.as_str()), Arc::from(tablename), transaction.table_uuid.to_string());
                     match system_table_result {
-                        Ok(t) => {
+                        Ok(_) => {
                             transaction.is_system_table_updated= true;
                             let row = create_system_table_row(transaction.row_id, Arc::from(transaction.db_name.as_str()), Arc::from(tab_name), transaction.table_uuid.to_string());
                             let add_row_result = moihandler::add_row("C:\\MiaSql\\system\\tables.moi", row);
@@ -164,12 +162,12 @@ pub fn create_table(mut transaction: TransactionContext, tablename: String, colu
                                             let moi_path = "C:\\MiaSql\\tables\\".to_owned() + uuid.to_string().as_str() + ".moi";
                                             let moi_creating_result = create_moi_file(&moi_path);
                                             match moi_creating_result{
-                                                Ok(t) => {
+                                                Ok(_) => {
                                                     transaction.is_moi_file_updated = true;
                                                     Ok(transaction)
 
                                                 }
-                                                Err(why)=> {
+                                                Err(_)=> {
                                                     transaction.error = true;
                                                     Err(anyhow!("unable to create mtd file"))
                                                 }

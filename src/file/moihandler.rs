@@ -42,14 +42,14 @@ pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
     }
 
 
-    input.read_exact(&mut u8_buffer);
-    u8::from_le_bytes(u8_buffer);
+    let _ = input.read_exact(&mut u8_buffer);
+    let _ = u8::from_le_bytes(u8_buffer);
 
-    input.read_exact(&mut i64_buffer);
+    let _ =input.read_exact(&mut i64_buffer);
     let number_of_lines = i64::from_le_bytes(i64_buffer);
 
-    input.read_exact(&mut u8_buffer);
-    u8::from_le_bytes(u8_buffer);
+    let _ =input.read_exact(&mut u8_buffer);
+    let _ = u8::from_le_bytes(u8_buffer);
 
     for _ in 0..number_of_lines {
         let mut row: Vec<DataType> = Vec::new();
@@ -201,8 +201,8 @@ pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
                 }
             }
         }
-        input.read_exact(&mut u8_buffer);
-        u8::from_le_bytes(u8_buffer);
+        let _ =input.read_exact(&mut u8_buffer);
+        let _ =u8::from_le_bytes(u8_buffer);
 
         let row_id = match row[0] {
             DataType::BigInt(t) => { t }
@@ -218,7 +218,7 @@ pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
 pub fn get_max_id(path:& str) -> i64{
     let mut i64_buffer = [0u8; std::mem::size_of::<i64>()];
     let mut input = BufReader::new(File::open(path).expect("Failed to open file"));
-    input.read_exact(&mut i64_buffer);
+    let _ =input.read_exact(&mut i64_buffer);
     i64::from_le_bytes(i64_buffer)
 }
 
@@ -250,15 +250,15 @@ pub fn add_row(path: &str, row: Row) -> anyhow::Result<()>{
 
     //read max id
     let mut input = BufReader::new(File::open(path).expect("Failed to open file"));
-    input.read_exact(&mut i64_buffer);
+    let _ =input.read_exact(&mut i64_buffer);
     let _max_id = i64::from_le_bytes(i64_buffer);
 
     //read new line
-    input.read_exact(&mut u8_buffer);
-    u8::from_le_bytes(u8_buffer);
+    let _ =input.read_exact(&mut u8_buffer);
+    let _ =u8::from_le_bytes(u8_buffer);
 
     //read number of rows stored in file
-    input.read_exact(&mut i64_buffer);
+    let _ =input.read_exact(&mut i64_buffer);
     let number_of_lines = i64::from_le_bytes(i64_buffer);
 
     let mut file = OpenOptions::new()
@@ -480,43 +480,6 @@ pub fn add_row(path: &str, row: Row) -> anyhow::Result<()>{
     }
 }
 
-pub fn update(mut tp: TransactionContext) -> anyhow::Result<TransactionContext>{
-    match &tp.command {
-        SqlCommand::CreateDatabase {database, ..} => {
-            let mut row: Row = Row{
-                data: Vec::new(),
-            };
-            row.data.push(DataType::BigInt(tp.row_id));
-            row.data.push(DataType::VarChar(database.len() as u8, String::from(database)));
-            moihandler::add_row("C:\\MiaSql\\system\\database.moi", row).expect("Unable to update database moi file");
-        }
-        SqlCommand::CreateTable {table, ..} => {
-            let mut row: Row = Row{
-                data: Vec::new(),
-            };
-            let database = tp.db_name.clone();
-            tp.table_names.push(table.clone());
-
-            let path = "C:\\MiaSql\\tables\\".to_owned() + tp.table_uuid.to_string().as_str() + ".mtd";
-            row.data.push(DataType::BigInt(tp.row_id));
-            row.data.push(DataType::VarChar(database.len() as u8, String::from(database)));
-            row.data.push(DataType::VarChar(table.len() as u8, String::from(table)));
-            row.data.push(DataType::VarChar(path.len() as u8, String::from(path.clone())));
-            moihandler::add_row("C:\\MiaSql\\system\\tables.moi", row).expect("Unable to update database moi file");
-
-            create_moi_file(&path);
-        }
-        SqlCommand::Insert {table, columns, values, ..} => {
-            println!("{:?}", columns);
-            println!("{:?}", values)
-        }
-
-        _ => {
-        }
-    }
-    Ok(tp)
-}
-
 #[cfg(test)]
 mod tests {
     use crate::file::moihandler::{add_row, load_moi_file};
@@ -537,12 +500,12 @@ mod tests {
             Ok(file_item) => {
                 let mut writer = BufWriter::new(file_item);
                 let max_id: u64 = 2;
-                writer.write(&max_id.to_le_bytes()).expect("unable to write to disc");
-                writer.write(b"\n").expect("unable to write to disc");
+                let _ =writer.write(&max_id.to_le_bytes()).expect("unable to write to disc");
+                let _ =writer.write(b"\n").expect("unable to write to disc");
 
                 let lines: u64 = 2;
-                writer.write(&lines.to_le_bytes()).expect("unable to write to disc");
-                writer.write(b"\n").expect("unable to write to disc");
+                let _ =writer.write(&lines.to_le_bytes()).expect("unable to write to disc");
+                let _ =writer.write(b"\n").expect("unable to write to disc");
 
 
                 let id_1: i64 = 1 as i64;

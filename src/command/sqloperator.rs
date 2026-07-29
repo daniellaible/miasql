@@ -1,5 +1,4 @@
-#[derive(Clone, Debug)]
-#[derive(PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Operator {
     ADDITION,
     SUBTRACTION,

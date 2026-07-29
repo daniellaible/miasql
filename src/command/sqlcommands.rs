@@ -1,4 +1,3 @@
-use std::fmt;
 use crate::command::constraint::Constraint;
 use crate::command::createtable::ForeignKeyToken;
 use crate::command::select::{JoinClause};

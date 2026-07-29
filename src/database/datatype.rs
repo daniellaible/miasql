@@ -40,7 +40,7 @@ impl fmt::Display for DataType {
             DataType::Float(x) => {
                 write!(f, "{:?}", x)
             }
-            DataType::VarChar(x, s) => {
+            DataType::VarChar(.., s) => {
                 write!(f, "{:?}", s)
             }
             DataType::Bool(b) => {write!(f, "{:?}", b)}

@@ -1,4 +1,3 @@
-use crate::database::datatype::DataType;
 use crate::database::table::Row;
 
 #[derive(Debug)]
