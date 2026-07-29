@@ -1,13 +1,16 @@
+use std::thread;
 use crate::command::sqlcommands::SqlCommand;
 use crate::server;
 use crate::server::queue::{MasterQueueSingelton, TransactionContext};
 use log::{error, info};
 use std::time::Instant;
+use anyhow::Error;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use uuid::Uuid;
+use crate::command::resultset::ResultSet;
 
-pub async fn handle_client(stream: &mut TcpStream) -> std::io::Result<()> {
+pub async fn handle_client(stream: &mut TcpStream) -> anyhow::Result<()> {
     let mut buf = [0u8; 4096];
 
     let mut is_logged_in = false;
@@ -168,7 +171,20 @@ pub async fn handle_client(stream: &mut TcpStream) -> std::io::Result<()> {
                         error: false,
                     };
                     let start = Instant::now();
-                    MasterQueueSingelton.add(stream, transaction);
+
+                    let handle: tokio::task::JoinHandle<anyhow::Result<ResultSet>> =
+                        tokio::spawn(async move {
+                            MasterQueueSingelton.add(transaction)
+                        });
+
+                    match handle.await {
+                        Ok(inner_result) => {
+                            print_resultset_to_stream(inner_result, &stream);
+                            Ok(())
+                          },
+                        Err(join_err) => Err(anyhow::anyhow!("task failed: {}", join_err)),
+                    };
+
                     let duration = start.elapsed();
                     println!("Request took: {:?}", duration);
                 } else {
@@ -187,6 +203,8 @@ pub async fn handle_client(stream: &mut TcpStream) -> std::io::Result<()> {
         }
     }
 }
+
+
 
 pub fn parse_incomming(incomming: &str) -> SqlCommand {
     let mut management_command = String::from(incomming);
@@ -213,6 +231,32 @@ pub fn parse_incomming(incomming: &str) -> SqlCommand {
         let command = server::parser::tokenizer::tokeniz(&management_command);
         info!("tokenized command: {:?}", command);
         command
+    }
+}
+
+fn print_resultset_to_stream(result: anyhow::Result<ResultSet, Error>, stream:&TcpStream){
+    match result{
+        Ok(res) => {
+            for i in 0..res.header.len(){
+                let columnname = res.header[i].as_str().to_owned() + " ";
+                stream.try_write(columnname.as_bytes());
+            }
+            stream.try_write("\n\r".as_bytes());
+            for j in 0 .. res.rows.len(){
+                let row = &res.rows[j];
+                for k in 0 .. row.data.len(){
+                    let dt = &row.data[k];
+                    let datatype = dt.to_string() + " ";
+                    stream.try_write(datatype.as_bytes());
+                }
+                stream.try_write("\n\r".as_bytes());
+            }
+        }
+        Err(why) => {
+            let line = "Something went wrong";
+            stream.try_write(line.as_bytes());
+            stream.try_write("\n".as_bytes());
+        }
     }
 }
 

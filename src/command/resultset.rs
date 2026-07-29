@@ -11,13 +11,13 @@ pub struct ResultSet{
 impl ResultSet{
     pub fn create_with_rows( header: Vec<String>, rows: Vec<Row>) -> Self {
         let resultset = ResultSet{
-            header, 
+            header,
             rows,
             duration: "0.0".to_string(),
         };
         resultset
     }
-    
+
     pub fn create_with_header(header:Vec<String>) -> Self{
         let resultset = ResultSet{
             header,

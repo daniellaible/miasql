@@ -17,10 +17,7 @@ use crate::command::resultset::ResultSet;
 
 pub static COUNTER: AtomicU64 = AtomicU64::new(0);
 
-pub fn process_transaction(
-    stream: &TcpStream,
-    mut transaction: TransactionContext,
-) -> anyhow::Result<()> {
+pub fn process_transaction( mut transaction: TransactionContext) -> anyhow::Result<ResultSet> {
     info!("In the processor: {:?}", transaction.command);
 
     let transaction_id = get_transaction_counter();
@@ -51,12 +48,12 @@ pub fn process_transaction(
         SqlCommand::AlterTableRename { .. } => {Ok(())}
         SqlCommand::ShowDatabases { .. } => {
             let result = show_databases();
-            print_resultset_to_stream(result, &stream);
+            //print_resultset_to_stream(result);
             Ok(())
         }
         SqlCommand::ShowTables { .. } => {
             let resultset = show_table("system", "tables");
-            print_resultset_to_stream(resultset, &stream);
+            //print_resultset_to_stream(resultset);
             Ok(())
         }
 
@@ -68,23 +65,23 @@ pub fn process_transaction(
                 Ok(context) => {
                     if !context.error {
                         let line = format!("{} was created\n", database);
-                        if let Err(e) = stream.try_write(line.as_bytes()) {
+            /*            if let Err(e) = stream.try_write(line.as_bytes()) {
                             eprintln!("write failed: {e}");
                         }
-                        Ok(())
+                        Ok(())*/
                     } else {
                         let line = format!("There was an error while {} was created\n", database);
-                        if let Err(e) = stream.try_write(line.as_bytes()) {
+       /*                 if let Err(e) = stream.try_write(line.as_bytes()) {
                             eprintln!("write failed: {e} {context}");
-                        }
+                        }*/
                         Ok(())
                     }
                 }
                 Err(why) => {
                     let line = format!("There was an error while {} was created - database already exists\n", database);
-                    if let Err(e) = stream.try_write(line.as_bytes()) {
+       /*             if let Err(e) = stream.try_write(line.as_bytes()) {
                         eprintln!("write failed: {why}");
-                    }
+                    }*/
                     Ok(())
                 }
             }
@@ -96,15 +93,15 @@ pub fn process_transaction(
                 Ok(t) => {
                     if !t.error {
                         let line = format!("{} was created\n", table);
-                        if let Err(e) = stream.try_write(line.as_bytes()) {
+     /*                   if let Err(e) = stream.try_write(line.as_bytes()) {
                             eprintln!("write failed: {e}");
-                        }
+                        }*/
                         Ok(())
                     } else {
                         let line = format!("There was an error while {} was created\n", table);
-                        if let Err(e) = stream.try_write(line.as_bytes()) {
+/*                        if let Err(e) = stream.try_write(line.as_bytes()) {
                             eprintln!("write failed: {e} {t}");
-                        }
+                        }*/
                         Ok(())
                     }
                 }
@@ -119,31 +116,7 @@ pub fn process_transaction(
     }
 }
 
-fn print_resultset_to_stream(result: anyhow::Result<ResultSet, Error>, stream:&TcpStream){
-    match result{
-        Ok(res) => {
-            for i in 0..res.header.len(){
-                let columnname = res.header[i].as_str().to_owned() + " ";
-                stream.try_write(columnname.as_bytes());
-            }
-            stream.try_write("\n\r".as_bytes());
-            for j in 0 .. res.rows.len(){
-                let row = &res.rows[j];
-                for k in 0 .. row.data.len(){
-                    let dt = &row.data[k];
-                    let datatype = dt.to_string() + " ";
-                    stream.try_write(datatype.as_bytes());
-                }
-                stream.try_write("\n\r".as_bytes());
-            }
-        }
-        Err(why) => {
-            let line = "Something went wrong";
-            stream.try_write(line.as_bytes());
-            stream.try_write("\n".as_bytes());
-        }
-    }
-}
+
 
 
 fn load_table_to_ram(tp: TransactionContext) {
