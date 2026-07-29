@@ -27,34 +27,30 @@ pub fn process_transaction( mut transaction: TransactionContext) -> anyhow::Resu
 
     match &transaction.command {
         SqlCommand::Select { .. } => {
-            todo!()
+            Ok(ResultSet::create())
         }
         SqlCommand::DropTable { .. } => {
-            todo!()
+            Ok(ResultSet::create())
         }
         SqlCommand::DropDatabase { .. } => {
-            todo!()
+            Ok(ResultSet::create())
         }
         SqlCommand::Delete { .. } => {
-            todo!()
+            Ok(ResultSet::create())
         }
-        SqlCommand::Truncate { .. } => {Ok(())}
-        SqlCommand::Update { .. } => {Ok(())}
-        SqlCommand::Insert { .. } => {Ok(())}
-        SqlCommand::AlterAddColumn { .. } => {Ok(())}
-        SqlCommand::AlterDropColumn { .. } => {Ok(())}
-        SqlCommand::AlterRenameColumn { .. } => {Ok(())}
-        SqlCommand::AlterModifyColumn { .. } => {Ok(())}
-        SqlCommand::AlterTableRename { .. } => {Ok(())}
+        SqlCommand::Truncate { .. } => {Ok(ResultSet::create())}
+        SqlCommand::Update { .. } => {Ok(ResultSet::create())}
+        SqlCommand::Insert { .. } => {Ok(ResultSet::create())}
+        SqlCommand::AlterAddColumn { .. } => {Ok(ResultSet::create())}
+        SqlCommand::AlterDropColumn { .. } => {Ok(ResultSet::create())}
+        SqlCommand::AlterRenameColumn { .. } => {Ok(ResultSet::create())}
+        SqlCommand::AlterModifyColumn { .. } => {Ok(ResultSet::create())}
+        SqlCommand::AlterTableRename { .. } => {Ok(ResultSet::create())}
         SqlCommand::ShowDatabases { .. } => {
-            let result = show_databases();
-            //print_resultset_to_stream(result);
-            Ok(())
+            show_databases()
         }
         SqlCommand::ShowTables { .. } => {
-            let resultset = show_table("system", "tables");
-            //print_resultset_to_stream(resultset);
-            Ok(())
+            show_table("system", "tables")
         }
 
         SqlCommand::CreateDatabase { database, .. } => {
@@ -64,25 +60,14 @@ pub fn process_transaction( mut transaction: TransactionContext) -> anyhow::Resu
             match result {
                 Ok(context) => {
                     if !context.error {
-                        let line = format!("{} was created\n", database);
-            /*            if let Err(e) = stream.try_write(line.as_bytes()) {
-                            eprintln!("write failed: {e}");
-                        }
-                        Ok(())*/
+                        Ok(ResultSet::create())
                     } else {
-                        let line = format!("There was an error while {} was created\n", database);
-       /*                 if let Err(e) = stream.try_write(line.as_bytes()) {
-                            eprintln!("write failed: {e} {context}");
-                        }*/
-                        Ok(())
+                        Err(anyhow::anyhow!("create database failed"))
                     }
                 }
                 Err(why) => {
-                    let line = format!("There was an error while {} was created - database already exists\n", database);
-       /*             if let Err(e) = stream.try_write(line.as_bytes()) {
-                        eprintln!("write failed: {why}");
-                    }*/
-                    Ok(())
+                    Err(anyhow::anyhow!("create database failed: {:?}", why))
+
                 }
             }
         }
@@ -92,17 +77,9 @@ pub fn process_transaction( mut transaction: TransactionContext) -> anyhow::Resu
             match result {
                 Ok(t) => {
                     if !t.error {
-                        let line = format!("{} was created\n", table);
-     /*                   if let Err(e) = stream.try_write(line.as_bytes()) {
-                            eprintln!("write failed: {e}");
-                        }*/
-                        Ok(())
+                        Ok(ResultSet::create())
                     } else {
-                        let line = format!("There was an error while {} was created\n", table);
-/*                        if let Err(e) = stream.try_write(line.as_bytes()) {
-                            eprintln!("write failed: {e} {t}");
-                        }*/
-                        Ok(())
+                        Err(anyhow::anyhow!("create table failed"))
                     }
                 }
                 _ => {
@@ -111,13 +88,10 @@ pub fn process_transaction( mut transaction: TransactionContext) -> anyhow::Resu
             }
         }
         _ => {
-            Ok(())
+            Err(anyhow::anyhow!("Something really strange happened here"))
         }
     }
 }
-
-
-
 
 fn load_table_to_ram(tp: TransactionContext) {
     for i in 0..tp.table_names.len() {
@@ -129,7 +103,6 @@ fn load_table_to_ram(tp: TransactionContext) {
         }
     }
 }
-
 
 fn get_transaction_counter() -> u64 {
     COUNTER.fetch_add(1, std::sync::atomic::Ordering::SeqCst)
