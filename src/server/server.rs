@@ -203,8 +203,6 @@ pub async fn handle_client(stream: &mut TcpStream) -> anyhow::Result<()> {
     }
 }
 
-
-
 pub fn parse_incomming(incomming: &str) -> SqlCommand {
     let mut management_command = String::from(incomming);
     management_command = management_command.to_uppercase();

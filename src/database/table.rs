@@ -51,11 +51,6 @@ impl Table {
         }
     }
 
-    /// creates a new database with the params:
-    /// - new() Constructor
-    /// - get_table_name() - returns the human-readable name of teh database
-    /// - get_bptree() - returns the tree
-    /// - get_uuid() gets the uuid of the database///
     pub fn new(
         max_id: i64,
         db_name: String,

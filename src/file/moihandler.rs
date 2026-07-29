@@ -6,9 +6,6 @@ use std::fs::{File, OpenOptions};
 use std::io::{BufReader, BufWriter, Error, ErrorKind, Read, Seek, SeekFrom, Write};
 use anyhow::anyhow;
 use log::error;
-use crate::command::sqlcommands::SqlCommand;
-use crate::file::moihandler;
-use crate::server::queue::TransactionContext;
 
 pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
     let mut table = Table::default();
@@ -40,7 +37,6 @@ pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
         },
         Err(_) => {error!("Unable to write the id to a moi file")}
     }
-
 
     let _ = input.read_exact(&mut u8_buffer);
     let _ = u8::from_le_bytes(u8_buffer);

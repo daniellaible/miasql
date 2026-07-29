@@ -1,6 +1,5 @@
 use crate::command::resultset::ResultSet;
 use crate::command::sqlcommands::SqlCommand;
-use crate::server::config::config::ConfigSingelton;
 use crate::server::processor::processor;
 use anyhow::anyhow;
 use std::sync::OnceLock;
@@ -55,9 +54,6 @@ impl MasterQueueSingelton {
         })
     }
 
-    // TODO: here we could end up in a race condition or is it actually impossible since there is just one queue
-    // and do_all_transactions is not public
-    // High frequency parallel testing needed
     pub fn add(&self, transaction: TransactionContext) -> anyhow::Result<ResultSet, anyhow::Error> {
         let mut wait_duration = time::Duration::from_millis(1);
         let mut is_transaction_completed = false;

@@ -10,7 +10,6 @@ use crate::server::dbmem::DbMem;
 /// In this module you find all the files that do datamanipulation in the RAM.
 mod database {
     pub mod bptree;
-    pub mod database;
     pub mod datatype;
     pub mod table;
 }

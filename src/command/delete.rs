@@ -62,7 +62,6 @@ fn extract_expr_as_datatype(expr: &Expr) -> Result<DataType, String> {
     match expr {
         Expr::Value(v) => match &v.value {
             Value::Number(n, _) => {
-                // choose the right numeric type for your Datatype
                 let parsed = n
                     .parse::<i64>()
                     .map_err(|_| format!("Invalid integer literal: {}", n))?;
