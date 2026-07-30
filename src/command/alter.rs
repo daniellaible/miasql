@@ -1,3 +1,4 @@
+use log::error;
 use crate::command::constraint::Constraint;
 use crate::command::sqlcommands::SqlCommand;
 use crate::database::datatype::DataType;
@@ -10,7 +11,7 @@ pub fn parse(alter: AlterTable) -> SqlCommand {
     let table = parse_object_name(&alter.name);
 
     if alter.operations.len() != 1 {
-        println!("Expected 1 operation, found {}", alter.operations.len());
+        error!("Expected 1 operation, found {}", alter.operations.len());
         return SqlCommand::Undefined;
     }
 

@@ -169,7 +169,6 @@ pub async fn handle_client(stream: &mut TcpStream) -> anyhow::Result<()> {
 
                         error: false,
                     };
-                    let start = Instant::now();
 
                     let handle: tokio::task::JoinHandle<anyhow::Result<ResultSet>> =
                         tokio::spawn(async move {
@@ -183,9 +182,7 @@ pub async fn handle_client(stream: &mut TcpStream) -> anyhow::Result<()> {
                           },
                         Err(join_err) => Err(anyhow::anyhow!("task failed: {}", join_err)),
                     };
-
-                    let duration = start.elapsed();
-                    println!("Request took: {:?}", duration);
+                    
                 } else {
                     answer = format!("I don't understand: {command_string}");
                 }
@@ -248,6 +245,10 @@ fn print_resultset_to_stream(result: anyhow::Result<ResultSet, Error>, stream:&T
                 }
                 let _ = stream.try_write("\n\r".as_bytes());
             }
+
+            let line = "Request took ".to_owned() + res.duration.to_string().as_str() + " microsecs";
+            let _ = stream.try_write(line.as_bytes());
+            let _ = stream.try_write("\n\r".as_bytes());
         }
         Err(_) => {
             let line = "Something went wrong";

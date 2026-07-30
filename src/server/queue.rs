@@ -5,6 +5,7 @@ use anyhow::anyhow;
 use std::sync::OnceLock;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::{thread, time};
+use std::time::Instant;
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
@@ -55,6 +56,7 @@ impl MasterQueueSingelton {
     }
 
     pub fn add(&self, transaction: TransactionContext) -> anyhow::Result<ResultSet, anyhow::Error> {
+        let start = Instant::now();
         let mut wait_duration = time::Duration::from_millis(1);
         let mut is_transaction_completed = false;
         while !is_transaction_completed {
@@ -68,7 +70,15 @@ impl MasterQueueSingelton {
                     .is_working
                     .store(false, Ordering::SeqCst);
                 is_transaction_completed = true;
-                return result;
+                let duration = start.elapsed();
+                let res_set:anyhow::Result<ResultSet> = match result{
+                    Ok(mut rs) => { 
+                        rs.duration = duration.as_micros();
+                        Ok(rs)
+                    }
+                    Err(why) => {Err(anyhow!("something went wrong :{:?}", why))}
+                };
+                return res_set;
             } else {
                 thread::sleep(wait_duration);
                 if wait_duration.as_millis() <= 128 {

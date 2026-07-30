@@ -1,5 +1,11 @@
+use anyhow::{anyhow, Error};
 use crate::command::sqlcommands::SqlCommand;
 use sqlparser::ast::{Expr, Insert, SetExpr, TableObject, Value};
+use sqlparser::ast::DeclareType::ResultSet;
+use crate::command::createdatabase::update_database_moi;
+use crate::file;
+use crate::server::dbmem::DbMem;
+use crate::server::queue::TransactionContext;
 
 pub fn parse(insert: Insert) -> SqlCommand {
     let table = match parse_table(&insert.table) {
@@ -20,6 +26,43 @@ pub fn parse(insert: Insert) -> SqlCommand {
         columns,
         values,
     }
+}
+
+pub fn insert_into(transaction: &TransactionContext, table: &String, columns: &Vec<String>, values: &Vec<Vec<String>>) -> anyhow::Result<TransactionContext, Error>{
+    let ledger_clone_file = transaction.clone();
+    let result_append_to_ledger = file::ledgerhandler::append_to_file(
+        &ledger_clone_file.user,
+        &ledger_clone_file.command,
+        &ledger_clone_file.db_name,
+    );
+    match result_append_to_ledger{
+        Ok(_) => {
+            let result_moi_update: anyhow::Result<TransactionContext> =  update_database_moi(transaction.clone(), transaction.db_name.to_string());
+            match result_moi_update{
+                Ok(_) => {
+                    //DbMem update
+                    if let Some(table_arc) = DbMem::find_table(transaction.table_names[0].as_str(), table.as_str() ){
+                        let table_guard = table_arc.lock().unwrap();
+                        let column_names_mem = &table_guard.column_names;
+                        let column_types_mem = &table_guard.column_types;
+                        let btree = &table_guard.tree;
+                        Ok(transaction.clone())
+                    }else{
+                        Ok(transaction.clone()) 
+                    }
+                    
+                    //  load table from dbMem
+                    //  get the column types for the given columns
+                    //  parse the values to those columns types
+                    //  create row with the values
+                    //  add row to dbMem
+                }
+                Err(_) => {Err(anyhow!("Unable to update moi file for insert command"))}
+            }
+        }
+        Err(_) => {Err(anyhow!("Unable to update ledger for insert command"))}
+    }
+    
 }
 
 fn parse_table(table: &TableObject) -> Option<String> {

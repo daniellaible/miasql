@@ -9,6 +9,8 @@ use crate::server::dbmem::DbMem;
 use crate::server::queue::TransactionContext;
 use log::info;
 use std::sync::atomic::AtomicU64;
+use anyhow::Error;
+use crate::command::insert;
 
 pub static COUNTER: AtomicU64 = AtomicU64::new(0);
 
@@ -35,7 +37,10 @@ pub fn process_transaction( mut transaction: TransactionContext) -> anyhow::Resu
         }
         SqlCommand::Truncate { .. } => {Ok(ResultSet::create())}
         SqlCommand::Update { .. } => {Ok(ResultSet::create())}
-        SqlCommand::Insert { .. } => {Ok(ResultSet::create())}
+        SqlCommand::Insert { table, columns, values, .. } => {
+            let result : anyhow::Result<TransactionContext, Error> = insert::insert_into(&transaction,table, columns, values);
+            Ok(ResultSet::create())
+        }
         SqlCommand::AlterAddColumn { .. } => {Ok(ResultSet::create())}
         SqlCommand::AlterDropColumn { .. } => {Ok(ResultSet::create())}
         SqlCommand::AlterRenameColumn { .. } => {Ok(ResultSet::create())}

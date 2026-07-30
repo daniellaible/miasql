@@ -4,7 +4,7 @@ use crate::database::table::Row;
 pub struct ResultSet{
     pub header: Vec<String>,
     pub rows: Vec<Row>,
-    pub duration: String
+    pub duration: u128
 }
 
 impl ResultSet{
@@ -12,7 +12,7 @@ impl ResultSet{
         let resultset = ResultSet{
             header,
             rows,
-            duration: "0.0".to_string(),
+            duration: 0,
         };
         resultset
     }
@@ -21,7 +21,7 @@ impl ResultSet{
         let resultset = ResultSet{
             header,
             rows: Vec::new(),
-            duration:"0.0".to_string()
+            duration:0
         };
         resultset
     }
@@ -30,7 +30,7 @@ impl ResultSet{
         let resultset = ResultSet{
             header: Vec::new(),
             rows: Vec::new(),
-            duration:"0.0".to_string()
+            duration: 0
         };
         resultset
     }
