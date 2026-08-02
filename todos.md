@@ -8,8 +8,9 @@
 + do we need a alterRenameDatabase command
 + do not panic when the database you want to create already exists (same name problem)
 + if use-statement is transmitted – we load all the tables from that database into RAM
-## Bugs
 
+## Bugs
++ There is an issue with columnConstraints in mtdhandler - a closing braket is forgotten 
 
 ## Base Commands
 

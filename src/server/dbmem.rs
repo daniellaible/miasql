@@ -1,9 +1,12 @@
+use std::io::Error;
 use crate::database::datatype::DataType;
 use crate::database::table::{Row, Table};
 use anyhow::{Result, anyhow};
-use log::error;
+use log::{error, info};
 use std::sync::{Arc, LazyLock, Mutex};
 use crate::database::bptree::{Link, Node};
+use crate::file::moihandler::load_moi_file;
+use crate::file::mtdhandler::read_mtd_file;
 use crate::server::tools::{clean_string, datatype_to_string_uppercase, remove_double_slash};
 
 /// DbMem is the struct that holds the tables in memory.
@@ -45,6 +48,7 @@ impl DbMem {
             .map(|t| Arc::clone(&t.2))
     }
 
+    //load a given table into RAM
     pub fn load_db_to_mem(db_name: &str) -> anyhow::Result<()>{
         match Self::find_table("system", "tables") {
             None => {
@@ -57,7 +61,6 @@ impl DbMem {
                 let Node::Leaf(leaf) = &*guard else {
                     unreachable!("leaf.next must point to a leaf")
                 };
-                let mut result_from_tables:Vec<(String, String)> = Vec::new();
                 let rows = tree.leaf_walker_rows(leaf.clone())?;
                 for i in 0 .. rows.len(){
                     let row = &rows[i];
@@ -70,13 +73,21 @@ impl DbMem {
 
                     if table_value_upper == db_name_as_upper{
                         let path = remove_double_slash(clean_string(row[3].to_string()));
-                        result_from_tables.push((clean_string(row[2].to_string()),path));
+                        let mdtfile = read_mtd_file(path.as_str());
+                        let table_result = load_moi_file(&mdtfile);
+                        match table_result{
+                            Ok(table) => {
+                                info!("Table {:?} added to DB", &table.table_name);
+                                Self::add_table(table);
+                            }
+                            Err(why) => {
+                                anyhow!("{:?}", why);
+                            }
+                        }
                     }
                 }
-                println!("{:?}", result_from_tables);
             }
         }
-
         Ok(())
     }
 

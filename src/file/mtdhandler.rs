@@ -121,6 +121,9 @@ pub fn read_mtd_file(path: &str) -> MtdFile {
                 let column_constraints_split = column_constraints.split(";");
                 let mut column_constraints: Vec<(u32, Constraint)> = Vec::new();
                 for constraint in column_constraints_split {
+                    if constraint == "" {
+                        break;
+                    }
                     let mut clean_constraint = constraint.replace("(", "");
                     clean_constraint = clean_constraint.replace(")", "");
                     let mut tuple_splits = clean_constraint.split(",");
