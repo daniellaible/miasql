@@ -3,6 +3,8 @@ use crate::database::table::{Row, Table};
 use anyhow::{Result, anyhow};
 use log::error;
 use std::sync::{Arc, LazyLock, Mutex};
+use crate::database::bptree::{Link, Node};
+use crate::server::tools::{clean_string, datatype_to_string_uppercase, remove_double_slash};
 
 /// DbMem is the struct that holds the tables in memory.
 /// It consists of a vector with all the tables that are in use.
@@ -41,6 +43,41 @@ impl DbMem {
             .iter()
             .find(|t| t.0 == db_name && t.1 == table_name)
             .map(|t| Arc::clone(&t.2))
+    }
+
+    pub fn load_db_to_mem(db_name: &str) -> anyhow::Result<()>{
+        match Self::find_table("system", "tables") {
+            None => {
+                panic!("System table can not be found");
+            }
+            Some(table) => {
+                let tree = &table.lock().unwrap().tree;
+                let linky = tree.leftmost_leaf(tree.root.clone());
+                let guard = linky.lock().unwrap();
+                let Node::Leaf(leaf) = &*guard else {
+                    unreachable!("leaf.next must point to a leaf")
+                };
+                let mut result_from_tables:Vec<(String, String)> = Vec::new();
+                let rows = tree.leaf_walker_rows(leaf.clone())?;
+                for i in 0 .. rows.len(){
+                    let row = &rows[i];
+
+                    let mut table_value_upper = datatype_to_string_uppercase(&row[1]);
+                    table_value_upper = clean_string(table_value_upper);
+
+                    let mut db_name_as_upper = db_name.to_string().to_uppercase();
+                    db_name_as_upper = clean_string(db_name_as_upper);
+
+                    if table_value_upper == db_name_as_upper{
+                        let path = remove_double_slash(clean_string(row[3].to_string()));
+                        result_from_tables.push((clean_string(row[2].to_string()),path));
+                    }
+                }
+                println!("{:?}", result_from_tables);
+            }
+        }
+
+        Ok(())
     }
 
     /// This adds a row to a table in memory

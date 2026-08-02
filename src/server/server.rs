@@ -2,12 +2,12 @@ use crate::command::sqlcommands::SqlCommand;
 use crate::server;
 use crate::server::queue::{MasterQueueSingelton, TransactionContext};
 use log::{error, info};
-use std::time::Instant;
 use anyhow::Error;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use uuid::Uuid;
 use crate::command::resultset::ResultSet;
+use crate::server::dbmem::DbMem;
 
 pub async fn handle_client(stream: &mut TcpStream) -> anyhow::Result<()> {
     let mut buf = [0u8; 4096];
@@ -135,6 +135,8 @@ pub async fn handle_client(stream: &mut TcpStream) -> anyhow::Result<()> {
                     answer = format!("using:  {database} \r\n");
                     is_use_command = true;
                     db_used = database;
+                    DbMem::load_db_to_mem("testdb");
+
                 }
                 _ => {}
             };
@@ -145,7 +147,6 @@ pub async fn handle_client(stream: &mut TcpStream) -> anyhow::Result<()> {
                 }
                 _ => {}
             };
-
 
             if !db_used.is_empty() && !is_use_command {
                 if sql_command != SqlCommand::Undefined {
@@ -182,7 +183,7 @@ pub async fn handle_client(stream: &mut TcpStream) -> anyhow::Result<()> {
                           },
                         Err(join_err) => Err(anyhow::anyhow!("task failed: {}", join_err)),
                     };
-                    
+
                 } else {
                     answer = format!("I don't understand: {command_string}");
                 }

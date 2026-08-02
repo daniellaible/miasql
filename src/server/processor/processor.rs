@@ -38,7 +38,7 @@ pub fn process_transaction( mut transaction: TransactionContext) -> anyhow::Resu
         SqlCommand::Truncate { .. } => {Ok(ResultSet::create())}
         SqlCommand::Update { .. } => {Ok(ResultSet::create())}
         SqlCommand::Insert { table, columns, values, .. } => {
-            let result : anyhow::Result<TransactionContext, Error> = insert::insert_into(&transaction,table, columns, values);
+            let result : anyhow::Result<TransactionContext, Error> = insert::insert_into(&transaction, table, columns, values);
             Ok(ResultSet::create())
         }
         SqlCommand::AlterAddColumn { .. } => {Ok(ResultSet::create())}

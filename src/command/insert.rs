@@ -1,8 +1,10 @@
+use std::collections::VecDeque;
 use anyhow::{anyhow, Error};
 use crate::command::sqlcommands::SqlCommand;
 use sqlparser::ast::{Expr, Insert, SetExpr, TableObject, Value};
-use sqlparser::ast::DeclareType::ResultSet;
 use crate::command::createdatabase::update_database_moi;
+use crate::database::datatype::DataType;
+use crate::database::table::Row;
 use crate::file;
 use crate::server::dbmem::DbMem;
 use crate::server::queue::TransactionContext;
@@ -46,16 +48,87 @@ pub fn insert_into(transaction: &TransactionContext, table: &String, columns: &V
                         let column_names_mem = &table_guard.column_names;
                         let column_types_mem = &table_guard.column_types;
                         let btree = &table_guard.tree;
+
+                        let mut column_indexs:Vec<usize> = Vec::new();
+                        for i in 0 .. column_names_mem.len() {
+                            if column_names_mem[i] == columns[i]{
+                                column_indexs.push(i);
+                            }
+                        }
+
+                        let mut types:Vec<DataType> = Vec::new();
+                        for i in 0 .. column_indexs.len(){
+                            types.push(column_types_mem[i].clone());
+                        }
+
+                        let mut typed_data:VecDeque<DataType> = VecDeque::new();
+                        for i in 0 .. values.len() {
+                            for j in 0 .. values[i].len() {
+                                match types[j]{
+                                    DataType::BigInt(_) => {
+                                        typed_data.push_back(DataType::BigInt(values[i][j].parse::<i64>().unwrap()));
+                                    }
+                                    DataType::Int(_) => {
+                                        typed_data.push_back(DataType::Int(values[i][j].parse::<i32>().unwrap()));
+                                    }
+                                    DataType::SmallInt(_) => {
+                                        typed_data.push_back( DataType::SmallInt(values[i][j].parse::<i16>().unwrap()));
+                                    }
+                                    DataType::TinyInt(_) => {
+                                        typed_data.push_back(DataType::TinyInt(values[i][j].parse::<i8>().unwrap()));
+                                    }
+                                    DataType::Decimal(_) => {
+                                        typed_data.push_back(DataType::Decimal(values[i][j].parse::<f32>().unwrap()));
+                                    }
+                                    DataType::Float(_) => {
+                                        typed_data.push_back(DataType::Float(values[i][j].parse::<f64>().unwrap()));
+                                    }
+                                    DataType::VarChar(_, _) => {
+                                        let size = values[i][j].len() as u8;
+                                        typed_data.push_back(DataType::VarChar(size, values[i][j].clone()));
+                                    }
+                                    DataType::Bool(_) => {
+                                        let b_value = values[i][j].to_lowercase();
+                                        if b_value == "true" {
+                                            typed_data.push_back(DataType::Bool(true));
+                                        }else{
+                                            typed_data.push_back(DataType::Bool(false));
+                                        }
+                                    }
+                                    DataType::Date(_) => {
+                                        typed_data.push_back(DataType::Date(values[i][j].parse::<u64>().unwrap()));
+                                    }
+                                    DataType::Time(_) => {
+                                        typed_data.push_back(DataType::Date(values[i][j].parse::<u64>().unwrap()))
+                                    }
+                                    DataType::DateTime(_) => {
+                                        typed_data.push_back(DataType::Date(values[i][j].parse::<u64>().unwrap()))
+                                    }
+                                    DataType::Null => {
+                                        typed_data.push_back(DataType::Null);
+                                    }
+                                    DataType::Undefined => {
+                                        typed_data.push_back(DataType::Undefined);
+                                    }
+                                };
+                            }
+                        }
+                        let mut data_for_row:Vec<DataType> = Vec::new();
+                        for i in 0 .. column_names_mem.len(){
+                            if !column_indexs.contains(&i){
+                                data_for_row.push(DataType::Null);
+                            }else{
+                                data_for_row.push(typed_data.pop_front().unwrap())
+                            }
+                        }
+                        let row:Row = Row{
+                            data: data_for_row
+                        };
+                        DbMem::insert_row(&transaction.db_name, table, row);
                         Ok(transaction.clone())
                     }else{
                         Ok(transaction.clone()) 
                     }
-                    
-                    //  load table from dbMem
-                    //  get the column types for the given columns
-                    //  parse the values to those columns types
-                    //  create row with the values
-                    //  add row to dbMem
                 }
                 Err(_) => {Err(anyhow!("Unable to update moi file for insert command"))}
             }

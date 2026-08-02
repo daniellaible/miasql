@@ -57,6 +57,7 @@ mod server {
     pub mod dbmem;
     pub mod server;
     pub mod queue;
+    pub mod tools;
 }
 
 mod test{

@@ -12,14 +12,16 @@
 //!
 //! Complexity
 //! - get:    O(log n)
-//! - insert: O(log n) 
-//! - remove: O(log n) 
+//! - insert: O(log n)
+//! - remove: O(log n)
 //! - range:  O(log n + k)
 //!
 
+use crate::server::dbmem::DbMem;
 use std::cmp::Ordering;
 use std::fmt::Debug;
 use std::sync::{Arc, Mutex};
+use crate::database::datatype::DataType;
 
 pub type Link<K, V, const MAX_KEYS: usize> = Arc<Mutex<Node<K, V, MAX_KEYS>>>;
 
@@ -55,7 +57,10 @@ where
     V: Clone + Send,
 {
     fn default() -> Self {
-        assert!(MAX_KEYS >= 3, "MAX_KEYS should be >= 3 for sensible behavior");
+        assert!(
+            MAX_KEYS >= 3,
+            "MAX_KEYS should be >= 3 for sensible behavior"
+        );
         let root = Arc::new(Mutex::new(Node::Leaf(LeafNode {
             keys: Vec::new(),
             values: Vec::new(),
@@ -68,7 +73,7 @@ where
 impl<K, V, const MAX_KEYS: usize> BPlusTree<K, V, MAX_KEYS>
 where
     K: Ord + Clone,
-    V: Clone,
+    V: Clone + std::fmt::Debug,
 {
     /// Minimum number of keys a non-root node should have.
     /// (Classic B+ tree with max keys = MAX_KEYS => min keys = ceil(MAX_KEYS/2))
@@ -103,7 +108,9 @@ where
 
         // Insert into leaf (or replace).leaf.borrow_mut();
         let mut leaf_mut = leaf.lock().unwrap();
-        let Node::Leaf(ln) = &mut *leaf_mut else { unreachable!() };
+        let Node::Leaf(ln) = &mut *leaf_mut else {
+            unreachable!()
+        };
 
         match ln.keys.binary_search(&key) {
             Ok(i) => {
@@ -136,7 +143,9 @@ where
 
         // Remove from leaf.
         let mut leaf_mut = leaf.lock().unwrap();
-        let Node::Leaf(ln) = &mut *leaf_mut else { unreachable!() };
+        let Node::Leaf(ln) = &mut *leaf_mut else {
+            unreachable!()
+        };
 
         let idx = match ln.keys.binary_search(key) {
             Ok(i) => i,
@@ -162,7 +171,11 @@ where
             // In a B+ tree, parent's key at (child_index_in_parent-1) equals first key of this child.
             if idx == 0 {
                 if let Some(new_first) = leaf_first_key {
-                    self.update_parent_separator_key(parent.clone(), child_index_in_parent, new_first);
+                    self.update_parent_separator_key(
+                        parent.clone(),
+                        child_index_in_parent,
+                        new_first,
+                    );
                 }
             }
         }
@@ -173,10 +186,31 @@ where
         Some(removed)
     }
 
-    /// Range query: returns key/value pairs for start..=end or start..end depending on bounds.
-    ///
-    /// `start`: inclusive lower bound (None => unbounded)
-    /// `end`:   exclusive upper bound (None => unbounded)
+    //ToDo add Vector with Options for SQLOperators so we can do SmallerThan, Greater aso
+    pub fn leaf_walker_rows(
+        &self,
+        leaf: LeafNode<K, Vec<DataType>, MAX_KEYS>,
+    ) -> anyhow::Result<Vec<Vec<DataType>>> {
+        let mut result_vec: Vec<Vec<DataType>> = Vec::new();
+        let mut cur: Option<LeafNode<K, Vec<DataType>, MAX_KEYS>> = Some(leaf);
+
+        while let Some(ln) = cur {
+            result_vec.extend(ln.values.clone());
+
+            cur = match ln.next.clone() {
+                Some(next_link) => {
+                    let next_guard = next_link.lock().unwrap();
+                    let Node::Leaf(next_leaf) = &*next_guard else {
+                        unreachable!("leaf.next must point to a leaf");
+                    };
+                    Some(next_leaf.clone())
+                }
+                None => None,
+            };
+        }
+        Ok(result_vec)
+    }
+
     pub fn range(&self, start: Option<&K>, end: Option<&K>) -> Vec<(K, V)> {
         let mut out = Vec::new();
 
@@ -211,7 +245,7 @@ where
         out
     }
 
-    /// Finds the leave with the lowest id. It is used traversing the tree 
+    /// Finds the leave with the lowest id. It is used traversing the tree
     /// node to node. You use it also if you want all elements of this database
     ///
     pub fn leftmost_leaf(&self, mut node: Link<K, V, MAX_KEYS>) -> Link<K, V, MAX_KEYS> {
@@ -219,33 +253,17 @@ where
             let b = node.lock().unwrap();
             match &*b {
                 Node::Leaf(_) => {
-                    drop(b);      // end the borrow explicitly
-                    return node;  // now it's legal
+                    drop(b); // end the borrow explicitly
+                    return node; // now it's legal
                 }
                 Node::Internal(internal) => {
                     let next = internal.children[0].clone();
-                    drop(b);      // end borrow before reassign
+                    drop(b); // end borrow before reassign
                     node = next;
                 }
             }
         }
     }
-
-/*    pub fn get_first(&self) -> Link<K, V, MAX_KEYS> {
-        let node = self.root.lock().unwrap();
-        loop {
-            let mut current = node;
-            match &*current {
-                Node::Leaf(_) => {
-                    return current;
-                }
-                Node::Internal(internal) => {
-                    let next = internal.children[0].clone();
-                    current = next;
-                }
-            }
-        }
-    }*/
 
     // -------------------------
     // Search helpers
@@ -268,7 +286,7 @@ where
             }
         }
     }
-    
+
     fn find_leaf_with_path(
         &self,
         mut node: Link<K, V, MAX_KEYS>,
@@ -277,7 +295,7 @@ where
     ) -> Link<K, V, MAX_KEYS> {
         loop {
             let next = {
-                let b = node.lock().unwrap() ;
+                let b = node.lock().unwrap();
                 match &*b {
                     Node::Leaf(_) => None,
                     Node::Internal(internal) => {
@@ -305,7 +323,9 @@ where
 
     fn split_leaf(&self, leaf: Link<K, V, MAX_KEYS>) -> (K, Link<K, V, MAX_KEYS>) {
         let mut leaf_mut = leaf.lock().unwrap();
-        let Node::Leaf(ln) = &mut *leaf_mut else { unreachable!() };
+        let Node::Leaf(ln) = &mut *leaf_mut else {
+            unreachable!()
+        };
 
         // Split roughly in half; right gets the larger half.
         let mid = ln.keys.len() / 2;
@@ -326,12 +346,11 @@ where
         (sep_key, right)
     }
 
-    fn split_internal(
-        &self,
-        internal: Link<K, V, MAX_KEYS>,
-    ) -> (K, Link<K, V, MAX_KEYS>) {
-        let mut nmut = internal.lock().unwrap() ;
-        let Node::Internal(inode) = &mut *nmut else { unreachable!() };
+    fn split_internal(&self, internal: Link<K, V, MAX_KEYS>) -> (K, Link<K, V, MAX_KEYS>) {
+        let mut nmut = internal.lock().unwrap();
+        let Node::Internal(inode) = &mut *nmut else {
+            unreachable!()
+        };
 
         // For internal node split:
         // promote middle key to parent, left keeps keys < promoted,
@@ -371,8 +390,10 @@ where
 
         // Insert sep_key into parent.keys at left_index, and right child at left_index+1
         {
-            let mut pb = parent.lock().unwrap() ;
-            let Node::Internal(pn) = &mut *pb else { unreachable!() };
+            let mut pb = parent.lock().unwrap();
+            let Node::Internal(pn) = &mut *pb else {
+                unreachable!()
+            };
 
             pn.keys.insert(left_index, sep_key);
             pn.children.insert(left_index + 1, right);
@@ -380,8 +401,10 @@ where
 
         // If parent overflows, split and propagate up.
         let overflow = {
-            let pb = parent.lock().unwrap() ;
-            let Node::Internal(pn) = &*pb else { unreachable!() };
+            let pb = parent.lock().unwrap();
+            let Node::Internal(pn) = &*pb else {
+                unreachable!()
+            };
             pn.keys.len() > MAX_KEYS
         };
 
@@ -455,9 +478,15 @@ where
         // Attempt borrow from left sibling if exists, else right sibling.
         let (left_sib, right_sib) = {
             let pb = parent.lock().unwrap();
-            let Node::Internal(pn) = &*pb else { unreachable!() };
+            let Node::Internal(pn) = &*pb else {
+                unreachable!()
+            };
 
-            let left = if idx > 0 { Some(pn.children[idx - 1].clone()) } else { None };
+            let left = if idx > 0 {
+                Some(pn.children[idx - 1].clone())
+            } else {
+                None
+            };
             let right = if idx + 1 < pn.children.len() {
                 Some(pn.children[idx + 1].clone())
             } else {
@@ -495,8 +524,10 @@ where
         idx: usize,
         left: Link<K, V, MAX_KEYS>,
     ) {
-        let mut pb = parent.lock().unwrap() ;
-        let Node::Internal(pn) = &mut *pb else { unreachable!() };
+        let mut pb = parent.lock().unwrap();
+        let Node::Internal(pn) = &mut *pb else {
+            unreachable!()
+        };
 
         let cur = pn.children[idx].clone();
 
@@ -539,7 +570,9 @@ where
         right: Link<K, V, MAX_KEYS>,
     ) {
         let mut pb = parent.lock().unwrap();
-        let Node::Internal(pn) = &mut *pb else { unreachable!() };
+        let Node::Internal(pn) = &mut *pb else {
+            unreachable!()
+        };
 
         let cur = pn.children[idx].clone();
 
@@ -576,8 +609,10 @@ where
 
     /// Merge node at idx with a sibling. Returns true if merged into left sibling, false if merged right into current.
     fn merge_with_sibling(&self, parent: &Link<K, V, MAX_KEYS>, idx: usize) -> bool {
-        let mut pb = parent.lock().unwrap() ;
-        let Node::Internal(pn) = &mut *pb else { unreachable!() };
+        let mut pb = parent.lock().unwrap();
+        let Node::Internal(pn) = &mut *pb else {
+            unreachable!()
+        };
 
         // Prefer merge with left if exists; otherwise merge with right.
         if idx > 0 {
@@ -661,7 +696,9 @@ where
             return;
         }
         let mut pb = parent.lock().unwrap();
-        let Node::Internal(pn) = &mut *pb else { unreachable!() };
+        let Node::Internal(pn) = &mut *pb else {
+            unreachable!()
+        };
         pn.keys[child_index - 1] = new_first_key;
     }
 }
@@ -737,7 +774,10 @@ where
                     return None;
                 }
 
-                Some((ln.keys.first().unwrap().clone(), ln.keys.last().unwrap().clone()))
+                Some((
+                    ln.keys.first().unwrap().clone(),
+                    ln.keys.last().unwrap().clone(),
+                ))
             }
 
             Node::Internal(inode) => {
@@ -813,7 +853,6 @@ where
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -1150,7 +1189,11 @@ mod tests {
 
             // Occasionally cross-check full ordered contents via range()
             if i % 250 == 0 {
-                let tv: Vec<(i32, i32)> = t.range(None, None).into_iter().map(|(k, v)| (k, v)).collect();
+                let tv: Vec<(i32, i32)> = t
+                    .range(None, None)
+                    .into_iter()
+                    .map(|(k, v)| (k, v))
+                    .collect();
                 let mv: Vec<(i32, i32)> = m.iter().map(|(k, v)| (*k, *v)).collect();
                 assert_eq!(tv, mv, "range() diverged from BTreeMap at step {i}");
                 t.validate();
@@ -1158,14 +1201,13 @@ mod tests {
         }
 
         // Final full cross-check
-        let tv: Vec<(i32, i32)> = t.range(None, None).into_iter().map(|(k, v)| (k, v)).collect();
+        let tv: Vec<(i32, i32)> = t
+            .range(None, None)
+            .into_iter()
+            .map(|(k, v)| (k, v))
+            .collect();
         let mv: Vec<(i32, i32)> = m.iter().map(|(k, v)| (*k, *v)).collect();
         assert_eq!(tv, mv);
         t.validate();
     }
-
-
 }
-
-
-

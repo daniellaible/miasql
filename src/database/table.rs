@@ -85,7 +85,6 @@ impl Table {
 }
 
 pub fn create_table_in_mem(mut tp: TransactionContext) -> anyhow::Result<TransactionContext> {
-
     match tp.command.clone() {
         SqlCommand::CreateTable {
             table,
