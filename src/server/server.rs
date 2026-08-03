@@ -134,8 +134,8 @@ pub async fn handle_client(stream: &mut TcpStream) -> anyhow::Result<()> {
                 SqlCommand::Use { database, .. } => {
                     answer = format!("using:  {database} \r\n");
                     is_use_command = true;
-                    db_used = database;
-                    DbMem::load_db_to_mem("testdb");
+                    db_used = database.clone();
+                    DbMem::load_db_to_mem(database.as_str());
 
                 }
                 _ => {}

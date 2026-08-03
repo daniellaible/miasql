@@ -271,7 +271,7 @@ pub fn new_mtd_file(
                             .expect("unable to write the start of output to disc");
                     }else {
                         let constraint = constraints[j].clone();
-                        let output = "(".to_owned() + i.to_string().as_str() + "," + constraint.to_string().as_str() + ");\n";
+                        let output = "(".to_owned() + i.to_string().as_str() + "," + constraint.to_string().as_str() + ")];\n";
                         writer
                             .write_all((&output).as_ref())
                             .expect("unable to write the start of output to disc");

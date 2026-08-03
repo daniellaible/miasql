@@ -9,7 +9,7 @@ use std::error::Error;
 use std::{fmt};
 use uuid::Uuid;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Row {
     pub data: Vec<DataType>,
 }

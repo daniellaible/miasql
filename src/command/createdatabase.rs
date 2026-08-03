@@ -81,9 +81,9 @@ pub fn update_system_table(
     dbname: String,
     id: i64,
 ) -> anyhow::Result<TransactionContext> {
-    let mut row: Row = Row { data: Vec::new() };
-    row.data.push(DataType::BigInt(id));
-    row.data.push(DataType::VarChar(
+    let mut row: Vec<DataType> = Vec::new() ;
+    row.push(DataType::BigInt(id));
+    row.push(DataType::VarChar(
         dbname.len() as u8,
         String::from(dbname),
     ));

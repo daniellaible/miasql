@@ -7,10 +7,11 @@
 + if an error in the processor happens, it needs to be reverted
 + do we need a alterRenameDatabase command
 + do not panic when the database you want to create already exists (same name problem)
-+ if use-statement is transmitted – we load all the tables from that database into RAM
+
 
 ## Bugs
 + There is an issue with columnConstraints in mtdhandler - a closing braket is forgotten 
++ insert command is not saving in moi file
 
 ## Base Commands
 
@@ -70,16 +71,11 @@
   + LIKE
 
 ## Datatypes
-  + CHAR
-  + BINARY
-  + VARBINARY
   + BLOB
-  + TINYBLOB
-  + MEDIUMBLOB
-  + LONGBLOB
   + TEXT
-  + MEDIUM TEXT
-  + LONGTEXT
+
+These will be the only large object types
+? What about complex types like lists, sets or tupels ? Maybe later version?
 
 
 ## Database

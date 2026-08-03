@@ -1,13 +1,14 @@
-use std::collections::VecDeque;
-use anyhow::{anyhow, Error};
 use crate::command::sqlcommands::SqlCommand;
-use sqlparser::ast::{Expr, Insert, SetExpr, TableObject, Value};
-use crate::command::createdatabase::update_database_moi;
 use crate::database::datatype::DataType;
 use crate::database::table::Row;
 use crate::file;
 use crate::server::dbmem::DbMem;
 use crate::server::queue::TransactionContext;
+use anyhow::{anyhow, Error};
+use sqlparser::ast::{Expr, Insert, SetExpr, TableObject, Value};
+use std::collections::VecDeque;
+use crate::file::moihandler;
+use crate::file::mtdhandler::read_mtd_file;
 
 pub fn parse(insert: Insert) -> SqlCommand {
     let table = match parse_table(&insert.table) {
@@ -30,112 +31,114 @@ pub fn parse(insert: Insert) -> SqlCommand {
     }
 }
 
-pub fn insert_into(transaction: &TransactionContext, table: &String, columns: &Vec<String>, values: &Vec<Vec<String>>) -> anyhow::Result<TransactionContext, Error>{
-    let ledger_clone_file = transaction.clone();
+pub fn insert_into(
+    transaction: &TransactionContext,
+    table: &String,
+    columns: &Vec<String>,
+    values: &Vec<Vec<String>>,
+) -> anyhow::Result<TransactionContext, Error> {
     let result_append_to_ledger = file::ledgerhandler::append_to_file(
-        &ledger_clone_file.user,
-        &ledger_clone_file.command,
-        &ledger_clone_file.db_name,
+        &transaction.user,
+        &transaction.command,
+        &transaction.db_name,
     );
-    match result_append_to_ledger{
-        Ok(_) => {
-            let result_moi_update: anyhow::Result<TransactionContext> =  update_database_moi(transaction.clone(), transaction.db_name.to_string());
-            match result_moi_update{
-                Ok(_) => {
-                    //DbMem update
-                    if let Some(table_arc) = DbMem::find_table(transaction.table_names[0].as_str(), table.as_str() ){
-                        let table_guard = table_arc.lock().unwrap();
-                        let column_names_mem = &table_guard.column_names;
-                        let column_types_mem = &table_guard.column_types;
-                        let btree = &table_guard.tree;
 
-                        let mut column_indexs:Vec<usize> = Vec::new();
-                        for i in 0 .. column_names_mem.len() {
-                            if column_names_mem[i] == columns[i]{
-                                column_indexs.push(i);
-                            }
-                        }
+    //first write the moi file, so we can get the id and replace it with the id the user has given
 
-                        let mut types:Vec<DataType> = Vec::new();
-                        for i in 0 .. column_indexs.len(){
-                            types.push(column_types_mem[i].clone());
-                        }
-
-                        let mut typed_data:VecDeque<DataType> = VecDeque::new();
-                        for i in 0 .. values.len() {
-                            for j in 0 .. values[i].len() {
-                                match types[j]{
-                                    DataType::BigInt(_) => {
-                                        typed_data.push_back(DataType::BigInt(values[i][j].parse::<i64>().unwrap()));
-                                    }
-                                    DataType::Int(_) => {
-                                        typed_data.push_back(DataType::Int(values[i][j].parse::<i32>().unwrap()));
-                                    }
-                                    DataType::SmallInt(_) => {
-                                        typed_data.push_back( DataType::SmallInt(values[i][j].parse::<i16>().unwrap()));
-                                    }
-                                    DataType::TinyInt(_) => {
-                                        typed_data.push_back(DataType::TinyInt(values[i][j].parse::<i8>().unwrap()));
-                                    }
-                                    DataType::Decimal(_) => {
-                                        typed_data.push_back(DataType::Decimal(values[i][j].parse::<f32>().unwrap()));
-                                    }
-                                    DataType::Float(_) => {
-                                        typed_data.push_back(DataType::Float(values[i][j].parse::<f64>().unwrap()));
-                                    }
-                                    DataType::VarChar(_, _) => {
-                                        let size = values[i][j].len() as u8;
-                                        typed_data.push_back(DataType::VarChar(size, values[i][j].clone()));
-                                    }
-                                    DataType::Bool(_) => {
-                                        let b_value = values[i][j].to_lowercase();
-                                        if b_value == "true" {
-                                            typed_data.push_back(DataType::Bool(true));
-                                        }else{
-                                            typed_data.push_back(DataType::Bool(false));
-                                        }
-                                    }
-                                    DataType::Date(_) => {
-                                        typed_data.push_back(DataType::Date(values[i][j].parse::<u64>().unwrap()));
-                                    }
-                                    DataType::Time(_) => {
-                                        typed_data.push_back(DataType::Date(values[i][j].parse::<u64>().unwrap()))
-                                    }
-                                    DataType::DateTime(_) => {
-                                        typed_data.push_back(DataType::Date(values[i][j].parse::<u64>().unwrap()))
-                                    }
-                                    DataType::Null => {
-                                        typed_data.push_back(DataType::Null);
-                                    }
-                                    DataType::Undefined => {
-                                        typed_data.push_back(DataType::Undefined);
-                                    }
-                                };
-                            }
-                        }
-                        let mut data_for_row:Vec<DataType> = Vec::new();
-                        for i in 0 .. column_names_mem.len(){
-                            if !column_indexs.contains(&i){
-                                data_for_row.push(DataType::Null);
-                            }else{
-                                data_for_row.push(typed_data.pop_front().unwrap())
-                            }
-                        }
-                        let row:Row = Row{
-                            data: data_for_row
-                        };
-                        DbMem::insert_row(&transaction.db_name, table, row);
-                        Ok(transaction.clone())
-                    }else{
-                        Ok(transaction.clone()) 
-                    }
-                }
-                Err(_) => {Err(anyhow!("Unable to update moi file for insert command"))}
-            }
-        }
-        Err(_) => {Err(anyhow!("Unable to update ledger for insert command"))}
+    if result_append_to_ledger.is_err() {
+        return Err(anyhow!("Unable to update moi file for insert command"));
     }
-    
+
+    let Some(table_arc) = DbMem::find_table(transaction.db_name.as_str(), table.as_str()) else {
+        return Ok(transaction.clone());
+    };
+
+    // Lock only to snapshot metadata, then release immediately
+    let (column_names_mem, column_types_mem) = {
+        let table_guard = table_arc
+            .lock()
+            .map_err(|_| anyhow!("Table lock poisoned while reading metadata"))?;
+        (table_guard.column_names.clone(), table_guard.column_types.clone())
+    };
+
+    // Validate columns and build index map
+    let mut column_indexs: Vec<usize> = Vec::new();
+    for (input_col_pos, input_col_name) in columns.iter().enumerate() {
+        let Some(schema_idx) = column_names_mem.iter().position(|c| c == input_col_name) else {
+            return Err(anyhow!("Unknown column '{}'", input_col_name));
+        };
+        // keep same ordering as incoming values
+        if input_col_pos < columns.len() {
+            column_indexs.push(schema_idx);
+        }
+    }
+
+    let types: Vec<DataType> = column_indexs
+        .iter()
+        .map(|idx| column_types_mem[*idx].clone())
+        .collect();
+
+    let mut typed_data: VecDeque<DataType> = VecDeque::new();
+    for row_vals in values {
+        if row_vals.len() != types.len() {
+            return Err(anyhow!(
+                "Value count ({}) does not match column count ({})",
+                row_vals.len(),
+                types.len()
+            ));
+        }
+
+        for (j, raw) in row_vals.iter().enumerate() {
+            let dt = match &types[j] {
+                DataType::BigInt(_) => DataType::BigInt(raw.parse::<i64>()?),
+                DataType::Int(_) => DataType::Int(raw.parse::<i32>()?),
+                DataType::SmallInt(_) => DataType::SmallInt(raw.parse::<i16>()?),
+                DataType::TinyInt(_) => DataType::TinyInt(raw.parse::<i8>()?),
+                DataType::Decimal(_) => DataType::Decimal(raw.parse::<f32>()?),
+                DataType::Float(_) => DataType::Float(raw.parse::<f64>()?),
+                DataType::VarChar(_, _) => DataType::VarChar(raw.len() as u8, raw.clone()),
+                DataType::Bool(_) => DataType::Bool(raw.eq_ignore_ascii_case("true")),
+                DataType::Date(_) => DataType::Date(raw.parse::<u64>()?),
+                DataType::Time(_) => DataType::Time(raw.parse::<u64>()?),
+                DataType::DateTime(_) => DataType::DateTime(raw.parse::<u64>()?),
+                DataType::Null => DataType::Null,
+                DataType::Undefined => DataType::Undefined,
+            };
+            typed_data.push_back(dt);
+        }
+    }
+
+    let mut data_for_row: Vec<DataType> = Vec::new();
+    for i in 0..column_names_mem.len() {
+        if !column_indexs.contains(&i) {
+            data_for_row.push(DataType::Null);
+        } else {
+            let Some(v) = typed_data.pop_front() else {
+                return Err(anyhow!("Internal error while building row data"));
+            };
+            data_for_row.push(v);
+        }
+    }
+
+    // This locks table internally, but we are NOT holding table_guard now
+    DbMem::insert_row(&transaction.db_name, table, data_for_row.clone());
+
+    // Re-lock briefly only to fetch mtd_path
+    let mtd_path = {
+        let table_guard = table_arc
+            .lock()
+            .map_err(|_| anyhow!("Table lock poisoned while reading mtd_path"))?;
+        table_guard.mtd_path.clone()
+    };
+
+    let mois = read_mtd_file(&mtd_path).moi_files;
+    if let Some(path) = mois.last() {
+        let row = Row { data: data_for_row };
+        moihandler::add_row(path, row);
+        Ok(transaction.clone())
+    } else {
+        Err(anyhow!("No moi file found for table '{}'", table))
+    }
 }
 
 fn parse_table(table: &TableObject) -> Option<String> {
@@ -248,7 +251,6 @@ mod tests {
         }
     }
 
-
     #[test]
     fn test_insert_with_columns() {
         let command = crate::command::insert::tests::parse_insert(
@@ -358,6 +360,4 @@ mod tests {
             _ => panic!("expected INSERT"),
         }
     }
-
-
 }

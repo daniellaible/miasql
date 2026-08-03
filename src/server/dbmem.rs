@@ -3,7 +3,7 @@ use crate::database::datatype::DataType;
 use crate::database::table::{Row, Table};
 use anyhow::{Result, anyhow};
 use log::{error, info};
-use std::sync::{Arc, LazyLock, Mutex};
+use std::sync::{Arc, LazyLock, LockResult, Mutex};
 use crate::database::bptree::{Link, Node};
 use crate::file::moihandler::load_moi_file;
 use crate::file::mtdhandler::read_mtd_file;
@@ -42,14 +42,18 @@ impl DbMem {
     //This finds you a certain table you might want to work with
     pub fn find_table(db_name: &str, table_name: &str) -> Option<Arc<Mutex<Table>>> {
         let dbs = DBS.lock().unwrap();
-        dbs.tables
-            .iter()
-            .find(|t| t.0 == db_name && t.1 == table_name)
-            .map(|t| Arc::clone(&t.2))
+
+        for i in 0 .. dbs.tables.len(){
+            let (db, local_table, table) = &dbs.tables[i].clone();
+            if db.to_uppercase() == db_name.to_uppercase() && local_table.to_uppercase() == table_name.to_uppercase(){
+                return Some(Arc::clone(table))
+            }
+        }
+        None
     }
 
     //load a given table into RAM
-    pub fn load_db_to_mem(db_name: &str) -> anyhow::Result<()>{
+    pub fn load_db_to_mem(db_name: &str) -> Result<()>{
         match Self::find_table("system", "tables") {
             None => {
                 panic!("System table can not be found");
@@ -92,20 +96,44 @@ impl DbMem {
     }
 
     /// This adds a row to a table in memory
-    pub fn insert_row(db_name: &str, table_name: &str, row: Row) {
-        let dbs = DBS.lock().unwrap();
-        for (db_n, table_n, table_arc) in &dbs.tables {
-            if db_n.eq_ignore_ascii_case(db_name) && table_n.eq_ignore_ascii_case(table_name) {
-                let mut table = table_arc.lock().unwrap();
-                match row.data[0] {
-                    DataType::BigInt(number) => {
-                        table.tree.insert(number, row.data.clone());
-                    }
-                    _ => error!("The first element is not the id ???"),
+    pub fn insert_row(db_name: &str, table_name: &str, data: Vec<DataType>) {
+        //Todo here we create our own id, if it is not given
+        let id = match data.first() {
+            Some(DataType::BigInt(n)) => *n,
+            Some(_) => {
+                error!("insert_row: first element must be DataType::BigInt(id)");
+                return;
+            }
+            None => {
+                error!("insert_row: row is empty");
+                return;
+            }
+        };
+        let table_arc: Arc<Mutex<Table>> = {
+            let dbs = DBS.lock().unwrap();
+
+            match dbs.tables.iter().find(|(db_n, table_n, _)| {
+                db_n.eq_ignore_ascii_case(db_name) && table_n.eq_ignore_ascii_case(table_name)
+            }) {
+                Some((_, _, arc)) => Arc::clone(arc),
+                None => {
+                    error!("insert_row: table not found: {}.{}", db_name, table_name);
+                    return;
                 }
-                println!("{:?}", *table);
+            }
+        };
+
+        match table_arc.try_lock() {
+            Ok(mut table) => {
+                table.tree.insert(id, data);
+                println!("{:?}", table.tree);
+            }
+            Err(why) => {
+                error!("insert_row: failed to lock table: {:?}", why);
             }
         }
+
+
     }
 
     /// Checks if the table is in memory or not

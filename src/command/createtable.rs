@@ -206,7 +206,7 @@ pub fn create_table(mut transaction: TransactionContext, tablename: String, colu
 
 pub fn update_system_table_in_mem(id: i64, db_name: Arc<str>, table_name:Arc<str>, table_uuid: String) -> anyhow::Result<()> {
     let row = create_system_table_row(id, db_name, table_name, table_uuid);
-    DbMem::insert_row("system", "tables", row);
+    DbMem::insert_row("system", "tables", row.data);
     Ok(())
 }
 
