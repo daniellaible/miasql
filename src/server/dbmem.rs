@@ -1,13 +1,12 @@
-use std::io::Error;
+use crate::database::bptree::{ Node};
 use crate::database::datatype::DataType;
-use crate::database::table::{Row, Table};
-use anyhow::{Result, anyhow};
-use log::{error, info};
-use std::sync::{Arc, LazyLock, LockResult, Mutex};
-use crate::database::bptree::{Link, Node};
+use crate::database::table::{Table};
 use crate::file::moihandler::load_moi_file;
 use crate::file::mtdhandler::read_mtd_file;
 use crate::server::tools::{clean_string, datatype_to_string_uppercase, remove_double_slash};
+use anyhow::{Result, anyhow, Error};
+use log::{error, info};
+use std::sync::{Arc, LazyLock, Mutex};
 
 /// DbMem is the struct that holds the tables in memory.
 /// It consists of a vector with all the tables that are in use.
@@ -35,26 +34,82 @@ impl DbMem {
         dbs.tables.push((
             table.db_name.clone(),
             table.table_name.clone(),
-            Arc::new(Mutex::new(table))
+            Arc::new(Mutex::new(table)),
         ));
     }
 
     //This finds you a certain table you might want to work with
-    pub fn find_table(db_name: &str, table_name: &str) -> Option<Arc<Mutex<Table>>> {
+    pub fn find_table_in_mem(db_name: &str, table_name: &str) -> Option<Arc<Mutex<Table>>> {
         let dbs = DBS.lock().unwrap();
 
-        for i in 0 .. dbs.tables.len(){
+        for i in 0..dbs.tables.len() {
             let (db, local_table, table) = &dbs.tables[i].clone();
-            if db.to_uppercase() == db_name.to_uppercase() && local_table.to_uppercase() == table_name.to_uppercase(){
-                return Some(Arc::clone(table))
+            if db.to_uppercase() == db_name.to_uppercase()
+                && local_table.to_uppercase() == table_name.to_uppercase()
+            {
+                return Some(Arc::clone(table));
             }
         }
         None
     }
 
+    pub fn load_table_from_system_tables(dbname: &str, tablename: &str) -> Result<String, Error> {
+        match Self::find_table_in_mem("system", "tables") {
+            None => {
+                panic!("System table can not be found");
+            }
+            Some(system_table) => {
+                let tree = &system_table.lock().unwrap().tree;
+                let link_left = tree.leftmost_leaf(tree.root.clone());
+                let guard = link_left.lock().unwrap();
+                let Node::Leaf(leaf) = &*guard else {
+                    unreachable!("leaf.next must point to a leaf")
+                };
+                let rows = tree.leaf_walker_rows(leaf.clone())?;
+                for i in 0..rows.len() {
+                    let row = &rows[i];
+
+                    let mut dbname_in_system_table = datatype_to_string_uppercase(&row[1]);
+                    dbname_in_system_table = clean_string(dbname_in_system_table);
+
+                    let mut tablename_in_system_table = datatype_to_string_uppercase(&row[2]);
+                    tablename_in_system_table = clean_string(tablename_in_system_table);
+
+                    let mut temp_dbname = dbname.to_string();
+                    temp_dbname = temp_dbname.to_uppercase();
+                    temp_dbname = clean_string(temp_dbname);
+
+                    let mut temp_tablename = tablename.to_string();
+                    temp_tablename = temp_tablename.to_uppercase();
+                    temp_tablename = clean_string(temp_tablename);
+
+                    if dbname_in_system_table == temp_dbname
+                        && tablename_in_system_table == temp_tablename
+                    {
+                        let path = remove_double_slash(clean_string(row[3].to_string()));
+                        let mdtfile = read_mtd_file(path.as_str());
+                        let table_result = load_moi_file(&mdtfile);
+                        match table_result {
+                            Ok(mut table) => {
+                                info!("Table {:?} added to DB", &table.table_name);
+                                table.mtd_path = path.clone();
+                                Self::add_table(table);
+                                return Ok(path);
+                            }
+                            Err(why) => {
+                                return Err(anyhow!("{:?}", why));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Err(anyhow!("Unable to load table from system"))
+    }
+
     //load a given table into RAM
-    pub fn load_db_to_mem(db_name: &str) -> Result<()>{
-        match Self::find_table("system", "tables") {
+    pub fn load_db_to_mem(db_name: &str) -> Result<()> {
+        match Self::find_table_in_mem("system", "tables") {
             None => {
                 panic!("System table can not be found");
             }
@@ -66,7 +121,7 @@ impl DbMem {
                     unreachable!("leaf.next must point to a leaf")
                 };
                 let rows = tree.leaf_walker_rows(leaf.clone())?;
-                for i in 0 .. rows.len(){
+                for i in 0..rows.len() {
                     let row = &rows[i];
 
                     let mut table_value_upper = datatype_to_string_uppercase(&row[1]);
@@ -75,13 +130,14 @@ impl DbMem {
                     let mut db_name_as_upper = db_name.to_string().to_uppercase();
                     db_name_as_upper = clean_string(db_name_as_upper);
 
-                    if table_value_upper == db_name_as_upper{
+                    if table_value_upper == db_name_as_upper {
                         let path = remove_double_slash(clean_string(row[3].to_string()));
                         let mdtfile = read_mtd_file(path.as_str());
                         let table_result = load_moi_file(&mdtfile);
-                        match table_result{
-                            Ok(table) => {
+                        match table_result {
+                            Ok(mut table) => {
                                 info!("Table {:?} added to DB", &table.table_name);
+                                table.mtd_path = path;
                                 Self::add_table(table);
                             }
                             Err(why) => {
@@ -126,14 +182,11 @@ impl DbMem {
         match table_arc.try_lock() {
             Ok(mut table) => {
                 table.tree.insert(id, data);
-                println!("{:?}", table.tree);
             }
             Err(why) => {
                 error!("insert_row: failed to lock table: {:?}", why);
             }
         }
-
-
     }
 
     /// Checks if the table is in memory or not

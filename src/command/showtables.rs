@@ -6,7 +6,7 @@ use crate::server::dbmem::DbMem;
 
 pub fn show_table(dbname: &str, tablename: &str) -> anyhow::Result<ResultSet, Error>{
     let mut result:ResultSet = ResultSet::create();
-    if let Some(table_arc) = DbMem::find_table(dbname, tablename) {
+    if let Some(table_arc) = DbMem::find_table_in_mem(dbname, tablename) {
         let table_guard = table_arc.lock().unwrap();
         let tree = &table_guard.tree;
         let header = &table_guard.column_names;

@@ -13,7 +13,7 @@ pub fn parse() -> SqlCommand {
 
 pub fn show_databases() -> anyhow::Result<ResultSet, Error> {
     let mut result:ResultSet = ResultSet::create();
-    if let Some(table_arc) = DbMem::find_table("system", "database") {
+    if let Some(table_arc) = DbMem::find_table_in_mem("system", "database") {
         let table_guard = table_arc.lock().unwrap();
         let tree = &table_guard.tree;
         let header = &table_guard.column_names;

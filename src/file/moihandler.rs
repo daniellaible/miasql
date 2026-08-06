@@ -482,6 +482,7 @@ mod tests {
     use crate::file::mtdhandler::read_mtd_file;
     use std::fs::File;
     use std::io::{BufWriter, Write};
+    use log::error;
 
     #[test]
     fn test_read_max_id() {
@@ -608,7 +609,7 @@ mod tests {
                             tablename = String::from("user");
                             path = String::from("C:\\MiaSql\\system\\user.mtd");
                     } else {
-                            println!("There's something strange in your neighbourhood ... who do you gonna call");
+                           error!("There's something strange in your neighbourhood ... who do you gonna call");
                         }
 
                         writer.write(&id.to_le_bytes()).expect("unable to write to disc");
@@ -641,7 +642,7 @@ mod tests {
                     }
                 }
                 Err(error) => {
-                    println!("Something went terribly wrong reading system tables table: {}", error);
+                    error!("Something went terribly wrong reading system tables table: {}", error);
                 }
             }
         }
@@ -686,7 +687,7 @@ mod tests {
                     writer.flush();
                 }
                 Err(error) => {
-                    println!("Something went terribly wrong reading system database tables: {}", error);
+                    error!("Something went terribly wrong reading system database tables: {}", error);
                 }
             }
         }

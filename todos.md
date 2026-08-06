@@ -5,12 +5,11 @@
 + MiaLedger ledger number is a constant right now get it from a system table
 + MiaLedger should start a new file when reaching the 4GB limitation
 + if an error in the processor happens, it needs to be reverted
-+ do we need a alterRenameDatabase command
++ ?do we need a alterRenameDatabase command
 + do not panic when the database you want to create already exists (same name problem)
 
 
 ## Bugs
-+ There is an issue with columnConstraints in mtdhandler - a closing braket is forgotten 
 + insert command is not saving in moi file
 
 ## Base Commands

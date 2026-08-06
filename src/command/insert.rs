@@ -1,12 +1,15 @@
+use std::arch::x86_64::_mm256_mask_cmp_epi16_mask;
 use crate::command::sqlcommands::SqlCommand;
 use crate::database::datatype::DataType;
-use crate::database::table::Row;
+use crate::database::table::{Row, Table};
 use crate::file;
 use crate::server::dbmem::DbMem;
 use crate::server::queue::TransactionContext;
 use anyhow::{anyhow, Error};
 use sqlparser::ast::{Expr, Insert, SetExpr, TableObject, Value};
 use std::collections::VecDeque;
+use std::sync::{Arc, Mutex};
+use log::error;
 use crate::file::moihandler;
 use crate::file::mtdhandler::read_mtd_file;
 
@@ -43,15 +46,36 @@ pub fn insert_into(
         &transaction.db_name,
     );
 
-    //first write the moi file, so we can get the id and replace it with the id the user has given
-
     if result_append_to_ledger.is_err() {
         return Err(anyhow!("Unable to update moi file for insert command"));
     }
 
-    let Some(table_arc) = DbMem::find_table(transaction.db_name.as_str(), table.as_str()) else {
-        return Ok(transaction.clone());
+    let table_arc = match DbMem::find_table_in_mem(transaction.db_name.as_str(), table.as_str()) {
+        Some(table_arc) => table_arc,
+        None => {
+            DbMem::load_table_from_system_tables(transaction.db_name.as_str(), table.as_str());
+            DbMem::find_table_in_mem(transaction.db_name.as_str(), table.as_str())
+                .ok_or_else(|| anyhow!("Unable to find table in memory"))?
+        }
     };
+
+    let mut mtd_path = {
+        let table_guard = table_arc
+            .lock()
+            .map_err(|_| anyhow!("Table lock poisoned while reading mtd_path"))?;
+        table_guard.mtd_path.clone()
+    };
+
+    if mtd_path.is_empty(){
+        match DbMem::load_table_from_system_tables(transaction.db_name.as_str(), table.as_str()){
+            Ok(path_to_mtd) => {
+                mtd_path = path_to_mtd;
+            }
+            Err(_) => {
+                return Err(anyhow!("Unable to load table into memory"))
+            }
+        }
+    }
 
     // Lock only to snapshot metadata, then release immediately
     let (column_names_mem, column_types_mem) = {
@@ -120,25 +144,17 @@ pub fn insert_into(
         }
     }
 
-    // This locks table internally, but we are NOT holding table_guard now
-    DbMem::insert_row(&transaction.db_name, table, data_for_row.clone());
-
-    // Re-lock briefly only to fetch mtd_path
-    let mtd_path = {
-        let table_guard = table_arc
-            .lock()
-            .map_err(|_| anyhow!("Table lock poisoned while reading mtd_path"))?;
-        table_guard.mtd_path.clone()
-    };
-
     let mois = read_mtd_file(&mtd_path).moi_files;
     if let Some(path) = mois.last() {
-        let row = Row { data: data_for_row };
+        let row = Row { data: data_for_row.clone() };
         moihandler::add_row(path, row);
-        Ok(transaction.clone())
     } else {
-        Err(anyhow!("No moi file found for table '{}'", table))
+        error!("No moi file found for table '{}'", table);
     }
+
+    // This locks table internally, but we are NOT holding table_guard now
+    DbMem::insert_row(&transaction.db_name, table, data_for_row.clone());
+    Ok(transaction.clone())
 }
 
 fn parse_table(table: &TableObject) -> Option<String> {
