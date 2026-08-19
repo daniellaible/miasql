@@ -1,9 +1,13 @@
+use anyhow::{anyhow, Error};
 use crate::command::sqlcommands::SqlCommand;
 use crate::command::sqloperator::Operator;
 use crate::command::whereclause::WhereClause;
 use crate::database::datatype;
 use sqlparser::ast::{BinaryOperator, Expr, Function as SqlFunction, FunctionArg, FunctionArgExpr, FunctionArgumentList, FunctionArguments, Ident, ObjectName, ObjectNamePart, Query, Select, SelectItem, TableFactor, TableWithJoins, Value, ValueWithSpan};
 use sqlparser::tokenizer::Token;
+use crate::command::resultset::ResultSet;
+use crate::server::dbmem::DbMem;
+use crate::server::queue::TransactionContext;
 
 /// This truct specifies what kind of Join command was tokenized
 #[derive(Clone, Debug, PartialEq)]
@@ -151,6 +155,42 @@ pub fn parse(query: Box<Query>) -> SqlCommand {
     };
     command
 }
+
+pub fn select_from(
+    dbname: String,
+    table: String,
+    columns: Vec<String>,
+    where_clause: Option<WhereClause>,
+    distinct: bool,
+    group_by: Option<Vec<String>>,
+    order_by: Option<Vec<String>>,
+    joins: Option<Vec<JoinClause>>,
+    limit: Option<i32>
+) -> anyhow::Result<ResultSet, Error>{
+    let mut result:ResultSet = ResultSet::create();
+    let table_arc = match DbMem::find_table_in_mem(&dbname, &table)  {
+        Some(table_arc) => table_arc,
+        None => {
+            DbMem::load_table_from_system_tables(&dbname, &table);
+            DbMem::find_table_in_mem(&dbname, &table)
+                .ok_or_else(|| anyhow!("Unable to find table in memory"))?
+        }
+    };
+    let table_guard = table_arc.lock().unwrap();
+    let header = &table_guard.column_names;
+    result.header = header.clone();
+
+    match where_clause{
+        None => {
+
+        }
+        Some(specifier) => {}
+    }
+
+
+    Ok(ResultSet::create())
+}
+
 
 fn extract_top(select_stmt: &Select) -> i32 {
     let Some(top) = &select_stmt.top else {
@@ -403,15 +443,22 @@ fn extract_columns(select_stmt: &Select) -> Vec<String> {
     columns
 }
 
+
+
 #[cfg(test)]
 mod tests {
-    use crate::command::select::{parse, JoinType};
+    use crate::command::select::{parse, select_from, JoinType};
     use crate::command::sqlcommands::SqlCommand;
     use crate::command::sqloperator::Operator;
     use crate::database::datatype;
     use sqlparser::ast::Statement;
     use sqlparser::dialect::GenericDialect;
     use sqlparser::parser::Parser;
+    use crate::command::whereclause::WhereClause;
+    use crate::database::table::Table;
+    use crate::file;
+    use crate::file::mtdhandler::{read_mtd_file, MtdFile};
+    use crate::server::dbmem::DbMem;
 
     fn parse_select(sql: &str) -> SqlCommand {
         let dialect = GenericDialect {};
@@ -421,6 +468,12 @@ mod tests {
             Statement::Query(query) => parse(query),
             _ => panic!("expected query"),
         }
+    }
+
+    #[test]
+    fn execute_select_simplest(){
+       import_system_tables();
+       let result = select_from("system".to_string(), "tables".to_string(), vec!["*".to_string()], None, false, None, None, None, None );
     }
 
     #[test]
@@ -714,4 +767,19 @@ fn select_with_valid_join_returns() {
         _ => panic!("expected SELECT"),
     }
 }
+
+    fn import_system_tables() {
+        let database_mtd: MtdFile = read_mtd_file("C:\\MiaSql\\system\\database.mtd");
+        let tables_mtd: MtdFile = read_mtd_file("C:\\MiaSql\\system\\tables.mtd");
+        let user_mtd: MtdFile = read_mtd_file("C:\\MiaSql\\system\\user.mtd");
+
+        let db_table:Table = file::moihandler::load_moi_file(&database_mtd).unwrap();
+        let tables_table:Table = file::moihandler::load_moi_file(&tables_mtd).unwrap();
+        let user_table: Table = file::moihandler::load_moi_file(&user_mtd).unwrap();
+
+        DbMem::init();
+        DbMem::add_table(db_table);
+        DbMem::add_table(tables_table);
+        DbMem::add_table(user_table);
+    }
 }

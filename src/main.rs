@@ -12,6 +12,9 @@ mod database {
     pub mod bptree;
     pub mod datatype;
     pub mod table;
+    pub mod memstruct;
+    pub mod boolstructure;
+    pub mod mapstructure;
 }
 
 /// # Parsing modules

@@ -22,6 +22,8 @@ use std::cmp::Ordering;
 use std::fmt::Debug;
 use std::sync::{Arc, Mutex};
 use crate::database::datatype::DataType;
+use crate::database::mapstructure::hashmap_structure;
+use crate::database::memstruct::memory_structure;
 
 pub type Link<K, V, const MAX_KEYS: usize> = Arc<Mutex<Node<K, V, MAX_KEYS>>>;
 
@@ -49,6 +51,20 @@ pub struct LeafNode<K, V, const MAX_KEYS: usize> {
 pub struct BPlusTree<K, V, const MAX_KEYS: usize = 64> {
     pub root: Link<K, V, MAX_KEYS>,
     pub len: usize,
+}
+
+impl<K, V, const MAX_KEYS: usize> memory_structure for BPlusTree<K, V, MAX_KEYS> {
+    fn insert(&self) {
+        todo!()
+    }
+
+    fn retrieve(&self) {
+        todo!()
+    }
+
+    fn delete(&self) {
+        todo!()
+    }
 }
 
 impl<K, V, const MAX_KEYS: usize> Default for BPlusTree<K, V, MAX_KEYS>
