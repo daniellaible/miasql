@@ -3,6 +3,7 @@
 use std::fmt;
 
 #[derive(Clone, Debug, PartialEq)]
+
 pub enum DataType {
     BigInt (i64),
     Int (i32),

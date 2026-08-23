@@ -1,29 +1,8 @@
-//! In-memory, single-threaded B+ tree.
-//!
-//! Features
-//! - Internal nodes + leaf nodes (leaves linked for efficient range scans)
-//! - Split on insert; merge/redistribute on delete
-//! - Always maintains B+ invariants, keeping tree height as low as possible
-//!
-//! Notes
-//! - This is a *classic* B+ tree with a fixed maximum fanout (MAX_KEYS).
-//! - Internal nodes store separator keys; values live only in leaves.
-//! - Keys are kept in sorted order.
-//!
-//! Complexity
-//! - get:    O(log n)
-//! - insert: O(log n)
-//! - remove: O(log n)
-//! - range:  O(log n + k)
-//!
-
-use crate::server::dbmem::DbMem;
 use std::cmp::Ordering;
 use std::fmt::Debug;
 use std::sync::{Arc, Mutex};
 use crate::database::datatype::DataType;
-use crate::database::mapstructure::hashmap_structure;
-use crate::database::memstruct::memory_structure;
+use crate::database::memstruct::MemoryStructure;
 
 pub type Link<K, V, const MAX_KEYS: usize> = Arc<Mutex<Node<K, V, MAX_KEYS>>>;
 
@@ -53,16 +32,25 @@ pub struct BPlusTree<K, V, const MAX_KEYS: usize = 64> {
     pub len: usize,
 }
 
-impl<K, V, const MAX_KEYS: usize> memory_structure for BPlusTree<K, V, MAX_KEYS> {
-    fn insert(&self) {
+//This function is the one we should use
+impl<K, V, const MAX_KEYS: usize, VAL, KEY> MemoryStructure<VAL, KEY> for BPlusTree<K, V, MAX_KEYS> {
+    fn create(&self) -> Self {
         todo!()
     }
 
-    fn retrieve(&self) {
+    fn insert(&mut self, value: VAL, id: KEY) {
         todo!()
     }
 
-    fn delete(&self) {
+    fn retrieve_values(&self, id: KEY) -> VAL{
+        todo!()
+    }
+
+    fn retrieve_keys(&self, value: KEY) -> Vec<KEY> {
+        todo!()
+    }
+
+    fn delete(&mut self, id: KEY) {
         todo!()
     }
 }
@@ -89,7 +77,7 @@ where
 impl<K, V, const MAX_KEYS: usize> BPlusTree<K, V, MAX_KEYS>
 where
     K: Ord + Clone,
-    V: Clone + std::fmt::Debug,
+    V: Clone + Debug,
 {
     /// Minimum number of keys a non-root node should have.
     /// (Classic B+ tree with max keys = MAX_KEYS => min keys = ceil(MAX_KEYS/2))

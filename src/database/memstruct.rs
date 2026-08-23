@@ -1,10 +1,10 @@
-// here are all the memory structures defined except the bptree.
-// BpTrees are just too much code so they got an extra file
 
-pub trait memory_structure{
-    fn insert(&self);
-    fn retrieve(&self);
-    fn delete (&self);
+pub trait MemoryStructure<V, K>{
+    fn create(&self) -> Self;
+    fn insert(&mut self, value:V, id:K);
+    fn retrieve_values(&self, value:K) -> V;
+    fn retrieve_keys(&self, value:K) -> Vec<K>;
+    fn delete (&mut self, id:K);
 }
 
 
