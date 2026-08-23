@@ -79,6 +79,7 @@ fn import_system_tables() {
     let tables_mtd: MtdFile = read_mtd_file("C:\\MiaSql\\system\\tables.mtd");
     let user_mtd: MtdFile = read_mtd_file("C:\\MiaSql\\system\\user.mtd");
 
+
     let db_table:Table = file::moihandler::load_moi_file(&database_mtd).unwrap();
     let tables_table:Table = file::moihandler::load_moi_file(&tables_mtd).unwrap();
     let user_table: Table = file::moihandler::load_moi_file(&user_mtd).unwrap();

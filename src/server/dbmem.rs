@@ -53,8 +53,10 @@ impl DbMem {
         None
     }
 
+    //TODO needs to be newly implemented
     pub fn load_table_from_system_tables(dbname: &str, tablename: &str) -> Result<String, Error> {
-        match Self::find_table_in_mem("system", "tables") {
+        panic!("! needs new implementation");
+/*        match Self::find_table_in_mem("system", "tables") {
             None => {
                 panic!("System table can not be found");
             }
@@ -104,12 +106,13 @@ impl DbMem {
                 }
             }
         }
-        Err(anyhow!("Unable to load table from system"))
+        Err(anyhow!("Unable to load table from system"))*/
     }
 
     //load a given table into RAM
     pub fn load_db_to_mem(db_name: &str) -> Result<()> {
-        match Self::find_table_in_mem("system", "tables") {
+        panic!("needs new implementation");
+/*        match Self::find_table_in_mem("system", "tables") {
             None => {
                 panic!("System table can not be found");
             }
@@ -148,13 +151,14 @@ impl DbMem {
                 }
             }
         }
-        Ok(())
+        Ok(())*/
     }
 
     /// This adds a row to a table in memory
     pub fn insert_row(db_name: &str, table_name: &str, data: Vec<DataType>) {
+        panic!("needs new implementation");
         //Todo here we create our own id, if it is not given
-        let id = match data.first() {
+/*        let id = match data.first() {
             Some(DataType::BigInt(n)) => *n,
             Some(_) => {
                 error!("insert_row: first element must be DataType::BigInt(id)");
@@ -186,7 +190,7 @@ impl DbMem {
             Err(why) => {
                 error!("insert_row: failed to lock table: {:?}", why);
             }
-        }
+        }*/
     }
 
     /// Checks if the table is in memory or not
@@ -243,7 +247,7 @@ mod tests {
     use crate::database::table::Table;
     use crate::server::dbmem::DbMem;
 
-    #[test]
+/*    #[test]
     fn test_is_table_loaded_standard() {
         DbMem::init();
         let mut default_table = Table::default();
@@ -252,9 +256,9 @@ mod tests {
         DbMem::add_table(default_table);
         let result = DbMem::is_table_loaded(String::from("business"), String::from("customer"));
         assert_eq!(result, true);
-    }
+    }*/
 
-    #[test]
+/*    #[test]
     fn test_is_table_loaded_case() {
         DbMem::init();
         let mut default_table = Table::default();
@@ -263,9 +267,9 @@ mod tests {
         DbMem::add_table(default_table);
         let result = DbMem::is_table_loaded(String::from("business"), String::from("customer"));
         assert_eq!(result, true);
-    }
+    }*/
 
-    #[test]
+/*    #[test]
     fn test_is_table_loaded_bad_case() {
         DbMem::init();
         let mut default_table = Table::default();
@@ -274,5 +278,5 @@ mod tests {
         DbMem::add_table(default_table);
         let result = DbMem::is_table_loaded(String::from("business"), String::from("customer"));
         assert_eq!(result, false);
-    }
+    }*/
 }

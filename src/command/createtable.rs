@@ -126,7 +126,7 @@ pub fn extract_foreign_keys(create_table: CreateTable) -> Vec<ForeignKeyToken> {
 }
 
 pub fn create_table(mut transaction: TransactionContext, tablename: String, columns:Vec<(String, DataType, Vec<Constraint>)>) -> anyhow::Result<TransactionContext, Error>{
-    let ledger_clone_file = transaction.clone();
+/*    let ledger_clone_file = transaction.clone();
     let ledger_result = file::ledgerhandler::append_to_file(
         &ledger_clone_file.user,
         &ledger_clone_file.command,
@@ -201,7 +201,8 @@ pub fn create_table(mut transaction: TransactionContext, tablename: String, colu
         Err(why) => {
             Err(anyhow!("unable to update ledger file because: {}", why))
         }
-    }
+    }*/
+    Err(anyhow!("unable to update ledger file - needs implementation"))
 }
 
 pub fn update_system_table_in_mem(id: i64, db_name: Arc<str>, table_name:Arc<str>, table_uuid: String) -> anyhow::Result<()> {

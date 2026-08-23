@@ -1,8 +1,8 @@
 use std::cmp::Ordering;
-use std::fmt::Debug;
+use std::fmt::{Debug, Formatter};
 use std::sync::{Arc, Mutex};
 use crate::database::datatype::DataType;
-use crate::database::memstruct::MemoryStructure;
+use crate::database::memstruct::{IndexValue, MemoryStructure, RowId};
 
 pub type Link<K, V, const MAX_KEYS: usize> = Arc<Mutex<Node<K, V, MAX_KEYS>>>;
 
@@ -32,25 +32,33 @@ pub struct BPlusTree<K, V, const MAX_KEYS: usize = 64> {
     pub len: usize,
 }
 
+
+
 //This function is the one we should use
-impl<K, V, const MAX_KEYS: usize, VAL, KEY> MemoryStructure<VAL, KEY> for BPlusTree<K, V, MAX_KEYS> {
-    fn create(&self) -> Self {
+impl<K, V, const MAX_KEYS: usize> MemoryStructure for BPlusTree<K, V, MAX_KEYS>
+where
+    K: Clone + Debug + Send + Sync + 'static,
+    V: Clone + Debug + Send + Sync + 'static,
+{
+    fn insert(&mut self, value: IndexValue, id: RowId) {
         todo!()
     }
 
-    fn insert(&mut self, value: VAL, id: KEY) {
+
+    fn retrieve_by_other(&self, key: &IndexValue) -> Vec<RowId> {
         todo!()
     }
 
-    fn retrieve_values(&self, id: KEY) -> VAL{
+    fn retrieve_by_i64(&self, id: RowId) -> Vec<IndexValue> {
         todo!()
     }
 
-    fn retrieve_keys(&self, value: KEY) -> Vec<KEY> {
+    fn delete(&mut self, id: RowId) {
         todo!()
     }
 
-    fn delete(&mut self, id: KEY) {
+
+    fn clone_box(&self) -> Box<dyn MemoryStructure> {
         todo!()
     }
 }

@@ -1,15 +1,15 @@
 use crate::command::constraint::Constraint;
 use crate::command::createtable::ForeignKeyToken;
 use crate::command::sqlcommands::SqlCommand;
-use crate::database::bptree::BPlusTree;
 use crate::database::datatype::DataType;
 use crate::server::dbmem::DbMem;
 use crate::server::queue::TransactionContext;
-use std::error::Error;
 use std::{fmt};
 use uuid::Uuid;
+use crate::database::mapstructure::HashmapStructure;
+use crate::database::memstruct::MemoryStructure;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Row {
     pub data: Vec<DataType>,
 }
@@ -20,7 +20,8 @@ pub struct Table {
     pub db_name: String,
     pub table_name: String,
     pub mtd_path: String,
-    pub tree: BPlusTree<i64, Vec<DataType>, 3>,
+    pub data: HashmapStructure,
+    pub index_structures: Vec<Box<dyn MemoryStructure>>,
     pub column_names: Vec<String>,
     pub column_types: Vec<DataType>,
     pub constraint: Vec<(u32, Constraint)>,
@@ -29,48 +30,30 @@ pub struct Table {
 
 impl fmt::Display for Table {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let table_name = &self.table_name;
-        write!(f, "Something went wrong with table: {table_name}")
+        write!(f, "Something went wrong with table: {}", self.table_name)
     }
 }
 
-impl Error for Table {}
-
 impl Table {
-    pub fn default() -> Self {
-        Table {
-            max_id: 0,
-            db_name: "".to_string(),
-            table_name: "".to_string(),
-            tree: Default::default(),
-            mtd_path: Default::default(),
-            column_names: vec![],
-            column_types: vec![],
-            foreign_keys: vec![],
-            constraint: vec![],
-        }
-    }
-
     pub fn new(
         max_id: i64,
         db_name: String,
         table_name: String,
-        tree: BPlusTree<i64, Vec<DataType>, 3>,
-        uuid: Uuid,
+        data: HashmapStructure,
+        index_structures: Vec<Box<dyn MemoryStructure>>,
         mtd_path: String,
         column_names: Vec<String>,
         column_types: Vec<DataType>,
         constraint: Vec<(u32, Constraint)>,
         foreign_keys: Vec<ForeignKeyToken>,
-    ) -> Table {
-        // todo check if there are duplicates in the names
-
-        Table {
+    ) -> Self {
+        Self {
             max_id,
             db_name,
             table_name,
-            tree,
             mtd_path,
+            data,
+            index_structures,
             column_names,
             column_types,
             constraint,
@@ -84,7 +67,8 @@ impl Table {
     }
 }
 
-pub fn create_table_in_mem(mut tp: TransactionContext) -> anyhow::Result<TransactionContext> {
+
+/*pub fn create_table_in_mem(mut tp: TransactionContext) -> anyhow::Result<TransactionContext> {
     match tp.command.clone() {
         SqlCommand::CreateTable {
             table,
@@ -96,12 +80,13 @@ pub fn create_table_in_mem(mut tp: TransactionContext) -> anyhow::Result<Transac
             let datatypes: Vec<DataType> = parse_to_datatypes(columns.clone());
             let constraints: Vec<(u32, Constraint)> = parse_to_constraints(columns.clone());
 
-            let tree: BPlusTree<i64, Vec<DataType>, 3> = BPlusTree::default();
+
             let table = Table::new(
                 0,
                 tp.db_name.clone(),
                 table,
-                tree,
+                HashmapStructure::create(),
+                vec![],
                 tp.table_uuid,
                 "".to_string(),
                 column_names,
@@ -116,7 +101,7 @@ pub fn create_table_in_mem(mut tp: TransactionContext) -> anyhow::Result<Transac
     }
     tp.is_btree_updated = true;
     Ok(tp)
-}
+}*/
 
 fn parse_to_constraints(columns: Vec<(String, DataType, Vec<Constraint>)>) -> Vec<(u32, Constraint)> {
     let mut result:Vec<(u32, Constraint)> = vec![];

@@ -7,8 +7,10 @@ use std::io::{BufReader, BufWriter, Error, ErrorKind, Read, Seek, SeekFrom, Writ
 use anyhow::anyhow;
 use log::error;
 
-pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
-    let mut table = Table::default();
+pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error>
+{
+    panic!("Reimplement");
+/*    let mut table = Table::default();
     let mut tree: BPlusTree<i64, Vec<DataType>, 3> = BPlusTree::default();
     table.db_name = mtd.dbname.clone();
     table.table_name = mtd.tablename.clone();
@@ -207,8 +209,9 @@ pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
 
         tree.insert(row_id, row);
     }
-    table.tree = tree;
-    Ok(table)
+    //TODO TODO TODO
+    //TODO insert row into map structure
+    Ok(table)*/
 }
 
 pub fn get_max_id(path:& str) -> i64{
@@ -706,9 +709,9 @@ mod tests {
 
     #[test]
     fn test_read_moi_file() {
-        let foo = read_mtd_file("C:\\MiaSql\\system\\database.mtd");
+/*        let foo = read_mtd_file("C:\\MiaSql\\system\\database.mtd");
         let bar = load_moi_file(&foo);
-        println!("{:?}", bar.unwrap())
+        println!("{:?}", bar.unwrap())*/
     }
 
 

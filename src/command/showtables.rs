@@ -5,7 +5,8 @@ use crate::database::table::Row;
 use crate::server::dbmem::DbMem;
 
 pub fn show_table(dbname: &str, tablename: &str) -> anyhow::Result<ResultSet, Error>{
-    let mut result:ResultSet = ResultSet::create();
+    panic!("Needs new implementation");
+/*    let mut result:ResultSet = ResultSet::create();
     if let Some(table_arc) = DbMem::find_table_in_mem(dbname, tablename) {
         let table_guard = table_arc.lock().unwrap();
         let tree = &table_guard.tree;
@@ -33,5 +34,5 @@ pub fn show_table(dbname: &str, tablename: &str) -> anyhow::Result<ResultSet, Er
         }
     }
 
-    anyhow::Ok(result)
+    anyhow::Ok(result)*/
 }
