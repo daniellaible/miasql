@@ -127,6 +127,7 @@ pub fn insert_into(
                 DataType::DateTime(_) => DataType::DateTime(raw.parse::<u64>()?),
                 DataType::Null => DataType::Null,
                 DataType::Undefined => DataType::Undefined,
+                DataType::Enum(_, _) => todo!(),
             };
             typed_data.push_back(dt);
         }

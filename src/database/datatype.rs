@@ -16,6 +16,7 @@ pub enum DataType {
     Date (u64),
     Time (u64),
     DateTime (u64),
+    Enum(String, Vec<String>),
     Null,
     Undefined,
 }
@@ -53,6 +54,9 @@ impl fmt::Display for DataType {
             }
             DataType::DateTime(d) => {
                 write!(f, "{:?}", d)
+            }
+            DataType::Enum(actual, possibilities) => {
+                write!(f, "{:?} within {:?}", actual, possibilities)
             }
             DataType::Null => {
                 write!(f, "NULL" )

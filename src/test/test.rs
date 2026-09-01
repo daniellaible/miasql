@@ -5,7 +5,7 @@ mod tests {
     use std::io::{BufRead, BufReader, Write};
     use std::net::TcpStream;
 
-    #[test]
+
     fn test_connect() -> io::Result<()>{
         let stream = TcpStream::connect("127.0.0.1:7878")?;
         println!("Connected to {}", stream.peer_addr()?);

@@ -44,12 +44,11 @@ where
         todo!()
     }
 
-
     fn retrieve_by_other(&self, key: &IndexValue) -> Vec<RowId> {
         todo!()
     }
 
-    fn retrieve_by_i64(&self, id: RowId) -> Vec<IndexValue> {
+    fn retrieve_by_u64(&self, id: RowId) -> Vec<IndexValue> {
         todo!()
     }
 
@@ -57,6 +56,7 @@ where
         todo!()
     }
 
+    fn kind(&self) -> &'static str { "btree" }
 
     fn clone_box(&self) -> Box<dyn MemoryStructure> {
         todo!()

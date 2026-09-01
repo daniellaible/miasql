@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::database::bptree::BPlusTree;
 use crate::database::datatype::DataType;
 use crate::database::table::{Row, Table};
@@ -6,29 +7,42 @@ use std::fs::{File, OpenOptions};
 use std::io::{BufReader, BufWriter, Error, ErrorKind, Read, Seek, SeekFrom, Write};
 use anyhow::anyhow;
 use log::error;
+use crate::database::boolstructure::BooleanStructure;
+use crate::database::emptymemstructure::EmptyMemStructure;
+use crate::database::mapstructure::HashmapStructure;
+use crate::database::memstruct::{IndexValue, MemoryStructure, RowId};
 
 pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error>
 {
-    panic!("Reimplement");
-/*    let mut table = Table::default();
-    let mut tree: BPlusTree<i64, Vec<DataType>, 3> = BPlusTree::default();
-    table.db_name = mtd.dbname.clone();
-    table.table_name = mtd.tablename.clone();
-    table.column_names = mtd.column_names.clone();
-    table.column_types = mtd.column_type_definitions.clone();
-    table.constraint = mtd.column_constraints.clone();
+    let hashmap: HashmapStructure = HashmapStructure{
+        data: HashMap::new(),
+    };
+    let index_structures: Vec<Box<dyn MemoryStructure>> = Vec::new();
+    let mut table = Table::new(
+        0,
+        mtd.dbname.clone(),
+        mtd.tablename.clone(),
+        "".to_string(),
+        hashmap,
+        index_structures,
+        mtd.column_names.clone(),
+        mtd.column_type_definitions.clone(),
+        mtd.column_constraints.clone(),
+        vec![]
+    );
 
     let column_defs = &mtd.column_type_definitions;
+    create_index_structures(&mut table);
     let moi_file = &mtd.moi_files[0];
 
-    let mut i64_buffer = [0u8; std::mem::size_of::<i64>()];
-    let mut u64_buffer = [0u8; std::mem::size_of::<u64>()];
-    let mut f64_buffer = [0u8; std::mem::size_of::<f64>()];
-    let mut i32_buffer = [0u8; std::mem::size_of::<i32>()];
-    let mut f32_buffer = [0u8; std::mem::size_of::<f32>()];
-    let mut i16_buffer = [0u8; std::mem::size_of::<i16>()];
-    let mut i8_buffer = [0u8; std::mem::size_of::<i8>()];
-    let mut u8_buffer = [0u8; std::mem::size_of::<u8>()];
+    let mut i64_buffer = [0u8; size_of::<i64>()];
+    let mut u64_buffer = [0u8; size_of::<u64>()];
+    let mut f64_buffer = [0u8; size_of::<f64>()];
+    let mut i32_buffer = [0u8; size_of::<i32>()];
+    let mut f32_buffer = [0u8; size_of::<f32>()];
+    let mut i16_buffer = [0u8; size_of::<i16>()];
+    let mut i8_buffer = [0u8; size_of::<i8>()];
+    let mut u8_buffer = [0u8; size_of::<u8>()];
 
     let mut input = BufReader::new(File::open(moi_file).expect("Failed to open file"));
 
@@ -195,7 +209,7 @@ pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error>
                     row.push(DataType::Time(datetime));
                 }
                 _ => {
-                    //return Err(Error::new(ErrorKind::InvalidData, "Unable to parse data from moi file"));
+                    return Err(Error::new(ErrorKind::InvalidData, "Unable to parse data from moi file"));
                 }
             }
         }
@@ -207,11 +221,67 @@ pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error>
             _ => { -1 }
         };
 
-        tree.insert(row_id, row);
+        let datarow = Row{
+            data: row,
+        };
+        let save_row:IndexValue = IndexValue::Row(datarow);
+        let data_id:RowId = row_id as RowId;
+        table.data.insert(save_row,data_id);
     }
-    //TODO TODO TODO
-    //TODO insert row into map structure
-    Ok(table)*/
+    Ok(table)
+}
+
+fn create_index_structures(table: &mut Table) -> &mut Table {
+    let columntypes = &table.column_types;
+    let mut indexstructures = &mut table.index_structures;
+    let mut counter = 0;
+    for columntype in columntypes.iter(){
+        match columntype {
+            DataType::BigInt(_) => {
+                indexstructures.insert(counter, Box::new(BPlusTree::<i64, Vec<i64>, 3 >::default())  );
+            }
+            DataType::Int(_) => {
+                indexstructures.insert(counter, Box::new(BPlusTree::<i32, Vec<i64>, 3 >::default())  );
+            }
+            DataType::SmallInt(_) => {
+                indexstructures.insert(counter, Box::new(BPlusTree::<i16, Vec<i64>, 3 >::default())  );
+            }
+            DataType::TinyInt(_) => {
+                indexstructures.insert(counter, Box::new(BPlusTree::<i8, Vec<i64>, 3 >::default())  );
+            }
+            DataType::Decimal(_) => {
+                //indexstructures.insert(counter, Box::new(BPlusTree::<f32, Vec<i64>, 3 >::default())  );
+            }
+            DataType::Float(_) => {}
+            DataType::VarChar(_, _) => {}
+            DataType::Bool(_) => {
+                indexstructures.insert(counter, Box::new(BooleanStructure::default())  );
+            }
+            DataType::Date(_) => {
+                indexstructures.insert(counter,  Box::new(BPlusTree::<u64, Vec<i64>, 3 >::default())  );
+            }
+            DataType::Time(_) => {
+                indexstructures.insert(counter,  Box::new(BPlusTree::<u64, Vec<i64>, 3 >::default())  );
+            }
+            DataType::DateTime(_) => {
+                indexstructures.insert(counter,  Box::new(BPlusTree::<u64, Vec<i64>, 3 >::default())  );
+            }
+            DataType::Enum(act, pos) => {
+                panic!("We need to implement the enum structure");
+                indexstructures.insert(counter,  Box::new(BPlusTree::<u64, Vec<i64>, 3 >::default())  );
+            }
+            DataType::Null => {
+                indexstructures.insert(counter, Box::new(EmptyMemStructure::default())  );
+            }
+            DataType::Undefined => {
+                indexstructures.insert(counter, Box::new(EmptyMemStructure::default())  );
+            }
+        }
+        counter += 1;
+    }
+
+
+    table
 }
 
 pub fn get_max_id(path:& str) -> i64{
@@ -709,9 +779,9 @@ mod tests {
 
     #[test]
     fn test_read_moi_file() {
-/*        let foo = read_mtd_file("C:\\MiaSql\\system\\database.mtd");
+        let foo = read_mtd_file("C:\\MiaSql\\system\\database.mtd");
         let bar = load_moi_file(&foo);
-        println!("{:?}", bar.unwrap())*/
+        println!("{:?}", bar.unwrap())
     }
 
 

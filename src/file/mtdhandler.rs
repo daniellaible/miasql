@@ -239,6 +239,7 @@ pub fn new_mtd_file(
                     DataType::Date(_) => "Date",
                     DataType::Time(_) => "Time",
                     DataType::DateTime(_) => "DateTime",
+                    DataType::Enum(_,_) => "Enum",
                     DataType::Null => "Null",
                     DataType::Undefined => "Undefined",
                 };

@@ -1,7 +1,5 @@
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
-use crate::database::datatype::DataType;
 use crate::database::memstruct::{IndexValue, MemoryStructure, RowId};
-use crate::database::table::Row;
 
 // This holds two vectors with the ids of the rows
 // The pos vector stores the ids of true values and the neg vector does the same with false values
@@ -12,8 +10,6 @@ pub struct BooleanStructure {
 }
 
 impl MemoryStructure for BooleanStructure {
-
-
     fn insert(&mut self, value: IndexValue, id: RowId) {
         match value {
             IndexValue::Bool(true) => self.pos.push(id),
@@ -33,7 +29,7 @@ impl MemoryStructure for BooleanStructure {
 
     //this here needs the boolean value to be a number
     // 1 = true else false
-    fn retrieve_by_i64(&self, id: RowId) -> Vec<IndexValue> {
+    fn retrieve_by_u64(&self, id: RowId) -> Vec<IndexValue> {
         let mut out = Vec::new();
         if self.pos.contains(&id) {
             out.push(IndexValue::Bool(true));
@@ -52,6 +48,8 @@ impl MemoryStructure for BooleanStructure {
             self.neg.remove(i);
         }
     }
+
+    fn kind(&self) -> &'static str { "bool" }
 
     fn clone_box(&self) -> Box<dyn MemoryStructure> {
         Box::new(self.clone())

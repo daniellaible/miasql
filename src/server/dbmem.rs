@@ -1,10 +1,10 @@
-use crate::database::bptree::{ Node};
+use crate::database::bptree::Node;
 use crate::database::datatype::DataType;
-use crate::database::table::{Table};
+use crate::database::table::Table;
 use crate::file::moihandler::load_moi_file;
 use crate::file::mtdhandler::read_mtd_file;
 use crate::server::tools::{clean_string, datatype_to_string_uppercase, remove_double_slash};
-use anyhow::{Result, anyhow, Error};
+use anyhow::{Error, Result, anyhow};
 use log::{error, info};
 use std::sync::{Arc, LazyLock, Mutex};
 
@@ -22,7 +22,7 @@ static DBS: LazyLock<Mutex<DbMem>> = LazyLock::new(|| Mutex::new(DbMem { tables:
 impl DbMem {
     /// This starts a new instance of the in-memory system of the database.
     /// There always should be max 1 of those instances
-    /// This function is triggered when this program starts
+    /// This function is triggered when the db engine starts
     pub fn init() {
         let mut dbs = DBS.lock().unwrap();
         dbs.tables = Vec::new();
@@ -53,28 +53,18 @@ impl DbMem {
         None
     }
 
-    //TODO needs to be newly implemented
     pub fn load_table_from_system_tables(dbname: &str, tablename: &str) -> Result<String, Error> {
-        panic!("! needs new implementation");
-/*        match Self::find_table_in_mem("system", "tables") {
+        match Self::find_table_in_mem("system", "tables") {
             None => {
                 panic!("System table can not be found");
             }
             Some(system_table) => {
-                let tree = &system_table.lock().unwrap().tree;
-                let link_left = tree.leftmost_leaf(tree.root.clone());
-                let guard = link_left.lock().unwrap();
-                let Node::Leaf(leaf) = &*guard else {
-                    unreachable!("leaf.next must point to a leaf")
-                };
-                let rows = tree.leaf_walker_rows(leaf.clone())?;
-                for i in 0..rows.len() {
-                    let row = &rows[i];
-
-                    let mut dbname_in_system_table = datatype_to_string_uppercase(&row[1]);
+                let datatable = &system_table.lock().unwrap().data;
+                for (_, row) in datatable.data.iter() {
+                    let mut dbname_in_system_table = datatype_to_string_uppercase(&row.data[1]);
                     dbname_in_system_table = clean_string(dbname_in_system_table);
 
-                    let mut tablename_in_system_table = datatype_to_string_uppercase(&row[2]);
+                    let mut tablename_in_system_table = datatype_to_string_uppercase(&row.data[2]);
                     tablename_in_system_table = clean_string(tablename_in_system_table);
 
                     let mut temp_dbname = dbname.to_string();
@@ -88,7 +78,7 @@ impl DbMem {
                     if dbname_in_system_table == temp_dbname
                         && tablename_in_system_table == temp_tablename
                     {
-                        let path = remove_double_slash(clean_string(row[3].to_string()));
+                        let path = remove_double_slash(clean_string(row.data[3].to_string()));
                         let mdtfile = read_mtd_file(path.as_str());
                         let table_result = load_moi_file(&mdtfile);
                         match table_result {
@@ -106,40 +96,32 @@ impl DbMem {
                 }
             }
         }
-        Err(anyhow!("Unable to load table from system"))*/
+        Err(anyhow!("Unable to load table from system"))
     }
 
-    //load a given table into RAM
+    //load a given database into RAM
     pub fn load_db_to_mem(db_name: &str) -> Result<()> {
-        panic!("needs new implementation");
-/*        match Self::find_table_in_mem("system", "tables") {
+        match Self::find_table_in_mem("system", "tables") {
             None => {
                 panic!("System table can not be found");
             }
             Some(table) => {
-                let tree = &table.lock().unwrap().tree;
-                let linky = tree.leftmost_leaf(tree.root.clone());
-                let guard = linky.lock().unwrap();
-                let Node::Leaf(leaf) = &*guard else {
-                    unreachable!("leaf.next must point to a leaf")
-                };
-                let rows = tree.leaf_walker_rows(leaf.clone())?;
-                for i in 0..rows.len() {
-                    let row = &rows[i];
+                let datamap = &table.lock().unwrap().data;
+                for (_, row) in datamap.data.iter() {
 
-                    let mut table_value_upper = datatype_to_string_uppercase(&row[1]);
+                    let mut table_value_upper = datatype_to_string_uppercase(&row.data[1]);
                     table_value_upper = clean_string(table_value_upper);
 
                     let mut db_name_as_upper = db_name.to_string().to_uppercase();
                     db_name_as_upper = clean_string(db_name_as_upper);
 
                     if table_value_upper == db_name_as_upper {
-                        let path = remove_double_slash(clean_string(row[3].to_string()));
+                        let path = remove_double_slash(clean_string(row.data[3].to_string()));
                         let mdtfile = read_mtd_file(path.as_str());
                         let table_result = load_moi_file(&mdtfile);
                         match table_result {
                             Ok(mut table) => {
-                                info!("Table {:?} added to DB", &table.table_name);
+                                println!("Table {:?} added to Memory", &table.table_name);
                                 table.mtd_path = path;
                                 Self::add_table(table);
                             }
@@ -151,14 +133,14 @@ impl DbMem {
                 }
             }
         }
-        Ok(())*/
+        Ok(())
     }
 
     /// This adds a row to a table in memory
     pub fn insert_row(db_name: &str, table_name: &str, data: Vec<DataType>) {
         panic!("needs new implementation");
         //Todo here we create our own id, if it is not given
-/*        let id = match data.first() {
+        /*        let id = match data.first() {
             Some(DataType::BigInt(n)) => *n,
             Some(_) => {
                 error!("insert_row: first element must be DataType::BigInt(id)");
@@ -244,10 +226,7 @@ fn check_datatypes() -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::database::table::Table;
-    use crate::server::dbmem::DbMem;
-
-/*    #[test]
+    /*    #[test]
     fn test_is_table_loaded_standard() {
         DbMem::init();
         let mut default_table = Table::default();
@@ -258,7 +237,7 @@ mod tests {
         assert_eq!(result, true);
     }*/
 
-/*    #[test]
+    /*    #[test]
     fn test_is_table_loaded_case() {
         DbMem::init();
         let mut default_table = Table::default();
@@ -269,7 +248,7 @@ mod tests {
         assert_eq!(result, true);
     }*/
 
-/*    #[test]
+    /*    #[test]
     fn test_is_table_loaded_bad_case() {
         DbMem::init();
         let mut default_table = Table::default();

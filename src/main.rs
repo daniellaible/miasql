@@ -15,6 +15,8 @@ mod database {
     pub mod memstruct;
     pub mod boolstructure;
     pub mod mapstructure;
+    pub mod emptymemstructure;
+    pub mod enumstructure;
 }
 
 /// # Parsing modules
@@ -78,8 +80,7 @@ fn import_system_tables() {
     let database_mtd: MtdFile = read_mtd_file("C:\\MiaSql\\system\\database.mtd");
     let tables_mtd: MtdFile = read_mtd_file("C:\\MiaSql\\system\\tables.mtd");
     let user_mtd: MtdFile = read_mtd_file("C:\\MiaSql\\system\\user.mtd");
-
-
+    
     let db_table:Table = file::moihandler::load_moi_file(&database_mtd).unwrap();
     let tables_table:Table = file::moihandler::load_moi_file(&tables_mtd).unwrap();
     let user_table: Table = file::moihandler::load_moi_file(&user_mtd).unwrap();
@@ -124,7 +125,7 @@ mod tests {
         let hours = 24;
         let days = 365;
         let millis_in_year = 1000 * seconds * minutes * hours * days;
-        println!("Wieviele Jahre braucht es für einen StackOverflow bei 1000 Einträgen/s : {}", max_id / millis_in_year);
+        println!("Wieviele Jahre braucht es für einen Overflow bei 1000 Einträgen/s : {}", max_id / millis_in_year);
     }
 }
 

@@ -19,7 +19,7 @@ pub struct Table {
     pub max_id: i64,
     pub db_name: String,
     pub table_name: String,
-    pub mtd_path: String,
+    pub mtd_path:String,
     pub data: HashmapStructure,
     pub index_structures: Vec<Box<dyn MemoryStructure>>,
     pub column_names: Vec<String>,
@@ -39,9 +39,10 @@ impl Table {
         max_id: i64,
         db_name: String,
         table_name: String,
+        mtd_path:String,
         data: HashmapStructure,
         index_structures: Vec<Box<dyn MemoryStructure>>,
-        mtd_path: String,
+
         column_names: Vec<String>,
         column_types: Vec<DataType>,
         constraint: Vec<(u32, Constraint)>,
@@ -59,6 +60,10 @@ impl Table {
             constraint,
             foreign_keys,
         }
+    }
+
+    pub fn add_index_structure<T: MemoryStructure + 'static>(&mut self, s: T) {
+        self.index_structures.push(Box::new(s));
     }
 
     pub fn inc_max_id(&mut self) -> i64 {
