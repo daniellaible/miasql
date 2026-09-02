@@ -455,7 +455,7 @@ mod tests {
     use sqlparser::dialect::GenericDialect;
     use sqlparser::parser::Parser;
     use crate::command::whereclause::WhereClause;
-    use crate::database::tabel::Tabel;
+    use crate::database::table::Table;
     use crate::file;
     use crate::file::mtdhandler::{read_mtd_file, MtdFile};
     use crate::server::dbmem::DbMem;

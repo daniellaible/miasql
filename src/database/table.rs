@@ -5,32 +5,49 @@ use std::{fmt};
 use crate::database::mapstructure::HashmapStructure;
 use crate::database::memstruct::MemoryStructure;
 
+/// This is a basic data structure for MiaSql. 
+/// It represents a row of a table.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Row {
     pub data: Vec<DataType>,
 }
 
+/// This is a basic data structure of MiaSql and it represents a table in memory.
+///  
 #[derive(Debug, Clone)]
-pub struct Tabel {
+pub struct Table {
+    /// stores the highest id in the table, so it gets easier to increase the id counter by 1
     pub max_id: i64,
+    /// each table belongs to a database. Tables can have the same name but be stored in different
+    ///     databases - hence it is good to know to which database the table belongs.
     pub db_name: String,
+    /// After all the table needs a name
     pub table_name: String,
+    /// The path tto the mtd file where the table specifications are stored
     pub mtd_path:String,
+    /// The main memory structure to retrieve a row by its id 
     pub data: HashmapStructure,
+    /// Each column has it's values indexed in appropriate memory structure - 
+    ///     all share the trait MemoryStructure 
     pub index_structures: Vec<Box<dyn MemoryStructure>>,
+    /// Each column has its name and it needs to be stored somewhere
     pub column_names: Vec<String>,
+    /// Each column has a column type ([DataType]) and it is stored right here
     pub column_types: Vec<DataType>,
+    /// Columns can have [Constraint]s - here they are
     pub constraint: Vec<(u32, Constraint)>,
+    /// Finally, columns can be of the type [ForeignKeyToken]
     pub foreign_keys: Vec<ForeignKeyToken>,
 }
 
-impl fmt::Display for Tabel {
+
+impl fmt::Display for Table {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Something went wrong with table: {}", self.table_name)
     }
 }
 
-impl Tabel {
+impl Table {
     pub fn new(
         max_id: i64,
         db_name: String,

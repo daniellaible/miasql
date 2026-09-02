@@ -1,6 +1,6 @@
 use log::info;
 use tokio::net::{TcpListener};
-use crate::database::tabel::Tabel;
+use crate::database::table::{Table};
 use crate::file::mtdhandler::{read_mtd_file, MtdFile};
 use crate::server::config::config::ConfigSingelton;
 use crate::server::config::configreader;
@@ -11,7 +11,7 @@ use crate::server::dbmem::DbMem;
 mod database {
     pub mod bptree;
     pub mod datatype;
-    pub mod tabel;
+    pub mod table;
     pub mod memstruct;
     pub mod boolstructure;
     pub mod mapstructure;
@@ -81,9 +81,9 @@ fn import_system_tables() {
     let tables_mtd: MtdFile = read_mtd_file("C:\\MiaSql\\system\\tables.mtd");
     let user_mtd: MtdFile = read_mtd_file("C:\\MiaSql\\system\\user.mtd");
     
-    let db_table: Tabel = file::moihandler::load_moi_file(&database_mtd).unwrap();
-    let tables_table: Tabel = file::moihandler::load_moi_file(&tables_mtd).unwrap();
-    let user_table: Tabel = file::moihandler::load_moi_file(&user_mtd).unwrap();
+    let db_table: Table = file::moihandler::load_moi_file(&database_mtd).unwrap();
+    let tables_table: Table = file::moihandler::load_moi_file(&tables_mtd).unwrap();
+    let user_table: Table = file::moihandler::load_moi_file(&user_mtd).unwrap();
 
     DbMem::init();
     DbMem::add_table(db_table);

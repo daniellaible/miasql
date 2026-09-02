@@ -6,16 +6,16 @@
 
 Introduction
 ------------
-To read a table from disc, there are three files needed.
-A moi-file stores the actual data of the table.
-A mtd-file stores the metadata of the table - the header of the table, constrains, etc.
-A mtl files stores the location of a row in the table on disc.
+To read a Table from disc, there are three files needed.
+A moi-file stores the actual data of the Table.
+A mtd-file stores the metadata of the Table - the header of the Table, constrains, etc.
+A mtl files stores the location of a row in the Table on disc.
 
 Mtl stands for Mia Table Locator.
 
-A mtl-file is used to store the location of a row in a table on disc.
+A mtl-file is used to store the location of a row in a Table on disc.
 Those files are build simple without any headers - they are supposed to be read easily and quickly.
-We use the mtl file to quickly access a certain row of the table if there
+We use the mtl file to quickly access a certain row of the Table if there
 is e.g. an alter statement issued.
 
 

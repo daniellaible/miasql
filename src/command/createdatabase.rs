@@ -1,6 +1,6 @@
 use crate::command::sqlcommands::SqlCommand;
 use crate::database::datatype::DataType;
-use crate::database::tabel::Row;
+use crate::database::table::Row;
 use crate::file;
 use crate::file::moihandler;
 use crate::server::dbmem::DbMem;

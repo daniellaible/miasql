@@ -1,14 +1,13 @@
 use std::fmt::Debug;
-use crate::database::tabel::Row;
+use crate::database::table::Row;
 
 /// A RowId is just a fancy way of saying that the ids have to be 0 or greater and that
-/// they are of 64bit wide.
+/// they are of 64-bit wide.
 pub type RowId = u64;
 
 /// When accessing different MemoryStructures like a tree [BPlusTree] or a hashmap [MapStructure]
 /// to manipulate data in memory, different datatypes are often used, although the intention
 /// of the trait is the same. This enum is used to keep the interface small.
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum IndexValue {
     Bool(bool),

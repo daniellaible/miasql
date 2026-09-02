@@ -1,7 +1,7 @@
 use anyhow::Error;
 use crate::command::resultset::ResultSet;
 use crate::database::bptree::Node;
-use crate::database::tabel::Row;
+use crate::database::table::Row;
 use crate::server::dbmem::DbMem;
 
 pub fn show_table(dbname: &str, tablename: &str) -> anyhow::Result<ResultSet, Error>{

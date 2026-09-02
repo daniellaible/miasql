@@ -1,6 +1,6 @@
 use crate::database::bptree::Node;
 use crate::database::datatype::DataType;
-use crate::database::tabel::Tabel;
+use crate::database::table::{Table};
 use crate::file::moihandler::load_moi_file;
 use crate::file::mtdhandler::read_mtd_file;
 use crate::server::tools::{clean_string, datatype_to_string_uppercase, remove_double_slash};
@@ -14,7 +14,7 @@ use std::sync::{Arc, LazyLock, Mutex};
 /// Vec[(Database_Name, Table_Name, Table)]
 #[derive(Debug)]
 pub struct DbMem {
-    pub tables: Vec<(String, String, Arc<Mutex<Tabel>>)>,
+    pub tables: Vec<(String, String, Arc<Mutex<Table>>)>,
 }
 
 static DBS: LazyLock<Mutex<DbMem>> = LazyLock::new(|| Mutex::new(DbMem { tables: vec![] }));
@@ -29,7 +29,7 @@ impl DbMem {
     }
 
     /// This adds a table to the in memory system of the database
-    pub fn add_table(table: Tabel) {
+    pub fn add_table(table: Table) {
         let mut dbs = DBS.lock().unwrap();
         dbs.tables.push((
             table.db_name.clone(),
@@ -39,7 +39,7 @@ impl DbMem {
     }
 
     //This finds you a certain table you might want to work with
-    pub fn find_table_in_mem(db_name: &str, table_name: &str) -> Option<Arc<Mutex<Tabel>>> {
+    pub fn find_table_in_mem(db_name: &str, table_name: &str) -> Option<Arc<Mutex<Table>>> {
         let dbs = DBS.lock().unwrap();
 
         for i in 0..dbs.tables.len() {

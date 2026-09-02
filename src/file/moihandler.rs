@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use crate::database::bptree::BPlusTree;
 use crate::database::datatype::DataType;
-use crate::database::tabel::{Row, Tabel};
+use crate::database::table::{Row, Table};
 use crate::file::mtdhandler::MtdFile;
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, BufWriter, Error, ErrorKind, Read, Seek, SeekFrom, Write};
@@ -13,13 +13,13 @@ use crate::database::enumstructure::EnumStructure;
 use crate::database::mapstructure::HashmapStructure;
 use crate::database::memstruct::{IndexValue, MemoryStructure, RowId};
 
-pub fn load_moi_file(mtd: &MtdFile) -> Result<Tabel, Error>
+pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error>
 {
     let hashmap: HashmapStructure = HashmapStructure{
         data: HashMap::new(),
     };
     let index_structures: Vec<Box<dyn MemoryStructure>> = Vec::new();
-    let mut table = Tabel::new(
+    let mut table = Table::new(
         0,
         mtd.dbname.clone(),
         mtd.tablename.clone(),
@@ -232,7 +232,7 @@ pub fn load_moi_file(mtd: &MtdFile) -> Result<Tabel, Error>
     Ok(table)
 }
 
-fn create_index_structures(table: &mut Tabel) -> &mut Tabel {
+fn create_index_structures(table: &mut Table) -> &mut Table {
     let columntypes = &table.column_types;
     let mut indexstructures = &mut table.index_structures;
     let mut counter = 0;

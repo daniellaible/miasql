@@ -3,7 +3,7 @@ use std::fmt::{Debug, Formatter};
 use std::sync::{Arc, Mutex};
 use crate::database::datatype::DataType;
 use crate::database::memstruct::{IndexValue, MemoryStructure, RowId};
-use crate::database::tabel::Row;
+use crate::database::table::Row;
 
 pub type Link<K, V, const MAX_KEYS: usize> = Arc<Mutex<Node<K, V, MAX_KEYS>>>;
 

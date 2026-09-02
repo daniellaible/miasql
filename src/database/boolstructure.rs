@@ -1,6 +1,6 @@
 //use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use crate::database::memstruct::{IndexValue, MemoryStructure, RowId};
-use crate::database::tabel::Row;
+use crate::database::table::Row;
 
 // This holds two vectors with the ids of the rows
 // The pos vector stores the ids of true values and the neg vector does the same with false values

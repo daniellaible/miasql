@@ -1,4 +1,4 @@
-use crate::database::tabel::Row;
+use crate::database::table::Row;
 
 #[derive(Debug)]
 pub struct ResultSet{

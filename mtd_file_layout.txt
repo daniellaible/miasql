@@ -57,14 +57,14 @@ columnTypeDefinition
 
 columnConstraints
 -----------------
-   This is an array of tuples. Each Tupel represents one constraint. The tuple is defined as follows:
+   This is an array of tuples. Each tupel represents one constraint. The tuple is defined as follows:
    (ColumnNo, Constraint)
    There can be multiple constraints for one column.
 
 
 displayOrder
 ------------
-   This is an array of tuples. Since the order of the columns is crutial for the correct behavior of the database engine,
+   This is an array of tuples. Since the order of the columns is crucial for the correct behavior of the database engine,
    a reordering of the columns is not desired. However, users often want to reorder the columns for a more convenient
    view on the data; therefore, this field is provided to allow the user to define the desired order.
 

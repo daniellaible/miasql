@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use crate::database::memstruct::{IndexValue, MemoryStructure, RowId};
-use crate::database::tabel::Row;
+use crate::database::table::Row;
 
 /// This struct saves a [Row] in a hashmap. The key to the row is the [RowId] - just a fancy name
 /// for an u64.
@@ -66,7 +66,7 @@ mod tests {
     use crate::database::datatype::DataType::{BigInt, Int};
     use crate::database::mapstructure::HashmapStructure;
     use crate::database::memstruct::{IndexValue, MemoryStructure};
-    use crate::database::tabel::Row;
+    use crate::database::table::Row;
 
 
     #[test]

@@ -1,5 +1,5 @@
 use crate::database::memstruct::{IndexValue, MemoryStructure, RowId};
-use crate::database::tabel::Row;
+use crate::database::table::Row;
 
 #[derive(Debug, Clone, Default)]
 pub struct EmptyMemStructure {
