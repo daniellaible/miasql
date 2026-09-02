@@ -1,9 +1,7 @@
-//! These are the datatypes we will support in the beginning
-
 use std::fmt;
 
+/// This enum describes the supported datatypes of MiaSql.
 #[derive(Clone, Debug, PartialEq)]
-
 pub enum DataType {
     BigInt (i64),
     Int (i32),

@@ -9,6 +9,7 @@ use anyhow::anyhow;
 use log::error;
 use crate::database::boolstructure::BooleanStructure;
 use crate::database::emptymemstructure::EmptyMemStructure;
+use crate::database::enumstructure::EnumStructure;
 use crate::database::mapstructure::HashmapStructure;
 use crate::database::memstruct::{IndexValue, MemoryStructure, RowId};
 
@@ -267,8 +268,7 @@ fn create_index_structures(table: &mut Table) -> &mut Table {
                 indexstructures.insert(counter,  Box::new(BPlusTree::<u64, Vec<i64>, 3 >::default())  );
             }
             DataType::Enum(act, pos) => {
-                panic!("We need to implement the enum structure");
-                indexstructures.insert(counter,  Box::new(BPlusTree::<u64, Vec<i64>, 3 >::default())  );
+                indexstructures.insert(counter, Box::new(EnumStructure::default()));
             }
             DataType::Null => {
                 indexstructures.insert(counter, Box::new(EmptyMemStructure::default())  );
