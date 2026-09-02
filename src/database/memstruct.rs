@@ -1,5 +1,5 @@
 use std::fmt::Debug;
-use crate::database::table::Row;
+use crate::database::tabel::Row;
 
 /// A RowId is just a fancy way of saying that the ids have to be 0 or greater and that
 /// they are of 64bit wide.
@@ -23,8 +23,8 @@ pub trait MemoryStructure: Debug + Send + Sync {
 
     /// Use this interface to add a new value to a memory structure
     fn insert(&mut self, value: IndexValue, id: RowId);
-    fn retrieve_by_other(&self, key: &IndexValue) -> Vec<RowId>;
-    fn retrieve_by_u64(&self, id: RowId) -> Vec<IndexValue>;
+    fn retrieve_range(&self, key: &IndexValue) -> Vec<RowId>;
+    fn retrieve_by_index(&self, id: RowId) -> Option<Row>;
     fn delete(&mut self, id: RowId);
     fn clone_box(&self) -> Box<dyn MemoryStructure>;
     fn kind(&self) -> &'static str;

@@ -2,7 +2,7 @@ use anyhow::{Error};
 use crate::command::resultset::ResultSet;
 use crate::command::sqlcommands::SqlCommand;
 use crate::database::bptree::Node;
-use crate::database::table::{Row};
+use crate::database::tabel::{Row};
 use crate::server::dbmem::DbMem;
 
 pub fn parse() -> SqlCommand {

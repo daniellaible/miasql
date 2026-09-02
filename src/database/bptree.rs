@@ -3,6 +3,7 @@ use std::fmt::{Debug, Formatter};
 use std::sync::{Arc, Mutex};
 use crate::database::datatype::DataType;
 use crate::database::memstruct::{IndexValue, MemoryStructure, RowId};
+use crate::database::tabel::Row;
 
 pub type Link<K, V, const MAX_KEYS: usize> = Arc<Mutex<Node<K, V, MAX_KEYS>>>;
 
@@ -26,13 +27,12 @@ pub struct LeafNode<K, V, const MAX_KEYS: usize> {
     pub next: Option<Link<K, V, MAX_KEYS>>,
 }
 
+/// We need to do some descriptive work over here
 #[derive(Clone, Debug)]
 pub struct BPlusTree<K, V, const MAX_KEYS: usize = 64> {
     pub root: Link<K, V, MAX_KEYS>,
     pub len: usize,
 }
-
-
 
 //This function is the one we should use
 impl<K, V, const MAX_KEYS: usize> MemoryStructure for BPlusTree<K, V, MAX_KEYS>
@@ -44,11 +44,11 @@ where
         todo!()
     }
 
-    fn retrieve_by_other(&self, key: &IndexValue) -> Vec<RowId> {
+    fn retrieve_range(&self, key: &IndexValue) -> Vec<RowId> {
         todo!()
     }
 
-    fn retrieve_by_u64(&self, id: RowId) -> Vec<IndexValue> {
+    fn retrieve_by_index(&self, id: RowId) -> Option<Row> {
         todo!()
     }
 

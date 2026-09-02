@@ -5,13 +5,13 @@ use std::{fmt};
 use crate::database::mapstructure::HashmapStructure;
 use crate::database::memstruct::MemoryStructure;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Row {
     pub data: Vec<DataType>,
 }
 
 #[derive(Debug, Clone)]
-pub struct Table {
+pub struct Tabel {
     pub max_id: i64,
     pub db_name: String,
     pub table_name: String,
@@ -24,13 +24,13 @@ pub struct Table {
     pub foreign_keys: Vec<ForeignKeyToken>,
 }
 
-impl fmt::Display for Table {
+impl fmt::Display for Tabel {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Something went wrong with table: {}", self.table_name)
     }
 }
 
-impl Table {
+impl Tabel {
     pub fn new(
         max_id: i64,
         db_name: String,

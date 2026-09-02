@@ -1,5 +1,6 @@
 //use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use crate::database::memstruct::{IndexValue, MemoryStructure, RowId};
+use crate::database::tabel::Row;
 
 // This holds two vectors with the ids of the rows
 // The pos vector stores the ids of true values and the neg vector does the same with false values
@@ -30,7 +31,7 @@ impl MemoryStructure for BooleanStructure {
 
     /// This function returns a list of [RowId]s depending on the provided key.
     /// The key needs to be of IndexValue::Bool otherwise an empyt vector is returned.
-    fn retrieve_by_other(&self, key: &IndexValue) -> Vec<RowId> {
+    fn retrieve_range(&self, key: &IndexValue) -> Vec<RowId> {
         match key {
             IndexValue::Bool(true) => self.pos.clone(),
             IndexValue::Bool(false) => self.neg.clone(),
@@ -43,7 +44,7 @@ impl MemoryStructure for BooleanStructure {
     /// If you need to access a column value by id, it is faster to access the hashmap that contains
     /// the row instead of scanning both vectors completely. Therefore, to prevent misuse of this function,
     /// the engine panics.
-    fn retrieve_by_u64(&self, id: RowId) -> Vec<IndexValue> {
+    fn retrieve_by_index(&self, id: RowId) -> Option<Row> {
         panic!("This function should not be used in this context");
     }
 
@@ -81,13 +82,13 @@ mod tests {
         };
         insert_helper(&mut boolean_structure);
 
-        let all_trues = boolean_structure.retrieve_by_other(&IndexValue::Bool(true));
-        let all_false = boolean_structure.retrieve_by_other(&IndexValue::Bool(false));
+        let all_trues = boolean_structure.retrieve_range(&IndexValue::Bool(true));
+        let all_false = boolean_structure.retrieve_range(&IndexValue::Bool(false));
         assert_eq!(all_trues.len(), 3);
         assert_eq!(all_false.len(), 4);
 
         boolean_structure.delete(4);
-        let all_false = boolean_structure.retrieve_by_other(&IndexValue::Bool(false));
+        let all_false = boolean_structure.retrieve_range(&IndexValue::Bool(false));
         assert_eq!(all_false.len(), 3);
     }
 
@@ -110,7 +111,7 @@ mod tests {
         insert_helper(&mut boolean_structure);
         boolean_structure.delete(1);
         boolean_structure.delete(2);
-        let all_trues = boolean_structure.retrieve_by_other(&IndexValue::Bool(true));
+        let all_trues = boolean_structure.retrieve_range(&IndexValue::Bool(true));
         assert_eq!(all_trues.len(), 1);
     }
 
@@ -122,8 +123,8 @@ mod tests {
         };
         insert_helper(&mut boolean_structure);
         boolean_structure.delete(10);
-        let all_trues = boolean_structure.retrieve_by_other(&IndexValue::Bool(true));
-        let all_false = boolean_structure.retrieve_by_other(&IndexValue::Bool(false));
+        let all_trues = boolean_structure.retrieve_range(&IndexValue::Bool(true));
+        let all_false = boolean_structure.retrieve_range(&IndexValue::Bool(false));
         assert_eq!(all_trues.len(), 3);
         assert_eq!(all_false.len(), 4);
     }

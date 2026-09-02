@@ -1,7 +1,7 @@
 use std::arch::x86_64::_mm256_mask_cmp_epi16_mask;
 use crate::command::sqlcommands::SqlCommand;
 use crate::database::datatype::DataType;
-use crate::database::table::{Row, Table};
+use crate::database::tabel::{Row, Tabel};
 use crate::file;
 use crate::server::dbmem::DbMem;
 use crate::server::queue::TransactionContext;

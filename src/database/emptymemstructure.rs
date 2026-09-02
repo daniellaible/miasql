@@ -1,4 +1,5 @@
 use crate::database::memstruct::{IndexValue, MemoryStructure, RowId};
+use crate::database::tabel::Row;
 
 #[derive(Debug, Clone, Default)]
 pub struct EmptyMemStructure {
@@ -10,11 +11,11 @@ impl MemoryStructure for EmptyMemStructure {
         panic!("This function should not be called in this context");
     }
 
-    fn retrieve_by_other(&self, key: &IndexValue) -> Vec<RowId> {
+    fn retrieve_range(&self, key: &IndexValue) -> Vec<RowId> {
         panic!("This function should not be called in this context");
     }
 
-    fn retrieve_by_u64(&self, id: RowId) -> Vec<IndexValue> {
+    fn retrieve_by_index(&self, id: RowId) -> Option<Row> {
         panic!("This function should not be called in this context");
     }
 

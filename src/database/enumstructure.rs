@@ -1,4 +1,5 @@
 use crate::database::memstruct::{IndexValue, MemoryStructure, RowId};
+use crate::database::tabel::Row;
 
 #[derive(Debug, Clone, Default)]
 pub struct EnumStructure {
@@ -24,7 +25,7 @@ impl MemoryStructure for EnumStructure {
         }
     }
 
-    fn retrieve_by_other(&self, key: &IndexValue) -> Vec<RowId> {
+    fn retrieve_range(&self, key: &IndexValue) -> Vec<RowId> {
         match key {
             IndexValue::Text(ident) => {
                 for i in self.values.len().. {
@@ -42,7 +43,7 @@ impl MemoryStructure for EnumStructure {
         }
     }
 
-    fn retrieve_by_u64(&self, id: RowId) -> Vec<IndexValue> {
+    fn retrieve_by_index(&self, id: RowId) -> Option<Row> {
         panic!("EnumStructure uses retrieve_by_other function to access the data")
     }
 
