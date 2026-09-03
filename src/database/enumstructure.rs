@@ -1,4 +1,6 @@
 use log::error;
+use rayon::iter::IntoParallelRefIterator;
+use rayon::prelude::*;
 use crate::database::mapstructure::HashmapStructure;
 use crate::database::memstruct::{IndexValue, MemoryStructure, RowId};
 use crate::database::table::Row;
@@ -70,14 +72,25 @@ impl MemoryStructure for EnumStructure {
         panic!("EnumStructure uses retrieve_range function to access the data")
     }
 
+    /// This deletes an element([RowId]) from one of the vectors
     fn delete(&mut self, id: RowId) {
-
+        self.values
+            .par_iter_mut()
+            .for_each(|(_, row_ids)| {
+                *row_ids = row_ids
+                    .par_iter()
+                    .cloned()
+                    .filter(|row_id| *row_id != id)
+                    .collect();
+            });
     }
 
+    /// This is needed for the clone trait
     fn clone_box(&self) -> Box<dyn MemoryStructure> {
         Box::new(self.clone())
     }
 
+    /// Returns the type of [MemoryStructure] this is. It is, of course, "enum".
     fn kind(&self) -> &'static str { "enum" }
 }
 
@@ -158,6 +171,15 @@ mod tests {
         assert_eq!(result_high.len(), 3);
         assert_eq!(result_medium.len(), 2);
         assert_eq!(result_low.len(), 2);
+    }
+
+    #[test]
+    fn delete_test(){
+        let mut enum_struct = insert();
+        enum_struct.delete(1);
+        let high_result = &enum_struct.values[0];
+        let ids = &high_result.1;
+        assert_eq!(ids.len(), 2);
     }
 
     fn insert() -> EnumStructure{

@@ -37,11 +37,13 @@ pub struct BPlusTree<K, V, const MAX_KEYS: usize = 64> {
 //This function is the one we should use
 impl<K, V, const MAX_KEYS: usize> MemoryStructure for BPlusTree<K, V, MAX_KEYS>
 where
-    K: Clone + Debug + Send + Sync + 'static,
+    K: Ord + Clone + Debug + Send + Sync + 'static,
     V: Clone + Debug + Send + Sync + 'static,
 {
     fn insert(&mut self, value: IndexValue, id: RowId) {
-        todo!()
+
+        let _ = self.insert_into_tree(id, value);
+
     }
 
     fn retrieve_range(&self, key: &IndexValue) -> Vec<RowId> {
@@ -114,7 +116,7 @@ where
     }
 
     /// Insert key/value. Returns previous value if key existed.
-    pub fn insert(&mut self, key: K, value: V) -> Option<V> {
+    pub fn insert_into_tree(&mut self, key: K, value: V) -> Option<V> {
         let mut path = Vec::<(Link<K, V, MAX_KEYS>, usize)>::new();
         let leaf = self.find_leaf_with_path(self.root.clone(), &key, &mut path);
 
@@ -875,11 +877,11 @@ mod tests {
         let mut t: BPlusTree<i32, String, 4> = BPlusTree::default();
 
         assert!(t.is_empty());
-        t.insert(10, "a".into());
-        t.insert(20, "b".into());
-        t.insert(30, "c".into());
-        t.insert(40, "d".into());
-        t.insert(50, "e".into());
+        t.insert_into_tree(10, "a".into());
+        t.insert_into_tree(20, "b".into());
+        t.insert_into_tree(30, "c".into());
+        t.insert_into_tree(40, "d".into());
+        t.insert_into_tree(50, "e".into());
 
         assert_eq!(t.get(&10).as_deref(), Some("a"));
         assert_eq!(t.get(&35), None);
@@ -902,7 +904,7 @@ mod tests {
 
         // Insert a bunch of keys to create a multi-level tree.
         for k in 0..200 {
-            assert_eq!(t.insert(k, k * 10), None);
+            assert_eq!(t.insert_into_tree(k, k * 10), None);
         }
         assert_eq!(t.len(), 200);
         t.validate();
@@ -957,12 +959,12 @@ mod tests {
     fn insert_replaces_existing_value_and_len_stable() {
         let mut t: BPlusTree<i32, String, 4> = BPlusTree::default();
 
-        assert_eq!(t.insert(10, "a".into()), None);
+        assert_eq!(t.insert_into_tree(10, "a".into()), None);
         assert_eq!(t.len(), 1);
         assert_eq!(t.get(&10).as_deref(), Some("a"));
 
         // Replace
-        assert_eq!(t.insert(10, "b".into()).as_deref(), Some("a"));
+        assert_eq!(t.insert_into_tree(10, "b".into()).as_deref(), Some("a"));
         assert_eq!(t.len(), 1);
         assert_eq!(t.get(&10).as_deref(), Some("b"));
 
@@ -974,7 +976,7 @@ mod tests {
         let mut t: BPlusTree<i32, i32, 4> = BPlusTree::default();
 
         for k in 0..1000 {
-            assert_eq!(t.insert(k, k * 2), None);
+            assert_eq!(t.insert_into_tree(k, k * 2), None);
         }
         assert_eq!(t.len(), 1000);
 
@@ -994,7 +996,7 @@ mod tests {
         let mut t: BPlusTree<i32, i32, 4> = BPlusTree::default();
 
         for k in (0..500).rev() {
-            assert_eq!(t.insert(k, k + 1), None);
+            assert_eq!(t.insert_into_tree(k, k + 1), None);
         }
         assert_eq!(t.len(), 500);
 
@@ -1016,8 +1018,8 @@ mod tests {
         for i in 0..200 {
             let a = i;
             let b = 10_000 - i;
-            assert_eq!(t.insert(a, a * 10), None);
-            assert_eq!(t.insert(b, b * 10), None);
+            assert_eq!(t.insert_into_tree(a, a * 10), None);
+            assert_eq!(t.insert_into_tree(b, b * 10), None);
         }
         assert_eq!(t.len(), 400);
 
@@ -1043,7 +1045,7 @@ mod tests {
         let mut t: BPlusTree<i32, i32, 4> = BPlusTree::default();
 
         for k in 0..100 {
-            t.insert(k, k);
+            t.insert_into_tree(k, k);
         }
 
         // [10, 20) => 10..=19
@@ -1069,7 +1071,7 @@ mod tests {
         let mut t: BPlusTree<i32, i32, 4> = BPlusTree::default();
 
         for k in 0..50 {
-            t.insert(k, k);
+            t.insert_into_tree(k, k);
         }
         let before = t.len();
 
@@ -1085,7 +1087,7 @@ mod tests {
         let mut t: BPlusTree<i32, i32, 4> = BPlusTree::default();
 
         for k in 0..200 {
-            t.insert(k, k * 3);
+            t.insert_into_tree(k, k * 3);
         }
         t.validate();
 
@@ -1117,7 +1119,7 @@ mod tests {
         let mut t: BPlusTree<i32, i32, 4> = BPlusTree::default();
 
         for k in 0..200 {
-            t.insert(k, k * 5);
+            t.insert_into_tree(k, k * 5);
         }
         t.validate();
 
@@ -1144,7 +1146,7 @@ mod tests {
         let mut t: BPlusTree<i32, i32, 4> = BPlusTree::default();
 
         for k in 0..120 {
-            t.insert(k, k);
+            t.insert_into_tree(k, k);
         }
         t.validate();
 
@@ -1156,7 +1158,7 @@ mod tests {
 
         // Tree should still be usable after becoming empty.
         for k in 1000..1100 {
-            assert_eq!(t.insert(k, k * 2), None);
+            assert_eq!(t.insert_into_tree(k, k * 2), None);
         }
         assert_eq!(t.len(), 100);
         t.validate();
@@ -1186,7 +1188,7 @@ mod tests {
         for _ in 0..2000 {
             let k = next_i32();
             let v = k * 7;
-            let old_t = t.insert(k, v);
+            let old_t = t.insert_into_tree(k, v);
             let old_m = m.insert(k, v);
             assert_eq!(old_t, old_m);
         }
