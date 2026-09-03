@@ -38,6 +38,13 @@ trait BPlusTreeIndexKey: Sized {
     fn from_index_value(value: &IndexValue) -> Option<Self>;
 }
 
+trait BPlusTreeRowIdStore: Sized {
+    fn push_row_id(&mut self, id: RowId);
+    fn remove_row_id(&mut self, id: RowId) -> bool;
+    fn into_row_ids(self) -> Vec<RowId>;
+    fn is_empty(&self) -> bool;
+}
+
 impl BPlusTreeIndexKey for i64 {
     fn from_index_value(value: &IndexValue) -> Option<Self> {
         match value {
@@ -83,25 +90,73 @@ impl BPlusTreeIndexKey for u64 {
     }
 }
 
+impl BPlusTreeRowIdStore for Vec<RowId> {
+    fn push_row_id(&mut self, id: RowId) {
+        if !self.contains(&id) {
+            self.push(id);
+        }
+    }
+
+    fn remove_row_id(&mut self, id: RowId) -> bool {
+        let before = self.len();
+        self.retain(|current_id| *current_id != id);
+        self.len() != before
+    }
+
+    fn into_row_ids(self) -> Vec<RowId> {
+        self
+    }
+
+    fn is_empty(&self) -> bool {
+        self.is_empty()
+    }
+}
+
+impl BPlusTreeRowIdStore for Vec<i64> {
+    fn push_row_id(&mut self, id: RowId) {
+        let id = i64::try_from(id).expect("RowId exceeds i64 range");
+        if !self.contains(&id) {
+            self.push(id);
+        }
+    }
+
+    fn remove_row_id(&mut self, id: RowId) -> bool {
+        let id = i64::try_from(id).expect("RowId exceeds i64 range");
+        let before = self.len();
+        self.retain(|current_id| *current_id != id);
+        self.len() != before
+    }
+
+    fn into_row_ids(self) -> Vec<RowId> {
+        self.into_iter()
+            .map(|current_id| RowId::try_from(current_id).expect("negative row id stored in BPlusTree"))
+            .collect()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.is_empty()
+    }
+}
+
 //This function is the one we should use
-impl<K, const MAX_KEYS: usize> MemoryStructure for BPlusTree<K, Vec<RowId>, MAX_KEYS>
+impl<K, V, const MAX_KEYS: usize> MemoryStructure for BPlusTree<K, V, MAX_KEYS>
 where
     K: BPlusTreeIndexKey + Ord + Clone + Debug + Send + Sync + 'static,
+    V: BPlusTreeRowIdStore + Default + Clone + Debug + Send + Sync + 'static,
 {
     fn insert(&mut self, value: IndexValue, id: RowId) {
         let key = K::from_index_value(&value)
             .unwrap_or_else(|| panic!("BPlusTree received an incompatible IndexValue: {value:?}"));
 
         let mut row_ids = self.get(&key).unwrap_or_default();
-        if !row_ids.contains(&id) {
-            row_ids.push(id);
-        }
+        row_ids.push_row_id(id);
         BPlusTree::insert(self, key, row_ids);
     }
 
     fn retrieve_range(&self, key: &IndexValue) -> Vec<RowId> {
         K::from_index_value(key)
             .and_then(|typed_key| self.get(&typed_key))
+            .map(BPlusTreeRowIdStore::into_row_ids)
             .unwrap_or_default()
     }
 
@@ -110,13 +165,11 @@ where
     }
 
     fn delete(&mut self, id: RowId) {
-        let updates: Vec<(K, Vec<RowId>)> = self
+        let updates: Vec<(K, V)> = self
             .range(None, None)
             .into_iter()
             .filter_map(|(key, mut row_ids)| {
-                let before = row_ids.len();
-                row_ids.retain(|current_id| *current_id != id);
-                (row_ids.len() != before).then_some((key, row_ids))
+                row_ids.remove_row_id(id).then_some((key, row_ids))
             })
             .collect();
 
