@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use std::fmt::{Debug, Formatter};
+use std::fmt::Debug;
 use std::sync::{Arc, Mutex};
 use crate::database::datatype::DataType;
 use crate::database::memstruct::{IndexValue, MemoryStructure, RowId};
@@ -34,32 +34,105 @@ pub struct BPlusTree<K, V, const MAX_KEYS: usize = 64> {
     pub len: usize,
 }
 
+trait BPlusTreeIndexKey: Sized {
+    fn from_index_value(value: &IndexValue) -> Option<Self>;
+}
+
+impl BPlusTreeIndexKey for i64 {
+    fn from_index_value(value: &IndexValue) -> Option<Self> {
+        match value {
+            IndexValue::BigInt(v) => Some(*v),
+            _ => None,
+        }
+    }
+}
+
+impl BPlusTreeIndexKey for i32 {
+    fn from_index_value(value: &IndexValue) -> Option<Self> {
+        match value {
+            IndexValue::Int(v) => Some(*v),
+            _ => None,
+        }
+    }
+}
+
+impl BPlusTreeIndexKey for i16 {
+    fn from_index_value(value: &IndexValue) -> Option<Self> {
+        match value {
+            IndexValue::SmallInt(v) => Some(*v),
+            _ => None,
+        }
+    }
+}
+
+impl BPlusTreeIndexKey for i8 {
+    fn from_index_value(value: &IndexValue) -> Option<Self> {
+        match value {
+            IndexValue::TinyInt(v) => Some(*v),
+            _ => None,
+        }
+    }
+}
+
+impl BPlusTreeIndexKey for u64 {
+    fn from_index_value(value: &IndexValue) -> Option<Self> {
+        match value {
+            IndexValue::Date(v) | IndexValue::Time(v) | IndexValue::DateTime(v) => Some(*v),
+            _ => None,
+        }
+    }
+}
+
 //This function is the one we should use
-impl<K, V, const MAX_KEYS: usize> MemoryStructure for BPlusTree<K, V, MAX_KEYS>
+impl<K, const MAX_KEYS: usize> MemoryStructure for BPlusTree<K, Vec<RowId>, MAX_KEYS>
 where
-    K: Clone + Debug + Send + Sync + 'static,
-    V: Clone + Debug + Send + Sync + 'static,
+    K: BPlusTreeIndexKey + Ord + Clone + Debug + Send + Sync + 'static,
 {
     fn insert(&mut self, value: IndexValue, id: RowId) {
-        todo!()
+        let key = K::from_index_value(&value)
+            .unwrap_or_else(|| panic!("BPlusTree received an incompatible IndexValue: {value:?}"));
+
+        let mut row_ids = self.get(&key).unwrap_or_default();
+        if !row_ids.contains(&id) {
+            row_ids.push(id);
+        }
+        BPlusTree::insert(self, key, row_ids);
     }
 
     fn retrieve_range(&self, key: &IndexValue) -> Vec<RowId> {
-        todo!()
+        K::from_index_value(key)
+            .and_then(|typed_key| self.get(&typed_key))
+            .unwrap_or_default()
     }
 
-    fn retrieve_by_index(&self, id: RowId) -> Option<Row> {
-        todo!()
+    fn retrieve_by_index(&self, _id: RowId) -> Option<Row> {
+        panic!("BPlusTree uses retrieve_range to access indexed row ids")
     }
 
     fn delete(&mut self, id: RowId) {
-        todo!()
+        let updates: Vec<(K, Vec<RowId>)> = self
+            .range(None, None)
+            .into_iter()
+            .filter_map(|(key, mut row_ids)| {
+                let before = row_ids.len();
+                row_ids.retain(|current_id| *current_id != id);
+                (row_ids.len() != before).then_some((key, row_ids))
+            })
+            .collect();
+
+        for (key, row_ids) in updates {
+            if row_ids.is_empty() {
+                BPlusTree::remove(self, &key);
+            } else {
+                BPlusTree::insert(self, key, row_ids);
+            }
+        }
     }
 
     fn kind(&self) -> &'static str { "btree" }
 
     fn clone_box(&self) -> Box<dyn MemoryStructure> {
-        todo!()
+        Box::new(self.clone())
     }
 }
 
@@ -869,6 +942,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::BPlusTree;
+    use crate::database::memstruct::{IndexValue, MemoryStructure};
 
     #[test]
     fn basic_insert_get_range_remove() {
@@ -1221,5 +1295,25 @@ mod tests {
         let mv: Vec<(i32, i32)> = m.iter().map(|(k, v)| (*k, *v)).collect();
         assert_eq!(tv, mv);
         t.validate();
+    }
+
+    #[test]
+    fn memory_structure_insert_retrieve_delete_for_i32_tree() {
+        let mut t: BPlusTree<i32, Vec<u64>, 4> = BPlusTree::default();
+
+        MemoryStructure::insert(&mut t, IndexValue::Int(7), 1);
+        MemoryStructure::insert(&mut t, IndexValue::Int(7), 2);
+        MemoryStructure::insert(&mut t, IndexValue::Int(9), 3);
+        MemoryStructure::insert(&mut t, IndexValue::Int(7), 2);
+
+        assert_eq!(MemoryStructure::retrieve_range(&t, &IndexValue::Int(7)), vec![1, 2]);
+        assert_eq!(MemoryStructure::retrieve_range(&t, &IndexValue::Int(9)), vec![3]);
+
+        MemoryStructure::delete(&mut t, 2);
+        assert_eq!(MemoryStructure::retrieve_range(&t, &IndexValue::Int(7)), vec![1]);
+
+        MemoryStructure::delete(&mut t, 1);
+        assert!(MemoryStructure::retrieve_range(&t, &IndexValue::Int(7)).is_empty());
+        assert_eq!(MemoryStructure::retrieve_range(&t, &IndexValue::Int(9)), vec![3]);
     }
 }

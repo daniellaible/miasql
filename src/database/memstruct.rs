@@ -11,8 +11,15 @@ pub type RowId = u64;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum IndexValue {
+    BigInt(i64),
+    Int(i32),
+    SmallInt(i16),
+    TinyInt(i8),
     Bool(bool),
     Text(String),
+    Date(u64),
+    Time(u64),
+    DateTime(u64),
     Row(Row)
 }
 
@@ -35,7 +42,6 @@ impl Clone for Box<dyn MemoryStructure> {
         self.clone_box()
     }
 }
-
 
 
 
