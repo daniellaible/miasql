@@ -17,7 +17,7 @@ pub enum IndexValue {
     Int(i32),
     SmallInt(i16),
     TinyInt(i8)
-    
+
 }
 
 /// This trait describes the interface of several different structs which are designed to

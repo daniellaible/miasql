@@ -1,3 +1,4 @@
+use std::any::TypeId;
 use std::cmp::Ordering;
 use std::fmt::{Debug, Formatter};
 use std::sync::{Arc, Mutex};
@@ -15,7 +16,6 @@ pub enum Node<K, V, const MAX_KEYS: usize> {
 
 #[derive(Clone, Debug)]
 pub struct InternalNode<K, V, const MAX_KEYS: usize> {
-    // keys.len() == children.len() - 1
     pub keys: Vec<K>,
     pub children: Vec<Link<K, V, MAX_KEYS>>,
 }
@@ -34,11 +34,172 @@ pub struct BPlusTree<K, V, const MAX_KEYS: usize = 64> {
     pub len: usize,
 }
 
-//This function is the one we should use
-impl<K, V, const MAX_KEYS: usize> MemoryStructure for BPlusTree<K, V, MAX_KEYS>
+impl MemoryStructure for BPlusTree<u64, Vec<u64>, 3>{
+    fn insert(&mut self, value: IndexValue, id: RowId) {
+        todo!()
+    }
+
+    fn retrieve_range(&self, key: &IndexValue) -> Vec<RowId> {
+        todo!()
+    }
+
+    fn retrieve_by_index(&self, id: RowId) -> Option<Row> {
+        todo!()
+    }
+
+    fn delete(&mut self, id: RowId) {
+        todo!()
+    }
+
+    fn clone_box(&self) -> Box<dyn MemoryStructure> {
+        todo!()
+    }
+
+    fn kind(&self) -> &'static str {
+        todo!()
+    }
+}
+
+impl MemoryStructure for BPlusTree<i8, Vec<u64>, 3>{
+    fn insert(&mut self, value: IndexValue, id: RowId) {
+        todo!()
+    }
+
+    fn retrieve_range(&self, key: &IndexValue) -> Vec<RowId> {
+        todo!()
+    }
+
+    fn retrieve_by_index(&self, id: RowId) -> Option<Row> {
+        todo!()
+    }
+
+    fn delete(&mut self, id: RowId) {
+        todo!()
+    }
+
+    fn clone_box(&self) -> Box<dyn MemoryStructure> {
+        todo!()
+    }
+
+    fn kind(&self) -> &'static str {
+        todo!()
+    }
+}
+
+
+impl MemoryStructure for BPlusTree<i16, Vec<u64>, 3>{
+    fn insert(&mut self, value: IndexValue, id: RowId) {
+        todo!()
+    }
+
+    fn retrieve_range(&self, key: &IndexValue) -> Vec<RowId> {
+        todo!()
+    }
+
+    fn retrieve_by_index(&self, id: RowId) -> Option<Row> {
+        todo!()
+    }
+
+    fn delete(&mut self, id: RowId) {
+        todo!()
+    }
+
+    fn clone_box(&self) -> Box<dyn MemoryStructure> {
+        todo!()
+    }
+
+    fn kind(&self) -> &'static str {
+        todo!()
+    }
+}
+
+impl MemoryStructure for BPlusTree<i32, Vec<u64>, 3>{
+    fn insert(&mut self, value: IndexValue, id: RowId) {
+        todo!()
+    }
+
+    fn retrieve_range(&self, key: &IndexValue) -> Vec<RowId> {
+        todo!()
+    }
+
+    fn retrieve_by_index(&self, id: RowId) -> Option<Row> {
+        todo!()
+    }
+
+    fn delete(&mut self, id: RowId) {
+        todo!()
+    }
+
+    fn clone_box(&self) -> Box<dyn MemoryStructure> {
+        todo!()
+    }
+
+    fn kind(&self) -> &'static str {
+        todo!()
+    }
+}
+
+
+impl MemoryStructure for BPlusTree<i64, Vec<u64>, 3>{
+    fn insert(&mut self, value: IndexValue, id: RowId) {
+       // self.insert_into_tree(id as i64, value);
+        /*match value {
+            IndexValue::BigInt(x) => {
+                let root = self.root.clone();
+                let leaf_link = self.find_leaf(root, &(id as i64));
+                let guard = leaf_link.lock().unwrap();
+                match &*guard {
+                    Node::Leaf(ln) => {
+                        println!("{:?}", ln);
+                        for i in 0 ..ln.keys.len(){
+                            if ln.keys[i] == id as i64 {
+                                match value{
+                                    IndexValue::BigInt(number) => {
+
+                                    }
+
+                                    _ => {}
+                                }
+
+                            }
+                        }
+                    },
+                    Node::Internal(_) => {panic!("We do not belong here")}
+                }
+
+
+                //self.insert_into_tree(x, id);
+            }
+            _ => panic!("You did not give me an i64, therefore I crashed - upsi")
+        }*/
+    }
+
+    fn retrieve_range(&self, key: &IndexValue) -> Vec<RowId> {
+        todo!()
+    }
+
+    fn retrieve_by_index(&self, id: RowId) -> Option<Row> {
+        todo!()
+    }
+
+    fn delete(&mut self, id: RowId) {
+        todo!()
+    }
+
+    fn clone_box(&self) -> Box<dyn MemoryStructure> {
+        todo!()
+    }
+
+    fn kind(&self) -> &'static str {
+        todo!()
+    }
+}
+
+/*//This function is the one we should use
+impl<RowId, IndexValue> MemoryStructure for BPlusTree<RowId, IndexValue, 3>
 where
-    K: Ord + Clone + Debug + Send + Sync + 'static,
-    V: Clone + Debug + Send + Sync + 'static,
+    RowId: Ord + Clone + Debug + Send + Sync + 'static,
+    IndexValue: Clone + Debug + Send + Sync + 'static,
 {
     fn insert(&mut self, value: IndexValue, id: RowId) {
 
@@ -58,12 +219,12 @@ where
         todo!()
     }
 
-    fn kind(&self) -> &'static str { "btree" }
-
     fn clone_box(&self) -> Box<dyn MemoryStructure> {
         todo!()
     }
-}
+
+    fn kind(&self) -> &'static str { "btree" }
+}*/
 
 impl<K, V, const MAX_KEYS: usize> Default for BPlusTree<K, V, MAX_KEYS>
 where
@@ -87,7 +248,7 @@ where
 impl<K, V, const MAX_KEYS: usize> BPlusTree<K, V, MAX_KEYS>
 where
     K: Ord + Clone,
-    V: Clone + Debug,
+    V: Clone + Debug + 'static,
 {
     /// Minimum number of keys a non-root node should have.
     /// (Classic B+ tree with max keys = MAX_KEYS => min keys = ceil(MAX_KEYS/2))
@@ -126,17 +287,33 @@ where
             unreachable!()
         };
 
-        match ln.keys.binary_search(&key) {
-            Ok(i) => {
-                let old = std::mem::replace(&mut ln.values[i], value);
-                return Some(old);
+        if TypeId::of::<V>() == TypeId::of::<Vec<u64>>() {
+            match ln.keys.binary_search(&key) {
+                Ok(i) => {
+                    ln.values.push(value.clone());
+                    return Some(value);
+                }
+                Err(pos) => {
+                    ln.keys.insert(pos, key);
+                    ln.values.insert(pos, value);
+                    self.len += 1;
+                }
             }
-            Err(pos) => {
-                ln.keys.insert(pos, key);
-                ln.values.insert(pos, value);
-                self.len += 1;
+        }else{
+            match ln.keys.binary_search(&key) {
+                Ok(i) => {
+                    let old = std::mem::replace(&mut ln.values[i], value);
+                    return Some(old);
+                }
+                Err(pos) => {
+                    ln.keys.insert(pos, key);
+                    ln.values.insert(pos, value);
+                    self.len += 1;
+                }
             }
         }
+
+
 
         if ln.keys.len() <= MAX_KEYS {
             return None;
@@ -748,7 +925,7 @@ fn node_key_len<K, V, const MAX_KEYS: usize>(n: &Link<K, V, MAX_KEYS>) -> usize 
 impl<K, V, const MAX_KEYS: usize> BPlusTree<K, V, MAX_KEYS>
 where
     K: Ord + Clone + Debug,
-    V: Clone + Debug,
+    V: Clone + Debug + 'static,
 {
     /// Debug helper: validates key ordering and basic B+ invariants.
     /// Panics if invariant is violated.
@@ -870,7 +1047,25 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::database::memstruct::{IndexValue, MemoryStructure, RowId};
     use super::BPlusTree;
+
+    #[test]
+    fn insert_with_memorystructure(){
+        let mut t: BPlusTree<i64, Vec<u64>, 3> = BPlusTree::default();
+        assert!(t.is_empty());
+
+        t.insert_into_tree(10, vec![1]);
+        t.insert_into_tree(20, vec![2]);
+        t.insert_into_tree(30, vec![3]);
+        t.insert_into_tree(40, vec![4]);
+        t.insert_into_tree(50, vec![5]);
+
+        let indexValue = IndexValue::BigInt(60);
+        let rowId = 6;
+        t.insert(indexValue, rowId);
+    }
+
 
     #[test]
     fn basic_insert_get_range_remove() {
