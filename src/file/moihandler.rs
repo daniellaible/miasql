@@ -239,16 +239,16 @@ fn create_index_structures(table: &mut Table) -> &mut Table {
     for columntype in columntypes.iter(){
         match columntype {
             DataType::BigInt(x) => {
-                indexstructures.insert(counter, Box::new(BPlusTree::<i64, Vec<u64>, 3 >::default())  );
+                indexstructures.insert(counter, Box::new(BPlusTree::<i64>::default())  );
             }
             DataType::Int(_) => {
-                indexstructures.insert(counter, Box::new(BPlusTree::<i32, Vec<u64>, 3 >::default())  );
+                indexstructures.insert(counter, Box::new(BPlusTree::<i32>::default())  );
             }
             DataType::SmallInt(_) => {
-                indexstructures.insert(counter, Box::new(BPlusTree::<i16, Vec<u64>, 3 >::default())  );
+                indexstructures.insert(counter, Box::new(BPlusTree::<i16>::default())  );
             }
             DataType::TinyInt(_) => {
-                indexstructures.insert(counter, Box::new(BPlusTree::<i8, Vec<u64>, 3 >::default())  );
+                indexstructures.insert(counter, Box::new(BPlusTree::<i8>::default())  );
             }
             DataType::Decimal(_) => {
                 //indexstructures.insert(counter, Box::new(BPlusTree::<f32, Vec<i64>, 3 >::default())  );
@@ -259,13 +259,13 @@ fn create_index_structures(table: &mut Table) -> &mut Table {
                 indexstructures.insert(counter, Box::new(BooleanStructure::default())  );
             }
             DataType::Date(_) => {
-                indexstructures.insert(counter,  Box::new(BPlusTree::<u64, Vec<u64>, 3 >::default())  );
+                indexstructures.insert(counter,  Box::new(BPlusTree::<u64>::default())  );
             }
             DataType::Time(_) => {
-                indexstructures.insert(counter,  Box::new(BPlusTree::<u64, Vec<u64>, 3 >::default())  );
+                indexstructures.insert(counter,  Box::new(BPlusTree::<u64>::default())  );
             }
             DataType::DateTime(_) => {
-                indexstructures.insert(counter,  Box::new(BPlusTree::<u64, Vec<u64>, 3 >::default())  );
+                indexstructures.insert(counter,  Box::new(BPlusTree::<u64>::default())  );
             }
             DataType::Enum(act, pos) => {
                 indexstructures.insert(counter, Box::new(EnumStructure::default()));
