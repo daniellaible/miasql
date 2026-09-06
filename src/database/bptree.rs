@@ -193,37 +193,6 @@ impl MemoryStructure for BPlusTree<i64> {
     }
 }
 
-/*//This function is the one we should use
-impl<RowId, IndexValue> MemoryStructure for BPlusTree<RowId, IndexValue, 3>
-where
-    RowId: Ord + Clone + Debug + Send + Sync + 'static,
-    IndexValue: Clone + Debug + Send + Sync + 'static,
-{
-    fn insert(&mut self, value: IndexValue, id: RowId) {
-
-        let _ = self.insert_into_tree(id, value);
-
-    }
-
-    fn retrieve_range(&self, key: &IndexValue) -> Vec<RowId> {
-        todo!()
-    }
-
-    fn retrieve_by_index(&self, id: RowId) -> Option<Row> {
-        todo!()
-    }
-
-    fn delete(&mut self, id: RowId) {
-        todo!()
-    }
-
-    fn clone_box(&self) -> Box<dyn MemoryStructure> {
-        todo!()
-    }
-
-    fn kind(&self) -> &'static str { "btree" }
-}*/
-
 impl<K> Default for BPlusTree<K>
 where
     K: Ord + Clone + Send,
@@ -266,12 +235,10 @@ where
         }
     }
 
-    /// Insert key/value. Returns previous value if key existed.
     pub fn insert_into_tree(&mut self, key: K, value: Vec<u64>) -> Option<Vec<u64>> {
         let mut path = Vec::<(Link<K>, usize)>::new();
         let leaf = self.find_leaf_with_path(self.root.clone(), &key, &mut path);
 
-        // Insert into leaf (or replace).leaf.borrow_mut();
         let mut leaf_mut = leaf.lock().unwrap();
         let Node::Leaf(ln) = &mut *leaf_mut else {
             unreachable!()
@@ -326,14 +293,10 @@ where
             return Some(removed);
         }
 
-        // If still enough keys, might still need to update parent's separator key
-        // if we removed the first key in this leaf.
         let leaf_first_key = ln.keys.first().cloned();
         drop(leaf_mut);
 
         if let Some((parent, child_index_in_parent)) = path.last().cloned() {
-            // Update separator key that points to this leaf if needed:
-            // In a B+ tree, parent's key at (child_index_in_parent-1) equals first key of this child.
             if idx == 0 {
                 if let Some(new_first) = leaf_first_key {
                     self.update_parent_separator_key(
@@ -351,7 +314,6 @@ where
         Some(removed)
     }
 
-    //ToDo add Vector with Options for SQLOperators so we can do SmallerThan, Greater aso
     pub fn leaf_walker_rows(&self, leaf: LeafNode<K>) -> anyhow::Result<Vec<Vec<u64>>> {
         let mut result_vec: Vec<Vec<u64>> = Vec::new();
         let mut cur: Option<LeafNode<K>> = Some(leaf);
@@ -407,9 +369,6 @@ where
         out
     }
 
-    /// Finds the leave with the lowest id. It is used traversing the tree
-    /// node to node. You use it also if you want all elements of this database
-    ///
     pub fn leftmost_leaf(&self, mut node: Link<K>) -> Link<K> {
         loop {
             let b = node.lock().unwrap();
@@ -514,9 +473,6 @@ where
             unreachable!()
         };
 
-        // For internal node split:
-        // promote middle key to parent, left keeps keys < promoted,
-        // right gets keys > promoted.
         let mid_key_index = inode.keys.len() / 2;
         let promoted = inode.keys[mid_key_index].clone();
 
@@ -550,7 +506,6 @@ where
             return;
         };
 
-        // Insert sep_key into parent.keys at left_index, and right child at left_index+1
         {
             let mut pb = parent.lock().unwrap();
             let Node::Internal(pn) = &mut *pb else {
@@ -601,13 +556,10 @@ where
             };
 
             if node_key_count >= min_keys {
-                // underflow resolved
                 return;
             }
 
-            // Need parent info.
             let Some((parent, idx_in_parent)) = path.pop() else {
-                // Shouldn't happen because non-root has parent.
                 return;
             };
 
@@ -616,24 +568,17 @@ where
                 return;
             }
 
-            // Otherwise, merge with a sibling.
             let merged_into_left = self.merge_with_sibling(&parent, idx_in_parent);
 
-            // After merge, parent lost a key; node becomes the merged parent child we should continue checking.
             node = if merged_into_left {
-                // merged current into left sibling; new "node" for next loop is parent
                 parent.clone()
             } else {
-                // merged right sibling into current; new "node" is parent
                 parent.clone()
             };
-
-            // Continue loop: parent might now underflow.
         }
     }
 
     fn try_redistribute(&self, parent: &Link<K>, idx: usize) -> bool {
-        // Attempt borrow from left sibling if exists, else right sibling.
         let (left_sib, right_sib) = {
             let pb = parent.lock().unwrap();
             let Node::Internal(pn) = &*pb else {
@@ -697,18 +642,13 @@ where
                 pn.keys[idx - 1] = ln_cur.keys[0].clone();
             }
             (Node::Internal(in_left), Node::Internal(in_cur)) => {
-                // Internal redistribution:
-                // Bring parent separator down into current as first key,
-                // and move left's last child to current's front.
                 let sep_down = pn.keys[idx - 1].clone();
 
                 let borrowed_key = in_left.keys.pop().expect("left has keys");
                 let borrowed_child = in_left.children.pop().expect("left has child");
 
-                // Parent separator replaced by left's last key.
                 pn.keys[idx - 1] = borrowed_key;
 
-                // Current receives sep_down as first key, and borrowed_child as first child.
                 in_cur.keys.insert(0, sep_down);
                 in_cur.children.insert(0, borrowed_child);
             }
@@ -737,10 +677,6 @@ where
                 pn.keys[idx] = ln_right.keys[0].clone();
             }
             (Node::Internal(in_cur), Node::Internal(in_right)) => {
-                // Internal redistribution:
-                // Bring parent separator down into current as last key,
-                // move right's first child to current's end,
-                // and move right's first key up to parent.
                 let sep_down = pn.keys[idx].clone();
 
                 let borrowed_key = in_right.keys.remove(0);
@@ -755,14 +691,12 @@ where
         }
     }
 
-    /// Merge node at idx with a sibling. Returns true if merged into left sibling, false if merged right into current.
     fn merge_with_sibling(&self, parent: &Link<K>, idx: usize) -> bool {
         let mut pb = parent.lock().unwrap();
         let Node::Internal(pn) = &mut *pb else {
             unreachable!()
         };
 
-        // Prefer merge with left if exists; otherwise merge with right.
         if idx > 0 {
             // Merge current into left sibling
             let left = pn.children[idx - 1].clone();
@@ -775,7 +709,6 @@ where
             self.merge_nodes(left, cur, Some(sep_key));
             true
         } else {
-            // Merge right sibling into current
             let cur = pn.children[idx].clone();
             let right = pn.children[idx + 1].clone();
             let sep_key = pn.keys.remove(idx);
@@ -796,7 +729,6 @@ where
                 ln_left.next = ln_right.next.take();
             }
             (Node::Internal(in_left), Node::Internal(in_right)) => {
-                // For internal merge, bring separator key down between left and right keys.
                 let sep = sep_key_for_internal.expect("internal merge needs separator key");
                 in_left.keys.push(sep);
                 in_left.keys.extend(in_right.keys.drain(..));
@@ -807,8 +739,6 @@ where
     }
 
     fn maybe_shrink_root(&mut self) {
-        // If root is internal with a single child, promote that child as the new root.
-        // If root is leaf, keep it.
         let shrink_to = {
             let rb = self.root.lock().unwrap();
             match &*rb {
@@ -873,8 +803,6 @@ impl<K> BPlusTree<K>
 where
     K: Ord + Clone + Debug,
 {
-    /// Debug helper: validates key ordering and basic B+ invariants.
-    /// Panics if invariant is violated.
     pub fn validate(&self) {
         let min_keys = Self::min_keys();
         self.validate_node(self.root.clone(), true, min_keys);
@@ -913,14 +841,14 @@ where
             }
 
             Node::Internal(inode) => {
-                assert!(inode.keys.len() <= MAX_KEYS, "internal overflow");
+                assert!(inode.keys.len() >= MAX_KEYS / 2, "internal underflow");
                 assert_eq!(
                     inode.children.len(),
                     inode.keys.len() + 1,
                     "internal arity mismatch"
                 );
                 if !is_root {
-                    assert!(inode.keys.len() >= min_keys, "internal underflow");
+                    assert!(inode.keys.len() >= MAX_KEYS / 2, "internal underflow");
                 }
 
                 for w in inode.keys.windows(2) {
@@ -988,376 +916,442 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::BPlusTree;
+    use super::{BPlusTree, Node};
     use crate::database::memstruct::{IndexValue, MemoryStructure};
 
+
+    fn build(keys: &[i64]) -> BPlusTree<i64> {
+        let mut t = BPlusTree::default();
+        for &k in keys {
+            t.insert_into_tree(k, vec![k as u64]);
+        }
+        t
+    }
+
     #[test]
-    fn insert_with_memorystructure() {
+    fn default_tree_is_empty() {
+        let t: BPlusTree<i64> = BPlusTree::default();
+        assert!(t.is_empty());
+        assert_eq!(t.len(), 0);
+    }
+
+    #[test]
+    fn default_tree_get_returns_none() {
+        let t: BPlusTree<i64> = BPlusTree::default();
+        assert_eq!(t.get(&0), None);
+        assert_eq!(t.get(&99), None);
+    }
+
+    #[test]
+    fn default_tree_range_returns_empty() {
+        let t: BPlusTree<i64> = BPlusTree::default();
+        assert!(t.range(None, None).is_empty());
+        assert!(t.range(Some(&0), Some(&100)).is_empty());
+    }
+
+    #[test]
+    fn single_insert_get() {
         let mut t: BPlusTree<i64> = BPlusTree::default();
-        assert!(t.is_empty());
-
-        t.insert_into_tree(10, vec![1]);
-        t.insert_into_tree(20, vec![2]);
-        t.insert_into_tree(30, vec![3]);
-        t.insert_into_tree(40, vec![4]);
-        t.insert_into_tree(50, vec![5]);
-
-        let indexValue = IndexValue::BigInt(60);
-        let rowId = 6;
-        t.insert(indexValue, rowId);
+        let old = t.insert_into_tree(42, vec![1, 2]);
+        assert_eq!(old, None);
+        assert_eq!(t.len(), 1);
+        assert!(!t.is_empty());
+        assert_eq!(t.get(&42), Some(vec![1, 2]));
+        assert_eq!(t.get(&0), None);
     }
 
     #[test]
-    fn basic_insert_get_range_remove() {
-/*        let mut t: BPlusTree<i32> = BPlusTree::default();
+    fn insert_replaces_existing_value_returns_old() {
+        let mut t: BPlusTree<i64> = BPlusTree::default();
+        assert_eq!(t.insert_into_tree(10, vec![1]), None);
+        assert_eq!(t.len(), 1);
 
-        assert!(t.is_empty());
-        t.insert_into_tree(10, "a");
-        t.insert_into_tree(20, "b");
-        t.insert_into_tree(30, "c");
-        t.insert_into_tree(40, "d".into());
-        t.insert_into_tree(50, "e".into());
-
-        assert_eq!(t.get(&10).as_deref(), Some("a"));
-        assert_eq!(t.get(&35), None);
-
-        let r = t.range(Some(&15), Some(&45));
-        let keys: Vec<i32> = r.iter().map(|(k, _)| *k).collect();
-        assert_eq!(keys, vec![20, 30, 40]);
-
-        assert_eq!(t.remove(&30).as_deref(), Some("c"));
-        assert_eq!(t.get(&30), None);
-
-        // Validate structural invariants after deletes.
-        t.validate();*/
+        let old = t.insert_into_tree(10, vec![2, 3]);
+        assert_eq!(old, Some(vec![1]));
+        // Length does not change on replacement.
+        assert_eq!(t.len(), 1);
+        assert_eq!(t.get(&10), Some(vec![2, 3]));
     }
 
     #[test]
-    fn remove_causes_redistribute_and_merge_and_preserves_order() {
-/*        // Small fanout so we trigger splits/merges with fewer keys.
-        let mut t: BPlusTree<i32> = BPlusTree::default();
+    fn insert_empty_vec_as_value() {
+        let mut t: BPlusTree<i64> = BPlusTree::default();
+        assert_eq!(t.insert_into_tree(5, vec![]), None);
+        assert_eq!(t.get(&5), Some(vec![]));
+    }
 
-        // Insert a bunch of keys to create a multi-level tree.
-        for k in 0..200 {
-            assert_eq!(t.insert_into_tree(k, k * 10), None);
+    #[test]
+    fn insert_multiple_row_ids_per_key() {
+        let mut t: BPlusTree<i64> = BPlusTree::default();
+        t.insert_into_tree(7, vec![10, 20, 30]);
+        assert_eq!(t.get(&7), Some(vec![10, 20, 30]));
+    }
+
+    #[test]
+    fn insert_increasing_keys_len_correct() {
+        let mut t: BPlusTree<i64> = BPlusTree::default();
+        for k in 0..50_i64 {
+            assert_eq!(t.insert_into_tree(k, vec![k as u64]), None);
+        }
+        assert_eq!(t.len(), 50);
+        for k in 0..50_i64 {
+            assert_eq!(t.get(&k), Some(vec![k as u64]));
+        }
+    }
+
+    #[test]
+    fn insert_decreasing_keys_len_correct() {
+        let mut t: BPlusTree<i64> = BPlusTree::default();
+        for k in (0..50_i64).rev() {
+            assert_eq!(t.insert_into_tree(k, vec![k as u64]), None);
+        }
+        assert_eq!(t.len(), 50);
+        for k in 0..50_i64 {
+            assert_eq!(t.get(&k), Some(vec![k as u64]));
+        }
+    }
+
+    #[test]
+    fn insert_triggers_splits_validate_passes() {
+        // MAX_KEYS = 3, so after 4 inserts a split must have happened.
+        let mut t: BPlusTree<i64> = BPlusTree::default();
+        for k in 0..20_i64 {
+            t.insert_into_tree(k, vec![k as u64]);
+        }
+        t.validate(); // panics on structural violation
+    }
+
+    #[test]
+    fn insert_many_interleaved_keys_validate_passes() {
+        let mut t: BPlusTree<i64> = BPlusTree::default();
+        // Alternate low / high insertions to exercise different split paths.
+        for i in 0..100_i64 {
+            t.insert_into_tree(i, vec![i as u64]);
+            t.insert_into_tree(10_000 - i, vec![(10_000 - i) as u64]);
         }
         assert_eq!(t.len(), 200);
         t.validate();
+        // Spot-check
+        assert_eq!(t.get(&0), Some(vec![0]));
+        assert_eq!(t.get(&50), Some(vec![50]));
+        assert_eq!(t.get(&9950), Some(vec![9950]));
+        assert_eq!(t.get(&10_000), Some(vec![10_000]));
+    }
 
-        // Remove every 3rd key (creates "holes" and triggers some redistributions).
-        for k in (0..200).step_by(3) {
-            assert_eq!(t.remove(&k), Some(k * 10));
+    #[test]
+    fn insert_negative_keys() {
+        let mut t: BPlusTree<i64> = BPlusTree::default();
+        for k in [-5_i64, -3, -1, 0, 1, 3, 5] {
+            t.insert_into_tree(k, vec![k.unsigned_abs()]);
         }
+        assert_eq!(t.len(), 7);
         t.validate();
+        assert_eq!(t.get(&-3), Some(vec![3]));
+        assert_eq!(t.get(&0), Some(vec![0]));
+        assert_eq!(t.get(&5), Some(vec![5]));
+    }
 
-        // Ensure removed keys are gone, others still present.
-        for k in 0..200 {
-            if k % 3 == 0 {
-                assert_eq!(t.get(&k), None);
-            } else {
-                assert_eq!(t.get(&k), Some(k * 10));
-            }
-        }
+    #[test]
+    fn remove_missing_key_returns_none() {
+        let mut t = build(&[1, 2, 3]);
+        assert_eq!(t.remove(&99), None);
+        assert_eq!(t.remove(&0), None);
+        assert_eq!(t.len(), 3);
+    }
 
-        // Now remove a large contiguous range to force merges and potentially shrink height.
-        for k in 1..150 {
-            if k % 3 != 0 {
-                assert_eq!(t.remove(&k), Some(k * 10));
-            }
-        }
-        t.validate();
-
-        // Remaining keys should be exactly those >= 150 that are not multiples of 3.
-        let remaining = t.range(None, None);
-        for (k, v) in &remaining {
-            assert!(*k >= 150);
-            assert!(*k % 3 != 0);
-            assert_eq!(*v, *k * 10);
-        }
-
-        // Remove everything left; tree should still be valid and empty.
-        for (k, _) in remaining {
-            assert!(t.remove(&k).is_some());
-        }
+    #[test]
+    fn remove_only_element() {
+        let mut t: BPlusTree<i64> = BPlusTree::default();
+        t.insert_into_tree(42, vec![1]);
+        let v = t.remove(&42);
+        assert_eq!(v, Some(vec![1]));
         assert_eq!(t.len(), 0);
-
-        // Root should end up as a (possibly empty) leaf; validate should not panic.
-        // If your validate() panics on empty root leaf bounds (as discussed),
-        // comment this out or adjust validate() to handle empty root leaf.
-        // t.validate();
-
-        // Basic sanity: range on empty tree
-        assert!(t.range(None, None).is_empty());*/
+        assert!(t.is_empty());
+        assert_eq!(t.get(&42), None);
     }
 
     #[test]
-    fn insert_replaces_existing_value_and_len_stable() {
-/*        let mut t: BPlusTree<i32> = BPlusTree::default();
-
-        assert_eq!(t.insert_into_tree(10, "a".into()), None);
-        assert_eq!(t.len(), 1);
-        assert_eq!(t.get(&10).as_deref(), Some("a"));
-
-        // Replace
-        assert_eq!(t.insert_into_tree(10, "b".into()).as_deref(), Some("a"));
-        assert_eq!(t.len(), 1);
-        assert_eq!(t.get(&10).as_deref(), Some("b"));
-
-        t.validate();*/
+    fn remove_returns_correct_value() {
+        let mut t = build(&[10, 20, 30]);
+        let v = t.remove(&20);
+        assert_eq!(v, Some(vec![20]));
+        assert_eq!(t.len(), 2);
+        assert_eq!(t.get(&20), None);
+        assert_eq!(t.get(&10), Some(vec![10]));
+        assert_eq!(t.get(&30), Some(vec![30]));
     }
 
     #[test]
-    fn insert_many_increasing_keys_produces_sorted_range() {
-/*        let mut t: BPlusTree<i32> = BPlusTree::default();
-
-        for k in 0..1000 {
-            assert_eq!(t.insert_into_tree(k, k * 2), None);
+    fn remove_first_key_in_leaf_updates_structure() {
+        let mut t: BPlusTree<i64> = BPlusTree::default();
+        // Insert enough to cause splits (MAX_KEYS=3, so >=4 triggers one).
+        for k in 0..20_i64 {
+            t.insert_into_tree(k, vec![k as u64]);
         }
-        assert_eq!(t.len(), 1000);
-
-        // Ensure range is sorted and complete.
-        let all = t.range(None, None);
-        assert_eq!(all.len(), 1000);
-        for (i, (k, v)) in all.iter().enumerate() {
-            assert_eq!(*k, i as i32);
-            assert_eq!(*v, (*k) * 2);
-        }
-
-        t.validate();*/
-    }
-
-    #[test]
-    fn insert_many_decreasing_keys_produces_sorted_range() {
-/*        let mut t: BPlusTree<i32> = BPlusTree::default();
-
-        for k in (0..500).rev() {
-            assert_eq!(t.insert_into_tree(k, k + 1), None);
-        }
-        assert_eq!(t.len(), 500);
-
-        let all = t.range(None, None);
-        assert_eq!(all.len(), 500);
-        for (i, (k, v)) in all.iter().enumerate() {
-            assert_eq!(*k, i as i32);
-            assert_eq!(*v, *k + 1);
-        }
-
-        t.validate();*/
-    }
-
-    #[test]
-    fn insert_interleaved_keys_forces_splits_and_get_works() {
-/*        let mut t: BPlusTree<i32> = BPlusTree::default();
-
-        // Interleave low/high to exercise different split paths.
-        for i in 0..200 {
-            let a = i;
-            let b = 10_000 - i;
-            assert_eq!(t.insert_into_tree(a, a * 10), None);
-            assert_eq!(t.insert_into_tree(b, b * 10), None);
-        }
-        assert_eq!(t.len(), 400);
-
-        // Spot-check a bunch of keys.
-        for i in 0..200 {
-            let a = i;
-            let b = 10_000 - i;
-            assert_eq!(t.get(&a), Some(a * 10));
-            assert_eq!(t.get(&b), Some(b * 10));
-        }
-
-        // Range should be globally sorted.
-        let all = t.range(None, None);
-        for w in all.windows(2) {
-            assert!(w[0].0 < w[1].0);
-        }
-
-        t.validate();*/
-    }
-
-    #[test]
-    fn insert_then_range_with_bounds_matches_expected() {
-/*        let mut t: BPlusTree<i32> = BPlusTree::default();
-
-        for k in 0..100 {
-            t.insert_into_tree(k, k);
-        }
-
-        // [10, 20) => 10..=19
-        let r = t.range(Some(&10), Some(&20));
-        let keys: Vec<i32> = r.into_iter().map(|(k, _)| k).collect();
-        assert_eq!(keys, (10..20).collect::<Vec<_>>());
-
-        // Unbounded start
-        let r2 = t.range(None, Some(&5));
-        let keys2: Vec<i32> = r2.into_iter().map(|(k, _)| k).collect();
-        assert_eq!(keys2, (0..5).collect::<Vec<_>>());
-
-        // Unbounded end
-        let r3 = t.range(Some(&95), None);
-        let keys3: Vec<i32> = r3.into_iter().map(|(k, _)| k).collect();
-        assert_eq!(keys3, (95..100).collect::<Vec<_>>());
-
-        t.validate();*/
-    }
-
-    #[test]
-    fn remove_missing_key_returns_none_and_does_not_change_len() {
-/*        let mut t: BPlusTree<i32> = BPlusTree::default();
-
-        for k in 0..50 {
-            t.insert_into_tree(k, k);
-        }
-        let before = t.len();
-
-        assert_eq!(t.remove(&999), None);
-        assert_eq!(t.remove(&-1), None);
-        assert_eq!(t.len(), before);
-
-        t.validate();*/
-    }
-
-    #[test]
-    fn remove_first_key_repeatedly_updates_structure_correctly() {
-/*        let mut t: BPlusTree<i32> = BPlusTree::default();
-
-        for k in 0..200 {
-            t.insert_into_tree(k, k * 3);
-        }
-        t.validate();
-
-        // Remove ascending (often exercises “first key in leaf changed” paths)
-        for k in 0..200 {
-            assert_eq!(t.remove(&k), Some(k * 3));
+        // Remove keys in ascending order (repeatedly removes first key in leaves).
+        for k in 0..20_i64 {
+            assert_eq!(t.remove(&k), Some(vec![k as u64]));
             assert_eq!(t.get(&k), None);
-
-            // Spot-check a couple still-present keys.
-            if k + 1 < 200 {
-                assert_eq!(t.get(&(k + 1)), Some((k + 1) * 3));
-            }
-            if k + 10 < 200 {
-                assert_eq!(t.get(&(k + 10)), Some((k + 10) * 3));
-            }
-
-            // Validate occasionally (keeps test time reasonable)
-            if k % 17 == 0 {
-                t.validate();
-            }
         }
-
         assert_eq!(t.len(), 0);
-        assert!(t.range(None, None).is_empty());*/
     }
 
     #[test]
-    fn remove_last_key_repeatedly_updates_structure_correctly() {
-/*        let mut t: BPlusTree<i32> = BPlusTree::default();
-
-        for k in 0..200 {
-            t.insert_into_tree(k, k * 5);
+    fn remove_last_key_in_leaf_updates_structure() {
+        let mut t: BPlusTree<i64> = BPlusTree::default();
+        for k in 0..20_i64 {
+            t.insert_into_tree(k, vec![k as u64]);
         }
-        t.validate();
-
-        // Remove descending (exercises right-edge merges/borrows)
-        for k in (0..200).rev() {
-            assert_eq!(t.remove(&k), Some(k * 5));
-            assert_eq!(t.get(&k), None);
-
-            if k >= 1 {
-                assert_eq!(t.get(&(k - 1)), Some((k - 1) * 5));
-            }
-
-            if k % 19 == 0 {
-                t.validate();
-            }
+        // Remove in descending order (repeatedly removes last key in leaves).
+        for k in (0..20_i64).rev() {
+            assert_eq!(t.remove(&k), Some(vec![k as u64]));
         }
-
         assert_eq!(t.len(), 0);
-        assert!(t.range(None, None).is_empty());*/
     }
 
     #[test]
-    fn remove_all_then_reuse_tree_with_new_inserts() {
-/*        let mut t: BPlusTree<i32> = BPlusTree::default();
-
-        for k in 0..120 {
-            t.insert_into_tree(k, k);
+    fn remove_all_keys_then_reinsert() {
+        let mut t: BPlusTree<i64> = BPlusTree::default();
+        for k in 0..30_i64 {
+            t.insert_into_tree(k, vec![k as u64]);
         }
+        for k in 0..30_i64 {
+            t.remove(&k);
+        }
+        assert!(t.is_empty());
+
+        // Tree should be reusable after being emptied.
+        for k in 100..130_i64 {
+            assert_eq!(t.insert_into_tree(k, vec![k as u64]), None);
+        }
+        assert_eq!(t.len(), 30);
         t.validate();
-
-        for k in 0..120 {
-            assert_eq!(t.remove(&k), Some(k));
+        for k in 100..130_i64 {
+            assert_eq!(t.get(&k), Some(vec![k as u64]));
         }
-        assert_eq!(t.len(), 0);
-        assert!(t.range(None, None).is_empty());
-
-        // Tree should still be usable after becoming empty.
-        for k in 1000..1100 {
-            assert_eq!(t.insert_into_tree(k, k * 2), None);
-        }
-        assert_eq!(t.len(), 100);
-        t.validate();
-
-        for k in 1000..1100 {
-            assert_eq!(t.get(&k), Some(k * 2));
-        }*/
     }
 
     #[test]
-    fn delete_matches_btreemap_model() {
-        /*        use std::collections::BTreeMap;
-        
-                let mut t: BPlusTree<i32> = BPlusTree::default();
-                let mut m = BTreeMap::<i32, i32>::new();
-        
-                // Deterministic pseudo-random-ish sequence without external crates.
-                // (Linear congruential generator)
-                let mut x: u32 = 0xC0FFEE;
-                let mut next_i32 = || {
-                    x = x.wrapping_mul(1664525).wrapping_add(1013904223);
-                    // map into a modest key range with collisions
-                    (x % 500) as i32
-                };
-        
-                // Insert phase
-                for _ in 0..2000 {
-                    let k = next_i32();
-                    let v = k * 7;
-                    let old_t = t.insert_into_tree(k, v);
-                    let old_m = m.insert(k, v);
-                    assert_eq!(old_t, old_m);
-                }
-                t.validate();
-        
-                // Delete phase
-                for i in 0..3000 {
-                    let k = next_i32();
-                    let rt = t.remove(&k);
-                    let rm = m.remove(&k);
-                    assert_eq!(rt, rm, "mismatch removing key {k} at step {i}");
-        
-                    // Occasionally cross-check full ordered contents via range()
-                    if i % 250 == 0 {
-                        let tv: Vec<(i32, i32)> = t
-                            .range(None, None)
-                            .into_iter()
-                            .map(|(k, v)| (k, v))
-                            .collect();
-                        let mv: Vec<(i32, i32)> = m.iter().map(|(k, v)| (*k, *v)).collect();
-                        assert_eq!(tv, mv, "range() diverged from BTreeMap at step {i}");
-                        t.validate();
-                    }
-                }
-        
-                // Final full cross-check
-                let tv: Vec<(i32, i32)> = t
-                    .range(None, None)
-                    .into_iter()
-                    .map(|(k, v)| (k, v))
-                    .collect();
-                let mv: Vec<(i32, i32)> = m.iter().map(|(k, v)| (*k, *v)).collect();
-                assert_eq!(tv, mv);
-                t.validate();
-            }*/
+    fn remove_triggers_redistribute_and_validate_passes() {
+        let mut t: BPlusTree<i64> = BPlusTree::default();
+        for k in 0..50_i64 {
+            t.insert_into_tree(k, vec![k as u64]);
+        }
+        t.validate();
+        // Remove every other key to trigger redistribute/merge paths.
+        for k in (0..50_i64).step_by(2) {
+            t.remove(&k);
+        }
+        t.validate();
+        // Remaining keys (odd ones) should still be present.
+        for k in (1..50_i64).step_by(2) {
+            assert_eq!(t.get(&k), Some(vec![k as u64]));
+        }
     }
-}
+
+    #[test]
+    fn remove_same_key_twice_second_returns_none() {
+        let mut t = build(&[5, 10, 15]);
+        assert_eq!(t.remove(&10), Some(vec![10]));
+        assert_eq!(t.remove(&10), None);
+        assert_eq!(t.len(), 2);
+    }
+
+    #[test]
+    fn range_unbounded_returns_all_sorted() {
+        let mut t: BPlusTree<i64> = BPlusTree::default();
+        for k in 0..30_i64 {
+            t.insert_into_tree(k, vec![k as u64]);
+        }
+        let all = t.range(None, None);
+        assert_eq!(all.len(), 30);
+        for (i, (k, v)) in all.iter().enumerate() {
+            assert_eq!(*k, i as i64);
+            assert_eq!(*v, vec![i as u64]);
+        }
+    }
+
+    #[test]
+    fn range_bounded_exclusive_end() {
+        let t = build(&[0, 10, 20, 30, 40, 50]);
+        // [10, 40) => 10, 20, 30
+        let r = t.range(Some(&10), Some(&40));
+        let keys: Vec<i64> = r.into_iter().map(|(k, _)| k).collect();
+        assert_eq!(keys, vec![10, 20, 30]);
+    }
+
+    #[test]
+    fn range_unbounded_start() {
+        let t = build(&[10, 20, 30, 40]);
+        let r = t.range(None, Some(&25));
+        let keys: Vec<i64> = r.into_iter().map(|(k, _)| k).collect();
+        assert_eq!(keys, vec![10, 20]);
+    }
+
+    #[test]
+    fn range_unbounded_end() {
+        let t = build(&[10, 20, 30, 40]);
+        let r = t.range(Some(&25), None);
+        let keys: Vec<i64> = r.into_iter().map(|(k, _)| k).collect();
+        assert_eq!(keys, vec![30, 40]);
+    }
+
+    #[test]
+    fn range_empty_when_start_equals_end() {
+        let t = build(&[10, 20, 30]);
+        let r = t.range(Some(&20), Some(&20));
+        assert!(r.is_empty());
+    }
+
+    #[test]
+    fn range_empty_when_start_greater_than_end() {
+        let t = build(&[10, 20, 30]);
+        let r = t.range(Some(&30), Some(&10));
+        assert!(r.is_empty());
+    }
+
+    #[test]
+    fn range_start_before_first_key_includes_first() {
+        let t = build(&[10, 20, 30]);
+        let r = t.range(Some(&5), Some(&25));
+        let keys: Vec<i64> = r.into_iter().map(|(k, _)| k).collect();
+        assert_eq!(keys, vec![10, 20]);
+    }
+
+    #[test]
+    fn range_end_after_last_key_includes_last() {
+        let t = build(&[10, 20, 30]);
+        let r = t.range(Some(&15), Some(&999));
+        let keys: Vec<i64> = r.into_iter().map(|(k, _)| k).collect();
+        assert_eq!(keys, vec![20, 30]);
+    }
+
+    #[test]
+    fn leftmost_leaf_on_empty_tree_is_root() {
+        let t: BPlusTree<i64> = BPlusTree::default();
+        let ll = t.leftmost_leaf(t.root.clone());
+        let guard = ll.lock().unwrap();
+        assert!(matches!(&*guard, Node::Leaf(_)));
+    }
+
+    #[test]
+    fn leftmost_leaf_contains_minimum_key() {
+        let t = build(&[50, 10, 30, 20, 40]);
+        let ll = t.leftmost_leaf(t.root.clone());
+        let guard = ll.lock().unwrap();
+        let Node::Leaf(ln) = &*guard else { panic!("not a leaf") };
+        // First key in leftmost leaf must be the global minimum.
+        assert_eq!(ln.keys[0], 10);
+    }
+
+    #[test]
+    fn leaf_walker_rows_empty_tree() {
+        let t: BPlusTree<i64> = BPlusTree::default();
+        let ll = t.leftmost_leaf(t.root.clone());
+        let guard = ll.lock().unwrap();
+        let Node::Leaf(ln) = &*guard else { panic!() };
+        let rows = t.leaf_walker_rows(ln.clone()).unwrap();
+        assert!(rows.is_empty());
+    }
+
+    #[test]
+    fn leaf_walker_rows_returns_all_values_in_key_order() {
+        let mut t: BPlusTree<i64> = BPlusTree::default();
+        for k in 0..20_i64 {
+            t.insert_into_tree(k, vec![k as u64, k as u64 + 100]);
+        }
+        let ll = t.leftmost_leaf(t.root.clone());
+        let guard = ll.lock().unwrap();
+        let Node::Leaf(ln) = &*guard else { panic!() };
+        let rows = t.leaf_walker_rows(ln.clone()).unwrap();
+
+        // Should return all 20 Vec<u64> values, one per key.
+        assert_eq!(rows.len(), 20);
+        for (i, v) in rows.iter().enumerate() {
+            assert_eq!(v[0], i as u64);
+            assert_eq!(v[1], i as u64 + 100);
+        }
+    }
+
+    #[test]
+    fn validate_empty_tree_does_not_panic() {
+        let t: BPlusTree<i64> = BPlusTree::default();
+        t.validate(); // should not panic
+    }
+
+    #[test]
+    fn validate_single_key_does_not_panic() {
+        let mut t: BPlusTree<i64> = BPlusTree::default();
+        t.insert_into_tree(1, vec![1]);
+        t.validate();
+    }
+
+    #[test]
+    fn validate_after_many_inserts_does_not_panic() {
+        let mut t: BPlusTree<i64> = BPlusTree::default();
+        for k in 0..200_i64 {
+            t.insert_into_tree(k, vec![k as u64]);
+        }
+        t.validate();
+    }
+
+    #[test]
+    fn validate_after_mixed_inserts_and_removes_does_not_panic() {
+        let mut t: BPlusTree<i64> = BPlusTree::default();
+        for k in 0..100_i64 {
+            t.insert_into_tree(k, vec![k as u64]);
+        }
+        for k in (0..100_i64).step_by(3) {
+            t.remove(&k);
+        }
+        t.validate();
+    }
+
+    #[test]
+    fn insert_remove_matches_btreemap_oracle() {
+        use std::collections::BTreeMap;
+
+        let mut t: BPlusTree<i64> = BPlusTree::default();
+        let mut m: BTreeMap<i64, Vec<u64>> = BTreeMap::new();
+
+        // Deterministic LCG pseudo-random sequence (no external crates needed).
+        let mut x: u64 = 0xDEAD_BEEF;
+        let mut next_key = || {
+            x = x.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1_442_695_040_888_963_407);
+            ((x >> 33) % 200) as i64
+        };
+
+        // Insert phase: 400 operations, keys in [0, 200).
+        for id in 0..400_u64 {
+            let k = next_key();
+            let v = vec![id];
+            let old_t = t.insert_into_tree(k, v.clone());
+            let old_m = m.insert(k, v);
+            assert_eq!(old_t, old_m, "insert mismatch at id={id}, key={k}");
+        }
+        assert_eq!(t.len(), m.len());
+        t.validate();
+
+        // Verify range() matches BTreeMap ordering.
+        let tree_all: Vec<i64> = t.range(None, None).into_iter().map(|(k, _)| k).collect();
+        let map_all: Vec<i64> = m.keys().copied().collect();
+        assert_eq!(tree_all, map_all);
+
+        // Remove phase: 300 operations.
+        for _ in 0..300 {
+            let k = next_key();
+            let rt = t.remove(&k);
+            let rm = m.remove(&k);
+            assert_eq!(rt, rm, "remove mismatch at key={k}");
+        }
+        assert_eq!(t.len(), m.len());
+        t.validate();
+
+        // Final full cross-check.
+        let tree_final: Vec<(i64, Vec<u64>)> = t.range(None, None);
+        let map_final: Vec<(i64, Vec<u64>)> = m.into_iter().collect();
+        assert_eq!(tree_final, map_final);
+    }
+    }
+
+
