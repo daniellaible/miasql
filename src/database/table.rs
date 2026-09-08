@@ -2,18 +2,42 @@ use crate::command::constraint::Constraint;
 use crate::command::createtable::ForeignKeyToken;
 use crate::database::datatype::DataType;
 use std::{fmt};
+use std::cmp::Ordering;
 use crate::database::mapstructure::HashmapStructure;
 use crate::database::memstruct::MemoryStructure;
 
-/// This is a basic data structure for MiaSql. 
+/// This is a basic data structure for MiaSql.
 /// It represents a row of a table.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Row {
     pub data: Vec<DataType>,
 }
 
+impl PartialOrd for Row {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        todo!()
+    }
+
+    fn lt(&self, other: &Self) -> bool {
+        todo!()
+    }
+
+    fn le(&self, other: &Self) -> bool {
+        todo!()
+    }
+
+    fn gt(&self, other: &Self) -> bool {
+        todo!()
+    }
+
+    fn ge(&self, other: &Self) -> bool {
+        todo!()
+    }
+
+}
+
 /// This is a basic data structure of MiaSql and it represents a table in memory.
-///  
+///
 #[derive(Debug, Clone)]
 pub struct Table {
     /// stores the highest id in the table, so it gets easier to increase the id counter by 1
@@ -25,10 +49,10 @@ pub struct Table {
     pub table_name: String,
     /// The path tto the mtd file where the table specifications are stored
     pub mtd_path:String,
-    /// The main memory structure to retrieve a row by its id 
+    /// The main memory structure to retrieve a row by its id
     pub data: HashmapStructure,
-    /// Each column has it's values indexed in appropriate memory structure - 
-    ///     all share the trait MemoryStructure 
+    /// Each column has it's values indexed in appropriate memory structure -
+    ///     all share the trait MemoryStructure
     pub index_structures: Vec<Box<dyn MemoryStructure>>,
     /// Each column has its name and it needs to be stored somewhere
     pub column_names: Vec<String>,

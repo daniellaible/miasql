@@ -8,7 +8,7 @@ pub type RowId = u64;
 /// When accessing different MemoryStructures like a tree [BPlusTree] or a hashmap [MapStructure]
 /// to manipulate data in memory, different datatypes are often used, although the intention
 /// of the trait is the same. This enum is used to keep the interface small.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum IndexValue {
     Bool(bool),
     Text(String),
@@ -16,8 +16,9 @@ pub enum IndexValue {
     BigInt(i64),
     Int(i32),
     SmallInt(i16),
-    TinyInt(i8)
-
+    TinyInt(i8),
+    Decimal (f32),
+    Float (f64),
 }
 
 /// This trait describes the interface of several different structs which are designed to

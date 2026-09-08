@@ -1,4 +1,3 @@
-//use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use crate::database::memstruct::{IndexValue, MemoryStructure, RowId};
 use crate::database::table::Row;
 
