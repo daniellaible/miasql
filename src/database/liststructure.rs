@@ -1,7 +1,7 @@
 use crate::database::memstruct::{IndexValue, MemoryStructure, RowId};
 use crate::database::table::Row;
+use rayon::prelude::*;
 use std::cmp::Ordering;
-use std::f64::NAN;
 
 /// This structure is used to store decimals of typ t in memory.
 /// Type T must be of type f32 or f64.
@@ -36,29 +36,35 @@ impl MemoryStructure for ListStructure<f64> {
         }
     }
 
+    /// This interfacte is mainly for the use of enums and boolean datatypes
+    /// Don't use this interface with decimals
     fn retrieve_range(&self, key: &IndexValue) -> Vec<RowId> {
-        todo!()
+        panic!("This function should not be used in this context");
     }
 
+    /// Do no use this interface with decimals. Select the [Row] directly
+    /// in the [HashmapStructure]
     fn retrieve_by_index(&self, id: RowId) -> Option<Row> {
-        todo!()
+        panic!("This function should not be used in this context");
     }
 
+    /// This deletes the reference to a row, if the containing vector is empty the
+    /// whole tupel is deleted
     fn delete(&mut self, id: RowId) {
-        todo!()
+        self.data.par_iter_mut().for_each(|tupel| {
+            tupel.1.retain(|&x| x != id);
+        });
+        self.data.retain(|(_, ids)| !ids.is_empty());
     }
 
+    /// This is needed to implement the clone trait
     fn clone_box(&self) -> Box<dyn MemoryStructure> {
-        todo!()
+        Box::new(self.clone())
     }
 
-    fn kind(&self) -> &'static str {
-        todo!()
-    }
-}
-
-fn find_elem_and_add_f32(p0: Vec<(IndexValue, Vec<RowId>)>, p1: f32) {
-    todo!()
+    /// Returns the type of this [MemoryStructure] implementation.
+    /// In this case 'list'
+    fn kind(&self) -> &'static str { "list" }
 }
 
 fn find_elem_and_add_f64(mut list: Vec<(f64, Vec<RowId>)>, number: f64, id: RowId)
@@ -72,19 +78,6 @@ fn find_elem_and_add_f64(mut list: Vec<(f64, Vec<RowId>)>, number: f64, id: RowI
     list
 }
 
-
-fn check_value_in_list_f32<T>(list: Vec<(f32, Vec<RowId>)>, number: f32) -> bool
-where
-    f32: From<T>,
-{
-    let is_in_list =
-        list.binary_search_by(|(value, _)| value.partial_cmp(&number).unwrap_or(Ordering::Equal));
-    match is_in_list {
-        Ok(_) => true,
-        Err(_) => false,
-    }
-}
-
 fn check_value_in_list_f64<T: 'static>(list: Vec<(f64, Vec<RowId>)>, number: f64) -> bool
 {
     let is_in_list =
@@ -95,10 +88,89 @@ fn check_value_in_list_f64<T: 'static>(list: Vec<(f64, Vec<RowId>)>, number: f64
     }
 }
 
+
+/// This type of [MemoryStructure] is dedicated to float and decimal numbers.
+/// The structure consists of a vector of tupels of type (f32, Vec<[RowId]>).
+/// So a decimal value is stored in order along with a vector that saved the [RowId]s of the
+/// corresponding [Row]
+impl MemoryStructure for ListStructure<f32> {
+    // Use this function to insert a f32 number to this data structure. NaN is filtered out.
+    fn insert(&mut self, value: IndexValue, id: RowId) {
+        match value {
+            IndexValue::Decimal(f) => {
+                if f.is_nan() {
+                    return;
+                }
+                if !check_value_in_list_f32(self.data.clone(), f) {
+                    let mut rowIds = Vec::new();
+                    rowIds.push(id);
+                    self.data.push((f, rowIds));
+                    self.data.sort_by(|x, y| x.0.partial_cmp(&y.0).unwrap())
+                } else {
+                    self.data = find_elem_and_add_f32(self.data.clone(), f, id);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    /// This interfacte is mainly for the use of enums and boolean datatypes
+    /// Don't use this interface with decimals
+    fn retrieve_range(&self, key: &IndexValue) -> Vec<RowId> {
+        panic!("This function should not be used in this context");
+    }
+
+    /// Do no use this interface with decimals. Select the [Row] directly
+    /// in the [HashmapStructure]
+    fn retrieve_by_index(&self, id: RowId) -> Option<Row> {
+        panic!("This function should not be used in this context");
+    }
+
+    /// This deletes the reference to a row, if the containing vector is empty the
+    /// whole tupel is deleted
+    fn delete(&mut self, id: RowId) {
+        self.data.par_iter_mut().for_each(|tupel| {
+            tupel.1.retain(|&x| x != id);
+        });
+        self.data.retain(|(_, ids)| !ids.is_empty());
+    }
+
+    /// This is needed to implement the clone trait
+    fn clone_box(&self) -> Box<dyn MemoryStructure> {
+        Box::new(self.clone())
+    }
+
+    /// Returns the type of this [MemoryStructure] implementation.
+    /// In this case 'list'
+    fn kind(&self) -> &'static str { "list" }
+}
+
+fn check_value_in_list_f32(list: Vec<(f32, Vec<RowId>)>, number: f32) -> bool {
+    let is_in_list =
+        list.binary_search_by(|(value, _)| value.partial_cmp(&number).unwrap_or(Ordering::Equal));
+    match is_in_list {
+        Ok(_) => true,
+        Err(_) => false,
+    }
+}
+
+fn find_elem_and_add_f32(mut list: Vec<(f32, Vec<RowId>)>, number: f32, id: RowId)
+                         -> Vec<(f32, Vec<RowId>)>
+{
+    let index = list
+        .binary_search_by(|(value, _)| value.partial_cmp(&number).unwrap_or(Ordering::Equal))
+        .expect("Element not found although it should be here");
+
+    list[index].1.push(id);
+    list
+}
+
+
+
 #[cfg(test)]
 mod tests {
     use crate::database::liststructure::ListStructure;
-    use crate::database::memstruct::{IndexValue, MemoryStructure, RowId};
+    use crate::database::memstruct::{IndexValue, MemoryStructure};
 
     #[test]
     fn insert_new_id(){
