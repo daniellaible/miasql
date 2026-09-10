@@ -1,4 +1,7 @@
 # To Do's
++ Tests for liststructure
++ Implement MemoryStructure for various BpTree<T> types
++ Tests for BPlusTrees
 + Create table needs to implement foreign keys
 + Create database needs to check if there is already a database with the same name
 + MiaLedger path is not coming from the config file.

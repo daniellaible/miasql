@@ -1,7 +1,6 @@
 use log::error;
 use rayon::iter::IntoParallelRefIterator;
 use rayon::prelude::*;
-use crate::database::mapstructure::HashmapStructure;
 use crate::database::memstruct::{IndexValue, MemoryStructure, RowId};
 use crate::database::table::Row;
 
@@ -27,7 +26,7 @@ impl MemoryStructure for EnumStructure {
                     match indexvalue {
                         IndexValue::Text(enum_as_text) => {
                             if *enum_as_text == enum_value{
-                                &tupel.1.push(id);
+                                _ = &tupel.1.push(id);
                             }
                         }
                         _ => {}
@@ -68,7 +67,7 @@ impl MemoryStructure for EnumStructure {
     /// however, incredibly slow therefore, this function call panics.
     /// If you want to retrieve the enums data use the main [HashmapStructure] to retrieve
     /// the complete [Row] and access the element within the [Row] directly.
-    fn retrieve_by_index(&self, id: RowId) -> Option<Row> {
+    fn retrieve_by_index(&self, _id: RowId) -> Option<Row> {
         panic!("EnumStructure uses retrieve_range function to access the data")
     }
 

@@ -88,7 +88,6 @@ fn check_value_in_list_f64<T: 'static>(list: Vec<(f64, Vec<RowId>)>, number: f64
     }
 }
 
-
 /// This type of [MemoryStructure] is dedicated to float and decimal numbers.
 /// The structure consists of a vector of tupels of type (f32, Vec<[RowId]>).
 /// So a decimal value is stored in order along with a vector that saved the [RowId]s of the
@@ -165,8 +164,6 @@ fn find_elem_and_add_f32(mut list: Vec<(f32, Vec<RowId>)>, number: f32, id: RowI
     list
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use crate::database::liststructure::ListStructure;
@@ -188,6 +185,8 @@ mod tests {
        list_structure.insert(test_number4, 4);
         println!("{:?}", list_structure);
     }
+
+    //TODO do more tests
 
 }
 

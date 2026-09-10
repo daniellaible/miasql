@@ -125,8 +125,11 @@ pub fn extract_foreign_keys(create_table: CreateTable) -> Vec<ForeignKeyToken> {
     foreign_keys
 }
 
-pub fn create_table(mut transaction: TransactionContext, tablename: String, columns:Vec<(String, DataType, Vec<Constraint>)>) -> anyhow::Result<TransactionContext, Error>{
-/*    let ledger_clone_file = transaction.clone();
+pub fn  create_table(mut transaction: TransactionContext, tablename: String, columns:Vec<(String, DataType, Vec<Constraint>)>) -> anyhow::Result<TransactionContext, Error>{
+    // l
+
+
+    /*    let ledger_clone_file = transaction.clone();
     let ledger_result = file::ledgerhandler::append_to_file(
         &ledger_clone_file.user,
         &ledger_clone_file.command,

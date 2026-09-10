@@ -1,4 +1,3 @@
-use crate::database::datatype::DataType;
 use crate::database::memstruct::{IndexValue, MemoryStructure, RowId};
 use crate::database::table::Row;
 use std::cmp::Ordering;

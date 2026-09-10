@@ -18,6 +18,7 @@ mod database {
     pub mod emptymemstructure;
     pub mod enumstructure;
     pub mod liststructure;
+    pub mod varcharstructure;
 }
 
 /// # Parsing modules
