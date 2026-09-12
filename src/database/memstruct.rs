@@ -14,6 +14,7 @@ pub enum IndexValue {
     Text(String),
     Row(Row),
     BigInt(i64),
+    Date(u64),
     Int(i32),
     SmallInt(i16),
     TinyInt(i8),

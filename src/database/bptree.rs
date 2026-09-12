@@ -3,22 +3,33 @@ use crate::database::table::Row;
 use std::cmp::Ordering;
 use std::fmt::Debug;
 use std::sync::{Arc, Mutex};
+use log::{info, warn};
 
+/// Right now we are using max 3 keys per [Node]. Later on we will optimize this and make it
+/// changeable at runtime.
 const MAX_KEYS: usize = 3;
+
+/// [Link is just so we don't have to write Arc...Mutext...Node all the time
 pub type Link<K> = Arc<Mutex<Node<K>>>;
 
+/// Basic enum type of [Node] in a [BPlusTree]
+/// A [Node] can either be of type [Node::Internal] or it can be of type [Node::Leaf]
 #[derive(Clone, Debug)]
 pub enum Node<K> {
     Internal(InternalNode<K>),
     Leaf(LeafNode<K>),
 }
 
+/// An [InternalNode] is a special [Node] in the [BPlusTree], it contains a list of the keys and
+/// a list of [Link]s to the children.
 #[derive(Clone, Debug)]
 pub struct InternalNode<K> {
     pub keys: Vec<K>,
     pub children: Vec<Link<K>>,
 }
 
+/// A [LeafNode] is a special [Node] in the [BPlusTree]; it contains a list of all the keys, and
+/// a list of all values for the keys. Furthermore, it contains a [Link] the next [LeafNode] to the right.
 #[derive(Clone, Debug)]
 pub struct LeafNode<K> {
     pub keys: Vec<K>,
@@ -26,29 +37,88 @@ pub struct LeafNode<K> {
     pub next: Option<Link<K>>,
 }
 
-/// We need to do some descriptive work over here
+/// This is the basic struct of a [BPlusTree]
+/// It is just a [Link} to the root. Link is just a bubble wrapped [Node] which can be of type
+/// [InternalNode] or [LeafNode]. So this is not the whole tree, it is just a reference to its root.
 #[derive(Clone, Debug)]
 pub struct BPlusTree<K> {
     pub root: Link<K>,
     pub len: usize,
 }
 
+/// This is the [MemoryStructure] for whole numbers - not for fractions.
+/// The underlying structure is a [BPlusTree]. This implementation is used for timestamps.
+/// The underlying datatype is u64.
 impl MemoryStructure for BPlusTree<u64> {
     fn insert(&mut self, value: IndexValue, id: RowId) {
-        todo!()
+        match value{
+            IndexValue::Date(date) => {
+                match self.get(&date){
+                    None => {
+                        let mut keys = Vec::new();
+                        keys.push(id);
+                        self.insert_into_tree(date, keys);
+                    }
+                    Some(mut ids) => {
+                        ids.push(id);
+                    }
+                }
+            }
+            _ => {warn!("I expected a date (u64), you gave me something different")}
+        }
     }
 
     fn retrieve_range(&self, key: &IndexValue) -> Vec<RowId> {
-        todo!()
+        match key{
+            IndexValue::Date(date) => {
+                let ids_option = self.get(&date);
+                match ids_option{
+                    None => {
+                        Vec::new()
+                    }
+                    Some(ids) => {
+                        ids
+                    }
+                }
+            }
+            _ => {Vec::new()}
+        }
     }
 
+    /// I think we went over this already <br>
+    /// Don't use this function - use the [HashmapStructure] instead
     fn retrieve_by_index(&self, id: RowId) -> Option<Row> {
-        todo!()
+        panic!("You really should start to read the comments and not use this function is this context")
     }
 
-    fn delete(&mut self, id: RowId) {
-        todo!()
+    /// Deletes the given id from the [BPlusTree]
+    /// TODO needs testing
+    fn delete(&mut self, given_id: RowId) {
+        let current_leaf = self.leftmost_leaf(self.root.clone());
+        let node_guard = current_leaf.lock().unwrap();
+        let Node::Leaf(leaf) = &*node_guard else {
+            unreachable!("find_leaf must return leaf");
+        };
+        let values = leaf.values.clone(); //das sind die spalten mit den ids
+        let mut column_counter = 0;
+        for mut column in values {
+            let mut id_counter = 0;
+            for id in column.clone() {
+                if id == given_id{
+                    if column.len() > 1 {
+                        column.remove(id_counter);
+                    }else{
+                        let keys = leaf.keys.clone();
+                        let key = keys[column_counter];
+                        self.remove(&key);
+                    }
+                }
+                id_counter += 1;
+            }
+            column_counter += 1;
+        }
     }
+
 
     fn clone_box(&self) -> Box<dyn MemoryStructure> {
         todo!()
@@ -139,6 +209,7 @@ impl MemoryStructure for BPlusTree<i32> {
 
 impl MemoryStructure for BPlusTree<i64> {
     fn insert(&mut self, value: IndexValue, id: RowId) {
+
         // self.insert_into_tree(id as i64, value);
         /*match value {
             IndexValue::BigInt(x) => {

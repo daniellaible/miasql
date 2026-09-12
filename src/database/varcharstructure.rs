@@ -16,7 +16,7 @@ pub struct VarCharStructure {
 /// So a [DataType::VarChar] is stored in order along with a vector that saved the [RowId]s of the
 /// corresponding [Row]. Internally, the given value is of type [IndexValue::Text] which in itself
 /// is a wrapper for a String which is in this case a [DataType::VarChar].
-/// TLDR value has to be of type [IndexValue::Text] 
+/// TLDR value has to be of type [IndexValue::Text]
 impl MemoryStructure for VarCharStructure {
     /// This function is used to insert a [IndexValue::Text] into this kind of [MemoryStructure]
     fn insert(&mut self, value: IndexValue, id: RowId) {
@@ -38,16 +38,16 @@ impl MemoryStructure for VarCharStructure {
         }
     }
 
-    /// Rule #1: Don't do it <br>
-    /// Rule #2: Don't think about doing it <br>
-    /// goto Rule #1 
+    /// Rule #1: Don't use it <br>
+    /// Rule #2: Don't think about using    it <br>
+    /// goto Rule #1
     fn retrieve_range(&self, _key: &IndexValue) -> Vec<RowId> {
         panic!("We don't do this over here - wrong command for the wrong memorystructure")
     }
 
     /// Rule #1: Don't do it <br>
     /// Rule #2: Don't think about doing it <br>
-    /// goto Rule #1 
+    /// goto Rule #1
     fn retrieve_by_index(&self, _id: RowId) -> Option<Row> {
         panic!("Stupid thing we do not do - wrong command for the wrong memorystructure")
     }
@@ -86,6 +86,6 @@ fn text_is_stored(data: &Vec<(String, Vec<RowId>)>, text: String) -> bool {
 
 #[cfg(test)]
 mod tests {
-    
-    
+
+
 }
