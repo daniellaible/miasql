@@ -133,140 +133,352 @@ impl MemoryStructure for BPlusTree<u64> {
         Box::new(self.clone())
     }
 
-    fn kind(&self) -> &'static str { "tree" }
+    fn kind(&self) -> &'static str {
+        "tree"
+    }
 }
 
 impl MemoryStructure for BPlusTree<i8> {
     fn insert(&mut self, value: IndexValue, id: RowId) {
-        todo!()
+        match value {
+            IndexValue::TinyInt(tiny) => match self.get(&tiny) {
+                None => {
+                    let mut keys = Vec::new();
+                    keys.push(id);
+                    self.insert_into_tree(tiny, keys);
+                }
+                Some(mut ids) => {
+                    ids.push(id);
+                    self.insert_into_tree(tiny, ids);
+                }
+            },
+            _ => {
+                warn!("I expected a tiny int (i8), you gave me something different")
+            }
+        }
     }
 
     fn retrieve_range(&self, key: &IndexValue) -> Vec<RowId> {
-        todo!()
+        match key {
+            IndexValue::TinyInt(tiny) => {
+                let ids_option = self.get(&tiny);
+                match ids_option {
+                    None => Vec::new(),
+                    Some(ids) => ids,
+                }
+            }
+            _ => Vec::new(),
+        }
     }
 
     fn retrieve_by_index(&self, id: RowId) -> Option<Row> {
-        todo!()
+        panic!(
+            "You really should start to read the comments and not use this function is this context"
+        )
     }
 
-    fn delete(&mut self, id: RowId, _value: Option<IndexValue>) {
-        todo!()
+    fn delete(&mut self, given_id: RowId, value: Option<IndexValue>) {
+        if self.is_empty() {
+            return;
+        }
+
+        match value {
+            Some(value) => match value {
+                IndexValue::TinyInt(tiny) => {
+                    let result_option = self.get(&tiny);
+                    match result_option {
+                        None => {
+                            warn!("Somethings odd here - there should be a result")
+                        }
+                        Some(result) => {
+                            let mut new_id_vec = Vec::new();
+                            for i in 0..result.len() {
+                                if result[i] != given_id {
+                                    new_id_vec.push(result[i]);
+                                }
+                            }
+                            if new_id_vec.len() == 0 {
+                                self.remove(&tiny);
+                            } else {
+                                self.insert_into_tree(tiny, new_id_vec);
+                            }
+                        }
+                    }
+                }
+                _ => {
+                    panic!("The value is needed to retrieve the data")
+                }
+            },
+            None => {
+                panic!("In the tree we actually need the value")
+            }
+        }
     }
 
     fn clone_box(&self) -> Box<dyn MemoryStructure> {
-        todo!()
+        Box::new(self.clone())
     }
 
     fn kind(&self) -> &'static str {
-        todo!()
+        "tree"
     }
 }
 
 impl MemoryStructure for BPlusTree<i16> {
     fn insert(&mut self, value: IndexValue, id: RowId) {
-        todo!()
+        match value {
+            IndexValue::SmallInt(small) => match self.get(&small) {
+                None => {
+                    let mut keys = Vec::new();
+                    keys.push(id);
+                    self.insert_into_tree(small, keys);
+                }
+                Some(mut ids) => {
+                    ids.push(id);
+                    self.insert_into_tree(small, ids);
+                }
+            },
+            _ => {
+                warn!("I expected a smallint (i16), you gave me something different")
+            }
+        }
     }
 
     fn retrieve_range(&self, key: &IndexValue) -> Vec<RowId> {
-        todo!()
+        match key {
+            IndexValue::SmallInt(small) => {
+                let ids_option = self.get(&small);
+                match ids_option {
+                    None => Vec::new(),
+                    Some(ids) => ids,
+                }
+            }
+            _ => Vec::new(),
+        }
     }
 
     fn retrieve_by_index(&self, id: RowId) -> Option<Row> {
-        todo!()
+        panic!(
+            "You really should start to read the comments and not use this function is this context"
+        )
     }
 
-    fn delete(&mut self, id: RowId, _value: Option<IndexValue>) {
-        todo!()
+    fn delete(&mut self, given_id: RowId, value: Option<IndexValue>) {
+        if self.is_empty() {
+            return;
+        }
+
+        match value {
+            Some(value) => match value {
+                IndexValue::SmallInt(date) => {
+                    let result_option = self.get(&date);
+                    match result_option {
+                        None => {
+                            warn!("Somethings odd here - there should be a result")
+                        }
+                        Some(result) => {
+                            let mut new_id_vec = Vec::new();
+                            for i in 0..result.len() {
+                                if result[i] != given_id {
+                                    new_id_vec.push(result[i]);
+                                }
+                            }
+                            if new_id_vec.len() == 0 {
+                                self.remove(&date);
+                            } else {
+                                self.insert_into_tree(date, new_id_vec);
+                            }
+                        }
+                    }
+                }
+                _ => {
+                    panic!("The value is needed to retrieve the data")
+                }
+            },
+            None => {
+                panic!("In the tree we actually need the value")
+            }
+        }
     }
 
     fn clone_box(&self) -> Box<dyn MemoryStructure> {
-        todo!()
+        Box::new(self.clone())
     }
 
     fn kind(&self) -> &'static str {
-        todo!()
+        "tree"
     }
 }
 
 impl MemoryStructure for BPlusTree<i32> {
     fn insert(&mut self, value: IndexValue, id: RowId) {
-        todo!()
+        match value {
+            IndexValue::Int(inty) => match self.get(&inty) {
+                None => {
+                    let mut keys = Vec::new();
+                    keys.push(id);
+                    self.insert_into_tree(inty, keys);
+                }
+                Some(mut ids) => {
+                    ids.push(id);
+                    self.insert_into_tree(inty, ids);
+                }
+            },
+            _ => {
+                warn!("I expected an int (i64), you gave me something different")
+            }
+        }
     }
 
     fn retrieve_range(&self, key: &IndexValue) -> Vec<RowId> {
-        todo!()
+        match key {
+            IndexValue::Int(inty) => {
+                let ids_option = self.get(&inty);
+                match ids_option {
+                    None => Vec::new(),
+                    Some(ids) => ids,
+                }
+            }
+            _ => Vec::new(),
+        }
     }
 
     fn retrieve_by_index(&self, id: RowId) -> Option<Row> {
-        todo!()
+        panic!(
+            "You really should start to read the comments and not use this function is this context"
+        )
     }
 
-    fn delete(&mut self, id: RowId, _value: Option<IndexValue>) {
-        todo!()
+    fn delete(&mut self, given_id: RowId, value: Option<IndexValue>) {
+        if self.is_empty() {
+            return;
+        }
+
+        match value {
+            Some(value) => match value {
+                IndexValue::Int(inty) => {
+                    let result_option = self.get(&inty);
+                    match result_option {
+                        None => {
+                            warn!("Somethings odd here - there should be a result")
+                        }
+                        Some(result) => {
+                            let mut new_id_vec = Vec::new();
+                            for i in 0..result.len() {
+                                if result[i] != given_id {
+                                    new_id_vec.push(result[i]);
+                                }
+                            }
+                            if new_id_vec.len() == 0 {
+                                self.remove(&inty);
+                            } else {
+                                self.insert_into_tree(inty, new_id_vec);
+                            }
+                        }
+                    }
+                }
+                _ => {
+                    panic!("The value is needed to retrieve the data")
+                }
+            },
+            None => {
+                panic!("In the tree we actually need the value")
+            }
+        }
     }
 
     fn clone_box(&self) -> Box<dyn MemoryStructure> {
-        todo!()
+        Box::new(self.clone())
     }
 
     fn kind(&self) -> &'static str {
-        todo!()
+        "tree"
     }
 }
 
 impl MemoryStructure for BPlusTree<i64> {
     fn insert(&mut self, value: IndexValue, id: RowId) {
-
-        // self.insert_into_tree(id as i64, value);
-        /*match value {
-            IndexValue::BigInt(x) => {
-                let root = self.root.clone();
-                let leaf_link = self.find_leaf(root, &(id as i64));
-                let guard = leaf_link.lock().unwrap();
-                match &*guard {
-                    Node::Leaf(ln) => {
-                        println!("{:?}", ln);
-                        for i in 0 ..ln.keys.len(){
-                            if ln.keys[i] == id as i64 {
-                                match value{
-                                    IndexValue::BigInt(number) => {
-
-                                    }
-
-                                    _ => {}
-                                }
-
-                            }
-                        }
-                    },
-                    Node::Internal(_) => {panic!("We do not belong here")}
+        match value {
+            IndexValue::BigInt(biggy) => match self.get(&biggy) {
+                None => {
+                    let mut keys = Vec::new();
+                    keys.push(id);
+                    self.insert_into_tree(biggy, keys);
                 }
-
-
-                //self.insert_into_tree(x, id);
+                Some(mut ids) => {
+                    ids.push(id);
+                    self.insert_into_tree(biggy, ids);
+                }
+            },
+            _ => {
+                warn!("I expected a bigint (i64), you gave me something different")
             }
-            _ => panic!("You did not give me an i64, therefore I crashed - upsi")
-        }*/
+        }
     }
 
     fn retrieve_range(&self, key: &IndexValue) -> Vec<RowId> {
-        todo!()
+        match key {
+            IndexValue::BigInt(biggy) => {
+                let ids_option = self.get(&biggy);
+                match ids_option {
+                    None => Vec::new(),
+                    Some(ids) => ids,
+                }
+            }
+            _ => Vec::new(),
+        }
     }
 
     fn retrieve_by_index(&self, id: RowId) -> Option<Row> {
-        todo!()
+        panic!(
+            "You really should start to read the comments and not use this function is this context"
+        )
     }
 
-    fn delete(&mut self, id: RowId, _value: Option<IndexValue>) {
-        todo!()
+    fn delete(&mut self, given_id: RowId, value: Option<IndexValue>) {
+        if self.is_empty() {
+            return;
+        }
+
+        match value {
+            Some(value) => match value {
+                IndexValue::BigInt(biggy) => {
+                    let result_option = self.get(&biggy);
+                    match result_option {
+                        None => {
+                            warn!("Somethings odd here - there should be a result")
+                        }
+                        Some(result) => {
+                            let mut new_id_vec = Vec::new();
+                            for i in 0..result.len() {
+                                if result[i] != given_id {
+                                    new_id_vec.push(result[i]);
+                                }
+                            }
+                            if new_id_vec.len() == 0 {
+                                self.remove(&biggy);
+                            } else {
+                                self.insert_into_tree(biggy, new_id_vec);
+                            }
+                        }
+                    }
+                }
+                _ => {
+                    panic!("The value is needed to retrieve the data")
+                }
+            },
+            None => {
+                panic!("In the tree we actually need the value")
+            }
+        }
     }
 
     fn clone_box(&self) -> Box<dyn MemoryStructure> {
-        todo!()
+        Box::new(self.clone())
     }
 
     fn kind(&self) -> &'static str {
-        todo!()
+        "tree"
     }
 }
 
@@ -1040,7 +1252,9 @@ mod tests {
 
         let guard = tree.leftmost_leaf(tree.root.clone());
         let guarded = guard.lock().unwrap();
-        let Node::Leaf(leaf) = &*guarded else { unreachable!() };
+        let Node::Leaf(leaf) = &*guarded else {
+            unreachable!()
+        };
         let keys = &leaf.keys;
         let values = &leaf.values;
         assert_eq!(keys[0], 100);
