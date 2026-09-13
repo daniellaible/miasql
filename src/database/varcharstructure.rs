@@ -52,7 +52,7 @@ impl MemoryStructure for VarCharStructure {
         panic!("Stupid thing we do not do - wrong command for the wrong memorystructure")
     }
 
-    fn delete(&mut self, id: RowId) {
+    fn delete(&mut self, id: RowId, _value:Option<IndexValue>) {
         self.data.par_iter_mut().for_each(|tupel| {
             tupel.1.retain(|&x| x != id);
         });

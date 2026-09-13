@@ -72,7 +72,7 @@ impl MemoryStructure for EnumStructure {
     }
 
     /// This deletes an element([RowId]) from one of the vectors
-    fn delete(&mut self, id: RowId) {
+    fn delete(&mut self, id: RowId, _value:Option<IndexValue>) {
         self.values
             .par_iter_mut()
             .for_each(|(_, row_ids)| {
@@ -175,7 +175,7 @@ mod tests {
     #[test]
     fn delete_test(){
         let mut enum_struct = insert();
-        enum_struct.delete(1);
+        enum_struct.delete(1, None);
         let high_result = &enum_struct.values[0];
         let ids = &high_result.1;
         assert_eq!(ids.len(), 2);

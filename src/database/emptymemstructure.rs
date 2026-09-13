@@ -19,7 +19,7 @@ impl MemoryStructure for EmptyMemStructure {
         panic!("This function should not be called in this context");
     }
 
-    fn delete(&mut self, id: RowId) {
+    fn delete(&mut self, id: RowId, _value:Option<IndexValue>) {
         panic!("This function should not be called in this context");
     }
 

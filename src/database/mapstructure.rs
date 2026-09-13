@@ -46,7 +46,7 @@ impl MemoryStructure for HashmapStructure {
     }
 
     /// Use this method to delete a [Row] from the tabel
-    fn delete(&mut self, id: RowId)
+    fn delete(&mut self, id: RowId, _value:Option<IndexValue>)
     {
         self.data.remove(&id);
     }
@@ -86,7 +86,7 @@ mod tests {
     fn basic_insert_delete_test() {
         let mut map_structure = HashmapStructure::default();
         insert_helper(&mut map_structure);
-        map_structure.delete(1);
+        map_structure.delete(1, None);
         assert_eq!(map_structure.retrieve_by_index(1), None);
     }
 

@@ -1,9 +1,9 @@
 use crate::database::memstruct::{IndexValue, MemoryStructure, RowId};
 use crate::database::table::Row;
+use log::{info, warn};
 use std::cmp::Ordering;
 use std::fmt::Debug;
 use std::sync::{Arc, Mutex};
-use log::{info, warn};
 
 /// Right now we are using max 3 keys per [Node]. Later on we will optimize this and make it
 /// changeable at runtime.
@@ -51,82 +51,89 @@ pub struct BPlusTree<K> {
 /// The underlying datatype is u64.
 impl MemoryStructure for BPlusTree<u64> {
     fn insert(&mut self, value: IndexValue, id: RowId) {
-        match value{
-            IndexValue::Date(date) => {
-                match self.get(&date){
-                    None => {
-                        let mut keys = Vec::new();
-                        keys.push(id);
-                        self.insert_into_tree(date, keys);
-                    }
-                    Some(mut ids) => {
-                        ids.push(id);
-                    }
+        match value {
+            IndexValue::Date(date) => match self.get(&date) {
+                None => {
+                    let mut keys = Vec::new();
+                    keys.push(id);
+                    self.insert_into_tree(date, keys);
                 }
+                Some(mut ids) => {
+                    ids.push(id);
+                    self.insert_into_tree(date, ids);
+                }
+            },
+            _ => {
+                warn!("I expected a date (u64), you gave me something different")
             }
-            _ => {warn!("I expected a date (u64), you gave me something different")}
         }
     }
 
     fn retrieve_range(&self, key: &IndexValue) -> Vec<RowId> {
-        match key{
+        match key {
             IndexValue::Date(date) => {
                 let ids_option = self.get(&date);
-                match ids_option{
-                    None => {
-                        Vec::new()
-                    }
-                    Some(ids) => {
-                        ids
-                    }
+                match ids_option {
+                    None => Vec::new(),
+                    Some(ids) => ids,
                 }
             }
-            _ => {Vec::new()}
+            _ => Vec::new(),
         }
     }
 
     /// I think we went over this already <br>
     /// Don't use this function - use the [HashmapStructure] instead
     fn retrieve_by_index(&self, id: RowId) -> Option<Row> {
-        panic!("You really should start to read the comments and not use this function is this context")
+        panic!(
+            "You really should start to read the comments and not use this function is this context"
+        )
     }
 
     /// Deletes the given id from the [BPlusTree]
-    /// TODO needs testing
-    fn delete(&mut self, given_id: RowId) {
-        let current_leaf = self.leftmost_leaf(self.root.clone());
-        let node_guard = current_leaf.lock().unwrap();
-        let Node::Leaf(leaf) = &*node_guard else {
-            unreachable!("find_leaf must return leaf");
-        };
-        let values = leaf.values.clone(); //das sind die spalten mit den ids
-        let mut column_counter = 0;
-        for mut column in values {
-            let mut id_counter = 0;
-            for id in column.clone() {
-                if id == given_id{
-                    if column.len() > 1 {
-                        column.remove(id_counter);
-                    }else{
-                        let keys = leaf.keys.clone();
-                        let key = keys[column_counter];
-                        self.remove(&key);
+    fn delete(&mut self, given_id: RowId, value: Option<IndexValue>) {
+        if self.is_empty() {
+            return;
+        }
+
+        match value {
+            Some(value) => match value {
+                IndexValue::Date(date) => {
+                    let result_option = self.get(&date);
+                    match result_option {
+                        None => {
+                            warn!("Somethings odd here - there should be a result")
+                        }
+                        Some(result) => {
+                            let mut new_id_vec = Vec::new();
+                            for i in 0..result.len() {
+                                if result[i] != given_id {
+                                    new_id_vec.push(result[i]);
+                                }
+                            }
+                            if new_id_vec.len() == 0 {
+                                self.remove(&date);
+                            } else {
+                                self.insert_into_tree(date, new_id_vec);
+                            }
+                        }
                     }
                 }
-                id_counter += 1;
+                _ => {
+                    panic!("The value is needed to retrieve the data")
+                }
+            },
+            None => {
+                panic!("In the tree we actually need the value")
             }
-            column_counter += 1;
         }
     }
 
-
     fn clone_box(&self) -> Box<dyn MemoryStructure> {
-        todo!()
+        Box::new(self.clone())
     }
 
-    fn kind(&self) -> &'static str {
-        todo!()
-    }
+    fn kind(&self) -> &'static str { "tree" }
 }
 
 impl MemoryStructure for BPlusTree<i8> {
@@ -142,7 +149,7 @@ impl MemoryStructure for BPlusTree<i8> {
         todo!()
     }
 
-    fn delete(&mut self, id: RowId) {
+    fn delete(&mut self, id: RowId, _value: Option<IndexValue>) {
         todo!()
     }
 
@@ -168,7 +175,7 @@ impl MemoryStructure for BPlusTree<i16> {
         todo!()
     }
 
-    fn delete(&mut self, id: RowId) {
+    fn delete(&mut self, id: RowId, _value: Option<IndexValue>) {
         todo!()
     }
 
@@ -194,7 +201,7 @@ impl MemoryStructure for BPlusTree<i32> {
         todo!()
     }
 
-    fn delete(&mut self, id: RowId) {
+    fn delete(&mut self, id: RowId, _value: Option<IndexValue>) {
         todo!()
     }
 
@@ -250,7 +257,7 @@ impl MemoryStructure for BPlusTree<i64> {
         todo!()
     }
 
-    fn delete(&mut self, id: RowId) {
+    fn delete(&mut self, id: RowId, _value: Option<IndexValue>) {
         todo!()
     }
 
@@ -989,6 +996,64 @@ mod tests {
     use super::{BPlusTree, Node};
     use crate::database::memstruct::{IndexValue, MemoryStructure};
 
+    // ----------------------------------------
+    // MemoryStructure Tests
+    // ----------------------------------------
+    #[test]
+    fn insert_into_tree_including_duplicates_test() {
+        let mut tree: BPlusTree<u64> = BPlusTree::default();
+        tree.insert(IndexValue::Date(100), 1);
+        tree.insert(IndexValue::Date(100), 7);
+        tree.insert(IndexValue::Date(101), 2);
+        tree.insert(IndexValue::Date(102), 3);
+        tree.insert(IndexValue::Date(103), 4);
+        tree.insert(IndexValue::Date(104), 5);
+        tree.insert(IndexValue::Date(105), 6);
+        let guard = tree.leftmost_leaf(tree.root.clone());
+        let guarded = guard.lock().unwrap();
+        let Node::Leaf(leaf) = &*guarded else {
+            unreachable!()
+        };
+        let keys = &leaf.keys;
+        let values = &leaf.values;
+        assert_eq!(keys[0], 100);
+        assert_eq!(keys[1], 101);
+        assert_eq!(values[0][0], 1);
+        assert_eq!(values[0][1], 7);
+        assert_eq!(values[1][0], 2);
+        println!("{:?}", leaf);
+    }
+
+    #[test]
+    fn delete_from_memorystruct() {
+        let mut tree: BPlusTree<u64> = BPlusTree::default();
+        tree.insert(IndexValue::Date(100), 1);
+        tree.insert(IndexValue::Date(100), 7);
+        tree.insert(IndexValue::Date(101), 2);
+        tree.insert(IndexValue::Date(102), 3);
+        tree.insert(IndexValue::Date(103), 4);
+        tree.insert(IndexValue::Date(104), 5);
+        tree.insert(IndexValue::Date(105), 6);
+
+        tree.delete(2, Some(IndexValue::Date(101)));
+        tree.delete(7, Some(IndexValue::Date(100)));
+
+        let guard = tree.leftmost_leaf(tree.root.clone());
+        let guarded = guard.lock().unwrap();
+        let Node::Leaf(leaf) = &*guarded else { unreachable!() };
+        let keys = &leaf.keys;
+        let values = &leaf.values;
+        assert_eq!(keys[0], 100);
+        assert_eq!(keys[1], 102);
+        assert_eq!(keys[2], 103);
+        assert_eq!(values[0][0], 1);
+        assert_eq!(values[1][0], 3);
+        assert_eq!(values[2][0], 4);
+    }
+
+    // ----------------------------------------
+    // BPlusTree Tests
+    // ----------------------------------------
 
     fn build(keys: &[i64]) -> BPlusTree<i64> {
         let mut t = BPlusTree::default();
@@ -1309,7 +1374,9 @@ mod tests {
         let t = build(&[50, 10, 30, 20, 40]);
         let ll = t.leftmost_leaf(t.root.clone());
         let guard = ll.lock().unwrap();
-        let Node::Leaf(ln) = &*guard else { panic!("not a leaf") };
+        let Node::Leaf(ln) = &*guard else {
+            panic!("not a leaf")
+        };
         // First key in leftmost leaf must be the global minimum.
         assert_eq!(ln.keys[0], 10);
     }
@@ -1387,7 +1454,9 @@ mod tests {
         // Deterministic LCG pseudo-random sequence (no external crates needed).
         let mut x: u64 = 0xDEAD_BEEF;
         let mut next_key = || {
-            x = x.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1_442_695_040_888_963_407);
+            x = x
+                .wrapping_mul(6_364_136_223_846_793_005)
+                .wrapping_add(1_442_695_040_888_963_407);
             ((x >> 33) % 200) as i64
         };
 
@@ -1422,6 +1491,4 @@ mod tests {
         let map_final: Vec<(i64, Vec<u64>)> = m.into_iter().collect();
         assert_eq!(tree_final, map_final);
     }
-    }
-
-
+}

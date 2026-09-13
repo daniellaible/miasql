@@ -50,7 +50,7 @@ impl MemoryStructure for ListStructure<f64> {
 
     /// This deletes the reference to a row, if the containing vector is empty the
     /// whole tupel is deleted
-    fn delete(&mut self, id: RowId) {
+    fn delete(&mut self, id: RowId, _value:Option<IndexValue>) {
         self.data.par_iter_mut().for_each(|tupel| {
             tupel.1.retain(|&x| x != id);
         });
@@ -127,7 +127,7 @@ impl MemoryStructure for ListStructure<f32> {
 
     /// This deletes the reference to a row, if the containing vector is empty the
     /// whole tupel is deleted
-    fn delete(&mut self, id: RowId) {
+    fn delete(&mut self, id: RowId, _value:Option<IndexValue>) {
         self.data.par_iter_mut().for_each(|tupel| {
             tupel.1.retain(|&x| x != id);
         });

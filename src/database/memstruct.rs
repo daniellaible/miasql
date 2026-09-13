@@ -34,7 +34,7 @@ pub trait MemoryStructure: Debug + Send + Sync {
     /// If you need a specifx [Row] and you know the [RowId]
     fn retrieve_by_index(&self, id: RowId) -> Option<Row>;
     /// You might want to delete an entry from the [MemoryStructure]
-    fn delete(&mut self, id: RowId);
+    fn delete(&mut self, id: RowId, value:Option<IndexValue>);
     /// This is used to implement the clone trait
     fn clone_box(&self) -> Box<dyn MemoryStructure>;
     /// If you need to know what kind of [MemoryStructure] you are dealing with

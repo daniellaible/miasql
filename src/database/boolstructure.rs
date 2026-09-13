@@ -48,7 +48,7 @@ impl MemoryStructure for BooleanStructure {
     }
 
     /// This function deletes an entry by the [RowId]
-    fn delete(&mut self, id: RowId) {
+    fn delete(&mut self, id: RowId, _value:Option<IndexValue>) {
         if let Some(i) = self.pos.iter().position(|v| *v == id) {
             self.pos.remove(i);
         }
@@ -86,7 +86,7 @@ mod tests {
         assert_eq!(all_trues.len(), 3);
         assert_eq!(all_false.len(), 4);
 
-        boolean_structure.delete(4);
+        boolean_structure.delete(4, None);
         let all_false = boolean_structure.retrieve_range(&IndexValue::Bool(false));
         assert_eq!(all_false.len(), 3);
     }
@@ -108,8 +108,8 @@ mod tests {
             neg: vec![],
         };
         insert_helper(&mut boolean_structure);
-        boolean_structure.delete(1);
-        boolean_structure.delete(2);
+        boolean_structure.delete(1, None);
+        boolean_structure.delete(2, None);
         let all_trues = boolean_structure.retrieve_range(&IndexValue::Bool(true));
         assert_eq!(all_trues.len(), 1);
     }
@@ -121,7 +121,7 @@ mod tests {
             neg: vec![],
         };
         insert_helper(&mut boolean_structure);
-        boolean_structure.delete(10);
+        boolean_structure.delete(10, None);
         let all_trues = boolean_structure.retrieve_range(&IndexValue::Bool(true));
         let all_false = boolean_structure.retrieve_range(&IndexValue::Bool(false));
         assert_eq!(all_trues.len(), 3);
