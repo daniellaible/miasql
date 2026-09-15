@@ -12,35 +12,20 @@ pub fn parse() -> SqlCommand {
 }
 
 pub fn show_databases() -> anyhow::Result<ResultSet, Error> {
-    panic!("Needs new implementation");
-/*    let mut result:ResultSet = ResultSet::create();
+
+   let mut result:ResultSet = ResultSet::create();
     if let Some(table_arc) = DbMem::find_table_in_mem("system", "database") {
         let table_guard = table_arc.lock().unwrap();
-        let tree = &table_guard.tree;
+        let db_map = &table_guard.data;
         let header = &table_guard.column_names;
         result.header = header.clone();
 
-        let mut cur = Some(tree.leftmost_leaf(tree.root.clone()));
-
-        while let Some(node_arc) = cur {
-            let (rows_to_send, next_leaf) = {
-                let node_guard = node_arc.lock().unwrap();
-                let Node::Leaf(leaf) = &*node_guard else {
-                    unreachable!("leftmost_leaf/next chain must be leaves");
-                };
-                (leaf.values.clone(), leaf.next.clone())
-            };
-
-            for raw_row in rows_to_send {
-                let row: Row = Row {
-                    data: raw_row
-                };
-                result.rows.push(row);
-            }
-            cur = next_leaf;
+        for (_, cur_row) in db_map.hashmap.iter() {
+            result.rows.push(cur_row.clone());
         }
+
     }
-    anyhow::Ok(result)*/
+    anyhow::Ok(result)
 }
 
 
