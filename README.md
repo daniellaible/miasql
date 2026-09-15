@@ -11,24 +11,18 @@ You can interact with the database via a socket connection and use this shell to
 We are working on the documentation – it will be on the website.
 On how to use the database, please look at the manual.md file.
 
-<b>Needs to be updated</b>    
-The B-Tree itself (Table) is always single-threaded, so there is always only one worker on one B-Tree,
-however, there can be multiple B-Trees in RAM storage - this will be then multithreaded.
-
-<b>Needs to be updated</b>
-With clusters there are multiple instances of the same Table (B-Tree) available for the users.
-On Shards you have different Table of the same database available (no read and write from the disc),
-on Clusters you have the same data available for parallel use.
+There is always only one table the engine is working on; however, it uses multithreading to access
+all the different data structures that are used for this task;
 
 To connect to the database open a PuTTY like shell with port 7878 - there you can enter your sql commands.
 In the future this will become a ssh connection, but right now we will be using a regular shell.
 
 ## License
 
-Sorry - we have not yet decided which licensing model we choose.
-As long as there is nothing else specified, you can look at the code, but you are not allowed
-to fork, change, sell, modify, distribute or use this code in any other way or form unless it is with our explicit
-permission.
+There will be two versions of MiaSql: the first one will be a community edition that will be free of cost.
+Second, there will be an enterprise edition that offers everything the community edition offers,
+additionally, there will be clusters and shards available as well as a multi-tier support.
+Both editions community and enterprise use the same Mia-engine.
 
 ## Website
 

@@ -17,7 +17,7 @@ use std::io::{BufReader, BufWriter, Error, ErrorKind, Read, Seek, SeekFrom, Writ
 
 pub fn load_moi_file(mtd: &MtdFile) -> Result<Table, Error> {
     let hashmap: HashmapStructure = HashmapStructure {
-        data: HashMap::new(),
+        hashmap: HashMap::new(),
     };
     let index_structures: Vec<Box<dyn MemoryStructure>> = Vec::new();
     let mut table = Table::new(

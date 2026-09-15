@@ -6,7 +6,7 @@ use crate::database::table::Row;
 /// for an u64.
 #[derive(Debug, Clone, Default)]
 pub struct HashmapStructure {
-    pub data: HashMap<RowId, Row>,
+    pub hashmap: HashMap<RowId, Row>,
 }
 
 /// This implementation of [MemoryStructure] uses a hashmap to access data quickly if e.g. the
@@ -21,7 +21,7 @@ impl MemoryStructure for HashmapStructure {
     fn insert(&mut self, value: IndexValue, id: RowId) {
         match value {
             IndexValue::Row(row) => {
-                self.data.insert(id, row);
+                self.hashmap.insert(id, row);
             }
             _ => { }
         }
@@ -38,7 +38,7 @@ impl MemoryStructure for HashmapStructure {
     /// As a result, it returns the [Row] of the given tabel
     fn retrieve_by_index(&self, id: RowId) -> Option<Row>
     {
-        let row_option = self.data.get(&id);
+        let row_option = self.hashmap.get(&id);
         match  row_option {
             Some(row) => Some(row.clone()),
             None => None,
@@ -48,7 +48,7 @@ impl MemoryStructure for HashmapStructure {
     /// Use this method to delete a [Row] from the tabel
     fn delete(&mut self, id: RowId, _value:Option<IndexValue>)
     {
-        self.data.remove(&id);
+        self.hashmap.remove(&id);
     }
 
     /// This is needed to implement the clone trait 
@@ -73,7 +73,7 @@ mod tests {
     fn basic_insert_retrieve_test() {
         let mut map_structure = HashmapStructure::default();
         insert_helper(&mut map_structure);
-        assert_eq!(map_structure.data.len(), 7);
+        assert_eq!(map_structure.hashmap.len(), 7);
 
         let row = map_structure.retrieve_by_index(6).unwrap();
 

@@ -1,6 +1,5 @@
 # To Do's
 + Tests for liststructure
-+ Implement MemoryStructure for various BpTree<T> types
 + Tests for BPlusTrees
 + Create table needs to implement foreign keys
 + Create database needs to check if there is already a database with the same name
@@ -8,7 +7,7 @@
 + MiaLedger ledger number is a constant right now get it from a system table
 + MiaLedger should start a new file when reaching the 4GB limitation
 + if an error in the processor happens, it needs to be reverted
-+ ?do we need a alterRenameDatabase command
++ ?do we need alterRenameDatabase command
 + do not panic when the database you want to create already exists (same name problem)
 
 
@@ -78,7 +77,7 @@
 
 These will be the only large object types
 ? What about complex types like lists, sets or tupels ? Maybe later version?
-
+We want to have our own sql parser, so we can do fancy commands and fancy datatypes
 
 ## Database
 

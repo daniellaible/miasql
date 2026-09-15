@@ -1,14 +1,15 @@
 use crate::database::bptree::Node;
 use crate::database::datatype::DataType;
-use crate::database::table::{Table};
+use crate::database::table::{Row, Table};
 use crate::file::moihandler::load_moi_file;
 use crate::file::mtdhandler::read_mtd_file;
 use crate::server::tools::{clean_string, datatype_to_string_uppercase, remove_double_slash};
 use anyhow::{Error, Result, anyhow};
 use log::{error, info};
 use std::sync::{Arc, LazyLock, Mutex};
+use crate::database::memstruct::{IndexValue, MemoryStructure, RowId};
 
-/// DbMem is the struct that holds the tables in memory.
+/// [DbMem] is the struct that holds the tables in memory.
 /// It consists of a vector with all the tables that are in use.
 /// The vector that stores those tables uses tupels with following structures
 /// Vec[(Database_Name, Table_Name, Table)]
@@ -60,7 +61,7 @@ impl DbMem {
             }
             Some(system_table) => {
                 let datatable = &system_table.lock().unwrap().data;
-                for (_, row) in datatable.data.iter() {
+                for (_, row) in datatable.hashmap.iter() {
                     let mut dbname_in_system_table = datatype_to_string_uppercase(&row.data[1]);
                     dbname_in_system_table = clean_string(dbname_in_system_table);
 
@@ -107,7 +108,7 @@ impl DbMem {
             }
             Some(table) => {
                 let datamap = &table.lock().unwrap().data;
-                for (_, row) in datamap.data.iter() {
+                for (_, row) in datamap.hashmap.iter() {
 
                     let mut table_value_upper = datatype_to_string_uppercase(&row.data[1]);
                     table_value_upper = clean_string(table_value_upper);
@@ -137,10 +138,10 @@ impl DbMem {
     }
 
     /// This adds a row to a table in memory
-    pub fn insert_row(db_name: &str, table_name: &str, data: Vec<DataType>) {
-        panic!("needs new implementation");
+    pub fn insert_row(db_name: &str, table_name: &str, row: Vec<DataType>) {
+
         //Todo here we create our own id, if it is not given
-        /*        let id = match data.first() {
+        let id = match row.first() {
             Some(DataType::BigInt(n)) => *n,
             Some(_) => {
                 error!("insert_row: first element must be DataType::BigInt(id)");
@@ -167,12 +168,84 @@ impl DbMem {
 
         match table_arc.try_lock() {
             Ok(mut table) => {
-                table.tree.insert(id, data);
+                let id = match row[0]{
+                    DataType::BigInt(id) => {id}
+                    _ =>{panic!("This really should be an id")}
+                };
+                let my_row = Row{data: row};
+                table.data.hashmap.insert(id as u64, my_row.clone());
+
+                for column_index in 0 .. my_row.data.len(){
+                    match &my_row.data[column_index]{
+
+                        DataType::BigInt(biggy) => {
+                            let boxed = &mut table.index_structures[column_index];
+                            let mut tree: &mut dyn MemoryStructure = &mut **boxed;
+                            tree.insert(IndexValue::BigInt(*biggy), id as RowId);
+                        }
+                        DataType::Int(inty) => {
+                            let boxed = &mut table.index_structures[column_index];
+                            let mut tree: &mut dyn MemoryStructure = &mut **boxed;
+                            tree.insert(IndexValue::Int(*inty), id as RowId);
+                        }
+                        DataType::SmallInt(small) => {
+                            let boxed = &mut table.index_structures[column_index];
+                            let mut tree: &mut dyn MemoryStructure = &mut **boxed;
+                            tree.insert(IndexValue::SmallInt(*small), id as RowId);
+                        }
+                        DataType::TinyInt(tiny) => {
+                            let boxed = &mut table.index_structures[column_index];
+                            let mut tree: &mut dyn MemoryStructure = &mut **boxed;
+                            tree.insert(IndexValue::TinyInt(*tiny), id as RowId);
+                        }
+                        DataType::Decimal(deci) => {
+                            let boxed = &mut table.index_structures[column_index];
+                            let mut tree: &mut dyn MemoryStructure = &mut **boxed;
+                            tree.insert(IndexValue::Decimal(*deci), id as RowId);
+                        }
+                        DataType::Float(floaty) => {
+                            let boxed = &mut table.index_structures[column_index];
+                            let mut tree: &mut dyn MemoryStructure = &mut **boxed;
+                            tree.insert(IndexValue::Float(*floaty), id as RowId);
+                        }
+                        DataType::VarChar(len, text) => {
+                            let boxed = &mut table.index_structures[column_index];
+                            let mut tree: &mut dyn MemoryStructure = &mut **boxed;
+                            tree.insert(IndexValue::Text(text.clone()), id as RowId);
+                        }
+                        DataType::Bool(booly) => {
+                            let boxed = &mut table.index_structures[column_index];
+                            let mut tree: &mut dyn MemoryStructure = &mut **boxed;
+                            tree.insert(IndexValue::Bool(*booly), id as RowId);
+                        }
+                        DataType::Date(date) => {
+                            let boxed = &mut table.index_structures[column_index];
+                            let mut tree: &mut dyn MemoryStructure = &mut **boxed;
+                            tree.insert(IndexValue::Date(*date), id as RowId);
+                        }
+                        DataType::Time(time) => {
+                            let boxed = &mut table.index_structures[column_index];
+                            let mut tree: &mut dyn MemoryStructure = &mut **boxed;
+                            tree.insert(IndexValue::Date(*time), id as RowId);
+                        }
+                        DataType::DateTime(dt) => {
+                            let boxed = &mut table.index_structures[column_index];
+                            let mut tree: &mut dyn MemoryStructure = &mut **boxed;
+                            tree.insert(IndexValue::Date(*dt), id as RowId);
+                        }
+                        DataType::Enum(act, _pos) => {
+                            let boxed = &mut table.index_structures[column_index];
+                            let mut tree: &mut dyn MemoryStructure = &mut **boxed;
+                            tree.insert(IndexValue::Enum(act.clone()), id as RowId);
+                        }
+                        _ =>{}
+                    }
+                }
             }
             Err(why) => {
                 error!("insert_row: failed to lock table: {:?}", why);
             }
-        }*/
+        }
     }
 
     /// Checks if the table is in memory or not
