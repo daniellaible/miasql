@@ -20,6 +20,7 @@ pub enum IndexValue {
     TinyInt(i8),
     Decimal (f32),
     Float (f64),
+    Enum (String)
 }
 
 /// This trait describes the interface of several different structs which are designed to
