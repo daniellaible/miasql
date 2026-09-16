@@ -10,6 +10,7 @@ use crate::server::queue::TransactionContext;
 use log::info;
 use std::sync::atomic::AtomicU64;
 use anyhow::Error;
+use uuid::Uuid;
 use crate::command::insert;
 
 pub static COUNTER: AtomicU64 = AtomicU64::new(0);
@@ -72,15 +73,17 @@ pub fn process_transaction( mut transaction: TransactionContext) -> anyhow::Resu
             }
         }
         SqlCommand::CreateTable { table, columns, .. } => {
+            transaction.table_uuid = Uuid::new_v4();
             let result = create_table(transaction.clone(), table.to_string(), columns.clone());
 
             match result {
                 Ok(t) => {
-                    if !t.error {
+                    Ok(ResultSet::create())
+/*                    if !t.error {
                         Ok(ResultSet::create())
                     } else {
                         Err(anyhow::anyhow!("create table failed"))
-                    }
+                    }*/
                 }
                 _ => {
                     panic!("Something strange happend here while creating a table");

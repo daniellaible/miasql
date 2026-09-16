@@ -2,6 +2,7 @@
 + Tests for liststructure
 + Tests for BPlusTrees
 + Create table needs to implement foreign keys
++ We need to create a log file for the admins
 + Create database needs to check if there is already a database with the same name
 + MiaLedger path is not coming from the config file.
 + MiaLedger ledger number is a constant right now get it from a system table

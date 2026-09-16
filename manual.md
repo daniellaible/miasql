@@ -2,7 +2,7 @@
 
 ## Preface
 
-MiaSQL was born out of curiosity. Daniel wanted to understand the way SQL databases work.
+MiaSQL was born out of curiosity. The creator od MiaSql wanted to understand how databases work.
 Therefore, he decided to program his own db project. He published his project on github and nobody noticed.
 
 The word 'mia' means 'my' in Esperanto. To name the software in Esperanto was chosen deliberately. Esperanto was created as a world
@@ -13,8 +13,15 @@ from third party tinkering, a tool that does not need to earn dividends for some
 
 ## Licencing
 ### Community License
+The community edition is free to use and to download. 
+You are not allowed to sell MiaSql to a third party without the consent of the creator.
+You are not allowed to download MiaSql, make changes to the codebase and sell the result to a third party without the consent of the creator. 
+You are not allowed to make any kind of revenue involving the codebase of MiaSql either as a whole or partly without the consent of the creator.
+Simply put - you can use it, even professionally, but you are not allowed to earn money with the code base.
 ### Enterprise License
-
+The enterprise edition is not free to use – please have a look at our pricing plans.
+The enterprise version contains all the features the community edition provides, however, additionally you get shards and clusters as well.
+Included in the enterprise edition is a basic for of support. If you need better support, there are plans for this too.
 ## Installing Mia
 ### Installing Mia on Windows
 
@@ -42,10 +49,17 @@ This closes your session with the Mia Server
 
 This specifies which database you want to use
 
+#### Show Databases
+> SHOW DATABASES
+
+Returns a list of all databases available. You select a database by using the USE command.
+The ResultSet you get is unordered.
+
 #### Show tables
 > SHOW TABLES
 
-Returns a list of all tables of the selected database. You select a database by using the USE command.
+Returns a list containing all tables of the selected database. You select a database by using the USE command.
+The ResultSet you get is unordered.
 
 #### Datatypes
 
@@ -182,27 +196,6 @@ Connecting to the database is simple - just use PuTTY and connect to your db-ser
 + moi file: table on the drive
 + cmon file: config file for mia
 
-		TCP/IP
-		 7878
-		  || 
-	       COMMAND   -----> Parser  
-         Sql-Command <-----
-		  ||
-		  ||
-		  ||
-		  ||      -----> Ledger (stores command tokens on disc)
-		  ||
-		  ||      -----> moi-file Updater (stores data on disc)
-              ||      -----> ledger updates field DataOnDisc
-		  ||
-		  ||      -----> update b-tree (stores tables in memory)		
-		  ||      -----> update cluster or shards
-		  ||
-		  ||
-		 \  /
-		  \/		
-	   
-	       Response  
 
 ## Syntax
 "DROP TABLE IF EXISTS table_name;" is not supported use "DROP TABLE table_name" instead.

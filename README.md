@@ -11,7 +11,7 @@ You can interact with the database via a socket connection and use this shell to
 We are working on the documentation – it will be on the website.
 On how to use the database, please look at the manual.md file.
 
-There is always only one table the engine is working on; however, it uses multithreading to access
+There is always only instruction the engine is working on; however, it uses multithreading to access
 all the different data structures that are used for this task;
 
 To connect to the database open a PuTTY like shell with port 7878 - there you can enter your sql commands.
@@ -36,11 +36,11 @@ We don't have a website yet - we are working on it, but lets get the database ru
 |---------|--------------------------------------------------------------------------------------------------------------------------------|
 | 0.1.0   | system files of the db can be read, system tables are created in memory                                                        |
 | 0.2.0   | basic select, create, insert, alter, truncate and drop statements are working in ram and on disc, also all columns are indexed |
-| 0.3.0   | functionality of all statements is guaranteed - including foreign keys and constraints                                         |
-| 0.4.0   | user management and secure shell - engine finished                                                                             | 
+| 0.3.0   | functionality of all statements is guaranteed - including foreign keys,constraints, joins etc                                         |
+| 0.4.0   | user management, secure shell, multithreading -> engine functional                                                                             | 
 | 0.5.0   | Speed optimization and additional testing                                                                                      | 
-| 0.6.0   | ledger implementation including restoring the backup, zipping - backup importer from other databases                           |
-| 0.7.0   | drivers for the most popular languages are provided                                                                            |
+| 0.6.0   | drivers for the most popular languages are provided                           |
+| 0.7.0   | ledger implementation including restoring the backup, zipping - backup importer from other databases                                                                            |
 | 0.8.0   | UI for interacting with Mia is provided                                                                                        |
 | 0.9.0   | adding clusters, shards and loadbalancer                                                                                       |
 | 1.0.0   | amaze - amaze - amaze - Question                                                                                               |
