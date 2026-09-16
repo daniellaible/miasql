@@ -18,7 +18,7 @@ pub async fn handle_client(stream: &mut TcpStream) -> anyhow::Result<()> {
     let mut db_used = String::from("system");
     loop {
         if !is_logged_in {
-            let login_prompt = String::from("login:");
+            let login_prompt = String::from("mia login>");
             stream
                 .write_all((&login_prompt).as_ref())
                 .await
@@ -31,6 +31,7 @@ pub async fn handle_client(stream: &mut TcpStream) -> anyhow::Result<()> {
 
             username = std::str::from_utf8(&buf[..n]).unwrap().to_string();
             username = username.replace("\r\n", "");
+            stream.try_write("mia>".as_bytes());
             is_logged_in = true;
         } else {
             let n = stream.read(&mut buf).await?;
@@ -132,7 +133,7 @@ pub async fn handle_client(stream: &mut TcpStream) -> anyhow::Result<()> {
             is_use_command = false;
             match sql_command.clone() {
                 SqlCommand::Use { database, .. } => {
-                    answer = format!("using:  {database} \r\n");
+                    answer = format!("using:  {database} \r\nmia>");
                     is_use_command = true;
                     db_used = database.clone();
                     DbMem::load_db_to_mem(database.as_str());
@@ -250,6 +251,7 @@ fn print_resultset_to_stream(result: anyhow::Result<ResultSet, Error>, stream:&T
             let line = "Request took ".to_owned() + res.duration.to_string().as_str() + " microsecs";
             let _ = stream.try_write(line.as_bytes());
             let _ = stream.try_write("\n\r".as_bytes());
+            let _ = stream.try_write("mia>".as_bytes());
         }
         Err(_) => {
             let line = "Something went wrong";

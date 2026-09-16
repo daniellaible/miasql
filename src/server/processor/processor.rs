@@ -79,11 +79,6 @@ pub fn process_transaction( mut transaction: TransactionContext) -> anyhow::Resu
             match result {
                 Ok(t) => {
                     Ok(ResultSet::create())
-/*                    if !t.error {
-                        Ok(ResultSet::create())
-                    } else {
-                        Err(anyhow::anyhow!("create table failed"))
-                    }*/
                 }
                 _ => {
                     panic!("Something strange happend here while creating a table");
